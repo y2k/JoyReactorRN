@@ -11,7 +11,7 @@ export type Source = FeedSource | TagSource
 
 export namespace Loader {
 
-    export function postDescription(id): Promise<Post> {
+    export function postDescription(id: number): Promise<Post> {
         return fetch(Domain.urlPostDetails(id))
             .then(x => x.text())
             .then(x => {
