@@ -1,7 +1,8 @@
 import { AsyncStorage, Dimensions } from 'react-native'
 
 export interface Attachment { url: string, aspect: number }
-export interface Post { title: string, image: Attachment }
+export interface Comment { text: string }
+export interface Post { title: string, image: Attachment, comments: Comment[] }
 interface PostResponse { posts: Post[] }
 
 export interface TagSource { kind: "tags", name: string }
@@ -9,6 +10,24 @@ export interface FeedSource { kind: "feed" }
 export type Source = FeedSource | TagSource
 
 export namespace Loader {
+
+    export function postDescription(id): Promise<Post> {
+        return fetch(Domain.urlPostDetails(id))
+            .then(x => x.text())
+            .then(x => {
+                let form = new FormData()
+                form.append("html", x)
+
+                let request = {
+                    method: "POST",
+                    headers: { "Content-Type": "multipart/form-data" },
+                    body: form
+                }
+
+                return fetch("http://212.47.229.214:4567/post", request)
+            })
+            .then(x => x.json())
+    }
 
     export function posts(tag: Source): Promise<PostResponse> {
         return fetch(Domain.makeUrl(tag))
@@ -30,6 +49,10 @@ export namespace Loader {
 }
 
 export namespace Domain {
+
+    export function urlPostDetails(post: number) {
+        return `http://joyreactor.cc/post/${post}`
+    }
 
     export function makeUrl(tag: Source) {
         switch (tag.kind) {
