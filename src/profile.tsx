@@ -13,15 +13,17 @@ class LoginComponent extends Component<any, any> {
         return (
             <View >
                 <TitleComponent title="Авторизация" />
-                <View style={{ padding: 4, flexDirection: "column" }} >
+                <View style={{ paddingLeft: 30, paddingRight: 30, paddingTop: 25, flexDirection: "column" }} >
                     <TextInput style={style.edit}
                         placeholder="Логин"
                         underlineColorAndroid="transparent"
-                        placeholderTextColor="white" />
+                        placeholderTextColor="gray" />
+                    <View style={{ height: 12 }} />
                     <TextInput style={style.edit}
                         placeholder="Пароль"
+                        secureTextEntry={true}
                         underlineColorAndroid="transparent"
-                        placeholderTextColor="white" />
+                        placeholderTextColor="gray" />
                     <Button title="Войти" color="#b80" onPress={() => { }} />
                 </View>
             </View>
@@ -31,11 +33,14 @@ class LoginComponent extends Component<any, any> {
 
 const style = StyleSheet.create({
     edit: {
+        backgroundColor: "white",
+        color: "black",
         padding: 4,
         height: 45,
         fontSize: 18,
-        borderColor: "gray",
+        paddingLeft: 18,
+        borderColor: "#ececec",
         borderWidth: 1,
-        borderRadius: 10
+        borderRadius: 2
     }
 })

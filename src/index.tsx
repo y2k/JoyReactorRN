@@ -18,9 +18,9 @@ export default class App extends Component<any, any> {
         return (
             <View style={styles.container}>
                 <View style={{ flex: 1 }}>
-                    <PostsComponent />
+                    {/*<PostsComponent />*/}
                     {/*<PostDetailsComponent />*/}
-                    {/*<ProfileComponent />*/}
+                    <ProfileComponent />
                 </View>
                 <NavigationComponent />
             </View>
@@ -32,6 +32,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
-        backgroundColor: '#ffb100',
+        backgroundColor: '#fafafa',
     },
 });

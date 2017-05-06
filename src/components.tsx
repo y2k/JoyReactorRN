@@ -10,8 +10,8 @@ export class TitleComponent extends Component<TitleProps, any> {
     render() {
         return (
             <View>
-                <View style={{ height: Platform.select({ ios: 15 }) }} />
-                <View style={{ height: 50, flexDirection: "row", alignItems: "center" }}>
+                <View style={{ backgroundColor: "#ffb100", height: Platform.select({ ios: 15 }) }} />
+                <View style={{ backgroundColor: "#ffb100", height: 50, flexDirection: "row", alignItems: "center" }}>
                     <TouchableHighlight
                         style={{ alignItems: "center", flexDirection: "row", width: 50, height: 50 }}
                         onPress={() => { }}>
