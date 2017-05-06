@@ -8,6 +8,7 @@ import { Post, Attachment, Domain, Loader, TagSource, FeedSource } from './domai
 import { NavigationComponent, TitleComponent } from "./components"
 import { PostDetailsComponent } from "./post"
 import { PostsComponent } from "./posts"
+import { ProfileComponent } from "./profile"
 
 interface PostsProps { data: Post }
 
@@ -16,8 +17,11 @@ export default class App extends Component<any, any> {
     render() {
         return (
             <View style={styles.container}>
-                <PostDetailsComponent />
-                {/*<PostsComponent />*/}
+                <View style={{ flex: 1 }}>
+                    {/*<PostDetailsComponent />*/}
+                    {/*<PostsComponent />*/}
+                    <ProfileComponent />
+                </View>
                 <NavigationComponent />
             </View>
         )
