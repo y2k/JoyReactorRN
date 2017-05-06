@@ -13,11 +13,10 @@ type State = PostState | ErrorState
 export class PostDetailsComponent extends Component<any, State> {
 
     componentDidMount() {
-        // Loader.postDescription(3092583)
-        //     .then(x => this.setState({ kind: "post", post: x }))
-        //     .catch(x => this.setState({ kind: "error", message: JSON.stringify(x) }))
+        Loader.postDescription(3092583)
+            .then(x => this.setState({ kind: "post", post: x }))
+            .catch(x => this.setState({ kind: "error", message: JSON.stringify(x) }))
     }
-
 
     render() {
         return (
@@ -30,13 +29,12 @@ export class PostDetailsComponent extends Component<any, State> {
 
     getViewState() {
         if (this.state == null) return (
-            <View style={{ flex: 1, backgroundColor: "blue" }}>
-                <ActivityIndicator
-                    style={{ backgroundColor: "red", alignSelf: "center" }}
-                    size="large"
-                    color="white" />
-            </View>
+            <ActivityIndicator
+                style={{ alignSelf: "center" }}
+                size="large"
+                color="white" />
         )
+        
         switch (this.state.kind) {
             case "post": return (
                 <View>
