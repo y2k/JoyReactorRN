@@ -4,27 +4,44 @@ import {
     TouchableHighlight, Image, ListView, Dimensions
 } from 'react-native'
 import { Post, Attachment, Domain, Loader, TagSource, FeedSource, Comment } from './domain'
+import { TitleComponent } from "./components"
 
-export class PostDetailsComponent extends Component<any, Post> {
+interface PostState { kind: "post", post: Post }
+interface ErrorState { kind: "error", message: string }
+type State = PostState | ErrorState
+
+export class PostDetailsComponent extends Component<any, State> {
 
     componentDidMount() {
-        Loader.postDescription(3092583).then(x => this.setState(x))
+        Loader.postDescription(3092583)
+            .then(x => this.setState({ kind: "post", post: x }))
+            .catch(x => this.setState({ kind: "error", message: JSON.stringify(x) }))
     }
 
+
     render() {
-        if (this.state == null) return (<Text>Loading...</Text>)
-        const post = this.state
         return (
-            <ScrollView style={styles.container}>
-                <Text>post.title</Text>
-
-                <Image
-                    style={{ height: 200 }}
-                    source={{ uri: post.image.url }} />
-
-                {post.comments.map((x, i) => componentComment(x, i))}
+            <ScrollView style={{ backgroundColor: '#ffb100' }}>
+                <TitleComponent title="Post" />
+                {this.getViewState()}
             </ScrollView>
-        );
+        )
+    }
+
+    getViewState() {
+        if (this.state == null) return (<Text>Loading...</Text>)
+        switch (this.state.kind) {
+            case "post": return (
+                <View>
+                    <Image
+                        style={{ height: 200 }}
+                        source={{ uri: this.state.post.image.url }} />
+                    <Text>Лучшие комментарии:</Text>
+                    {this.state.post.comments.map((x, i) => componentComment(x, i))}
+                </View>
+            );
+            case "error": return (<Text>ERROR: {this.state.message}</Text>)
+        }
     }
 }
 
@@ -33,11 +50,3 @@ function componentComment(x: Comment, i: number) {
         style={{ padding: 4, color: "white" }}
         numberOfLines={2} key={`comment${i}`}>{x.text}</Text>)
 }
-
-const styles = StyleSheet.create({
-    container: {
-        // flex: 1,
-        // justifyContent: "center",
-        backgroundColor: '#ffb100',
-    }
-})

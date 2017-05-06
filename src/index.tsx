@@ -6,6 +6,7 @@ import {
 
 import { Post, Attachment, Domain, Loader, TagSource, FeedSource } from './domain'
 import { PostDetailsComponent } from "./post"
+import { NavigationComponent } from "./components"
 
 interface PostsProps { data: Post }
 interface State { message: string, posts: Post[] }
@@ -23,29 +24,10 @@ export default class App extends Component<any, State> {
     render() {
         return (
             <View style={styles.container}>
-                {/*<ListView
-                    enableEmptySections={true}
-                    dataSource={
-                        new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
-                            .cloneWithRows(this.state.posts)}
-                    renderRow={(rowData) => <PostComponent data={rowData} />} />*/}
                 <PostDetailsComponent />
-                <View style={{ flexDirection: "row", height: 50 }}>
-                    <TouchableHighlight style={styles.tab} onPress={() => { }}>
-                        <Text style={styles.tabText}>Лента</Text>
-                    </TouchableHighlight>
-                    <TouchableHighlight style={styles.tab} onPress={() => { }}>
-                        <Text style={styles.tabText}>Теги</Text>
-                    </TouchableHighlight>
-                    <TouchableHighlight style={styles.tab} onPress={() => { }}>
-                        <Text style={styles.tabText}>Сообщения</Text>
-                    </TouchableHighlight>
-                    <TouchableHighlight style={styles.tab} onPress={() => { }}>
-                        <Text style={styles.tabText}>Профиль</Text>
-                    </TouchableHighlight>
-                </View>
+                <NavigationComponent />
             </View>
-        );
+        )
     }
 }
 
