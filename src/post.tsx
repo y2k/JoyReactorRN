@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import {
     StyleSheet, Text, View, Button, ScrollView,
-    TouchableHighlight, Image, ListView, Dimensions
+    TouchableHighlight, Image, ListView, Dimensions, ActivityIndicator
 } from 'react-native'
 import { Post, Attachment, Domain, Loader, TagSource, FeedSource, Comment } from './domain'
 import { TitleComponent } from "./components"
@@ -13,9 +13,9 @@ type State = PostState | ErrorState
 export class PostDetailsComponent extends Component<any, State> {
 
     componentDidMount() {
-        Loader.postDescription(3092583)
-            .then(x => this.setState({ kind: "post", post: x }))
-            .catch(x => this.setState({ kind: "error", message: JSON.stringify(x) }))
+        // Loader.postDescription(3092583)
+        //     .then(x => this.setState({ kind: "post", post: x }))
+        //     .catch(x => this.setState({ kind: "error", message: JSON.stringify(x) }))
     }
 
 
@@ -29,7 +29,14 @@ export class PostDetailsComponent extends Component<any, State> {
     }
 
     getViewState() {
-        if (this.state == null) return (<Text>Loading...</Text>)
+        if (this.state == null) return (
+            <View style={{ flex: 1, backgroundColor: "blue" }}>
+                <ActivityIndicator
+                    style={{ backgroundColor: "red", alignSelf: "center" }}
+                    size="large"
+                    color="white" />
+            </View>
+        )
         switch (this.state.kind) {
             case "post": return (
                 <View>

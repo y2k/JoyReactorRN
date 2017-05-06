@@ -6,7 +6,7 @@ import {
 
 import { Post, Attachment, Domain, Loader, TagSource, FeedSource } from './domain'
 import { PostDetailsComponent } from "./post"
-import { NavigationComponent } from "./components"
+import { NavigationComponent, TitleComponent } from "./components"
 
 interface PostsProps { data: Post }
 interface State { message: string, posts: Post[] }
@@ -24,7 +24,14 @@ export default class App extends Component<any, State> {
     render() {
         return (
             <View style={styles.container}>
-                <PostDetailsComponent />
+                <TitleComponent title="Feed" />
+                <ListView
+                    enableEmptySections={true}
+                    dataSource={
+                        new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
+                            .cloneWithRows(this.state.posts)}
+                    renderRow={(rowData) => <PostComponent data={rowData} />} />
+
                 <NavigationComponent />
             </View>
         )
@@ -58,14 +65,6 @@ class PostComponent extends Component<PostsProps, any> {
 }
 
 const styles = StyleSheet.create({
-    tab: { flex: 1 },
-    tabText: {
-        fontSize: 18,
-        color: "white",
-        flex: 1,
-        textAlign: "center",
-        textAlignVertical: "center",
-    },
     container: {
         flex: 1,
         justifyContent: "center",
