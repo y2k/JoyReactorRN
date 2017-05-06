@@ -44,7 +44,7 @@ class PostComponent extends Component<PostsProps, any> {
         const h = Domain.height(post.image)
         return (
             <TouchableHighlight
-                style={{ paddingBottom: 4, paddingTop: 4 }}
+                style={{ paddingBottom: 0, paddingTop: 0 }}
                 underlayColor="#ffb100" onPress={() => { }}>
                 <View style={{ alignItems: "stretch" }}>
                     {image != null &&
