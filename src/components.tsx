@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import {
     StyleSheet, Text, View, Button, ScrollView,
-    TouchableHighlight, Image, ListView, Dimensions
+    TouchableHighlight, Image, ListView, Dimensions, Platform
 } from 'react-native'
 
 interface TitleProps { title: string }
@@ -10,7 +10,7 @@ export class TitleComponent extends Component<TitleProps, any> {
     render() {
         return (
             <View>
-                <View style={{ height: 15 }} />
+                <View style={{ height: Platform.select({ ios: 15 }) }} />
                 <View style={{ height: 50, flexDirection: "row", alignItems: "center" }}>
                     <TouchableHighlight style={{ alignItems: "center", flexDirection: "row", width: 50, height: 50 }} onPress={() => { }}>
                         <Text style={{ flex: 1, textAlign: "center", color: "white", fontSize: 30 }}>{"<"}</Text>
