@@ -23,7 +23,7 @@ export class PostsComponent extends Component<any, State> {
     render() {
         return (
             <View style={{ flex: 1 }}>
-                <TitleComponent title="Feed" />
+                <TitleComponent title="Лента" />
                 <ListView
                     enableEmptySections={true}
                     dataSource={
