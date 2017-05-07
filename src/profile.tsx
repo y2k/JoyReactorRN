@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, TextInput, Button } from 'react-native'
+import { View, StyleSheet, TextInput, Button, TouchableHighlight, Text, TouchableOpacity } from 'react-native'
 
 import { Loader } from './domain'
 import { NavigationComponent, TitleComponent } from "./components"
@@ -13,7 +13,7 @@ class LoginComponent extends Component<any, any> {
         return (
             <View >
                 <TitleComponent title="Авторизация" />
-                <View style={{ paddingLeft: 30, paddingRight: 30, paddingTop: 25, flexDirection: "column" }} >
+                <View style={{ padding: 20, flexDirection: "column" }} >
                     <TextInput style={style.edit}
                         placeholder="Логин"
                         underlineColorAndroid="transparent"
@@ -24,7 +24,23 @@ class LoginComponent extends Component<any, any> {
                         secureTextEntry={true}
                         underlineColorAndroid="transparent"
                         placeholderTextColor="gray" />
-                    <Button title="Войти" color="#b80" onPress={() => { }} />
+                    <View style={{ height: 12 }} />
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: "#e49421",
+                            borderRadius: 4,
+                            overflow: "hidden",
+                        }}
+                        onPress={() => { }}>
+                        <Text style={{
+                            fontWeight: "bold",
+                            fontSize: 13,
+                            textAlign: "center",
+                            padding: 15,
+                            color: "white"
+                        }}>ВОЙТИ</Text>
+                    </TouchableOpacity>
+
                 </View>
             </View>
         )
@@ -37,10 +53,10 @@ const style = StyleSheet.create({
         color: "black",
         padding: 4,
         height: 45,
-        fontSize: 18,
+        fontSize: 16,
         paddingLeft: 18,
         borderColor: "#ececec",
         borderWidth: 1,
-        borderRadius: 2
+        borderRadius: 4
     }
 })

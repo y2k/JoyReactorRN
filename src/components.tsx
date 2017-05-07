@@ -1,8 +1,5 @@
 import React, { Component } from 'react'
-import {
-    StyleSheet, Text, View, Button, ScrollView,
-    TouchableHighlight, Image, ListView, Dimensions, Platform
-} from 'react-native'
+import { View, Platform, TouchableOpacity, Text, TouchableHighlight, StyleSheet } from 'react-native'
 
 interface TitleProps { title: string }
 
@@ -12,11 +9,11 @@ export class TitleComponent extends Component<TitleProps, any> {
             <View>
                 <View style={{ backgroundColor: "#ffb100", height: Platform.select({ ios: 15 }) }} />
                 <View style={{ backgroundColor: "#ffb100", height: 50, flexDirection: "row", alignItems: "center" }}>
-                    <TouchableHighlight
+                    <TouchableOpacity
                         style={{ alignItems: "center", flexDirection: "row", width: 50, height: 50 }}
                         onPress={() => { }}>
-                        <Text style={{ flex: 1, textAlign: "center", color: "white", fontSize: 30 }}>{"<"}</Text>
-                    </TouchableHighlight>
+                        <Text style={{ flex: 1, textAlign: "center", color: "white", fontSize: 25 }}>{"←"}</Text>
+                    </TouchableOpacity>
                     <Text style={{ color: "white", fontSize: 18 }}>{this.props.title}</Text>
                 </View>
             </View>
