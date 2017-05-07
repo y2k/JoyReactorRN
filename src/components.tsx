@@ -24,7 +24,7 @@ export class TitleComponent extends Component<TitleProps, any> {
 export class NavigationComponent extends Component<any, any> {
     render() {
         return (
-            <View style={{ flexDirection: "row", height: 50 }}>
+            <View style={{ backgroundColor: "#ffb100", flexDirection: "row", height: 50 }}>
                 <TouchableHighlight underlayColor="#f82" style={styles.tab} onPress={() => { }}>
                     <Text style={styles.tabText}>Лента</Text>
                 </TouchableHighlight>

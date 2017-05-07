@@ -9,6 +9,8 @@ export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
 export type Source = FeedSource | TagSource
 
+export interface Profile { name: string, avatar: string }
+
 export namespace Loader {
 
     export function postDescription(id: number): Promise<Post> {
