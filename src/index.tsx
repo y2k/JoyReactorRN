@@ -1,16 +1,10 @@
 import React, { Component } from 'react'
-import {
-    StyleSheet, Text, View, Button, ScrollView,
-    TouchableHighlight, Image, ListView, Dimensions
-} from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
-import { Post, Attachment, Domain, Loader, TagSource, FeedSource } from './domain'
 import { NavigationComponent, TitleComponent } from "./components"
 import { PostDetailsComponent } from "./post"
 import { PostsComponent } from "./posts"
 import { ProfileComponent } from "./profile"
-
-interface PostsProps { data: Post }
 
 export default class App extends Component<any, any> {
 
