@@ -47,8 +47,14 @@ class UserUnfoComponent extends Component<any, ProfileState> {
 
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />
                 <View style={{ backgroundColor: "white", height: 50, flexDirection: "row", alignItems: "center", justifyContent: "center" }} >
-                    <Text style={{ fontSize: 25, color: "#edc95b" }}>★★★★★</Text>
-                    <Text style={{ fontSize: 25, color: "#e4e6e7" }}>★★★★★</Text>
+                    <Text style={{
+                        includeFontPadding: false,
+                        textAlign: "center", textAlignVertical: "center", marginTop: 0, fontSize: 25, color: "#edc95b"
+                    }}>★★★★★</Text>
+                    <Text style={{
+                        textAlign: "center", textAlignVertical: "center", marginTop: 0, fontSize: 25, color: "#edc95b"
+                    }}>★★★★★</Text>
+                    {/*<Text style={{ fontSize: 25, color: "#e4e6e7" }}>★★★★★</Text>*/}
                 </View>
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />
                 <View style={{ backgroundColor: "white", height: 50 }} />
