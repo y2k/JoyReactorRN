@@ -12,7 +12,10 @@ export class TitleComponent extends Component<TitleProps, any> {
                     <TouchableOpacity
                         style={{ alignItems: "center", flexDirection: "row", width: 50, height: 50 }}
                         onPress={() => { }}>
-                        <Text style={{ flex: 1, textAlign: "center", color: "white", fontSize: 25 }}>{"←"}</Text>
+                        <Text style={{
+                            fontFamily: "icomoon",
+                            flex: 1, textAlign: "center", color: "white", fontSize: 20
+                        }}>{""}</Text>
                     </TouchableOpacity>
                     <Text style={{ color: "white", fontSize: 18 }}>{this.props.title}</Text>
                 </View>
