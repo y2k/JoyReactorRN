@@ -17,7 +17,14 @@ interface ProfileState { profile: Profile }
 
 class UserUnfoComponent extends Component<any, ProfileState> {
 
-    state = { profile: { name: "Alex", avatar: "http://img1.joyreactor.cc/pics/avatar/tag/10415" } }
+    state = {
+        profile: {
+            name: "Alex",
+            avatar: "http://img1.joyreactor.cc/pics/avatar/tag/10415",
+            stars: 3,
+            progress: 0.5,
+        }
+    }
 
     render() {
         return (
@@ -47,17 +54,20 @@ class UserUnfoComponent extends Component<any, ProfileState> {
 
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />
                 <View style={{ backgroundColor: "white", height: 50, flexDirection: "row", alignItems: "center", justifyContent: "center" }} >
-                    <Text style={{
-                        includeFontPadding: false,
-                        textAlign: "center", textAlignVertical: "center", marginTop: 0, fontSize: 25, color: "#edc95b"
-                    }}>★★★★★</Text>
-                    <Text style={{
-                        textAlign: "center", textAlignVertical: "center", marginTop: 0, fontSize: 25, color: "#edc95b"
-                    }}>★★★★★</Text>
-                    {/*<Text style={{ fontSize: 25, color: "#e4e6e7" }}>★★★★★</Text>*/}
+                    <Text style={{ includeFontPadding: false, fontSize: 25, color: "#edc95b" }}>
+                        {"★".repeat(this.state.profile.stars)}
+                    </Text>
+                    <Text style={{ includeFontPadding: false, fontSize: 25, color: "#e4e6e7" }}>
+                        {"★".repeat(Math.max(0, 10 - this.state.profile.stars))}
+                    </Text>
                 </View>
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />
-                <View style={{ backgroundColor: "white", height: 50 }} />
+                <View style={{ backgroundColor: "white", padding: 20 }} >
+                    <Text style={{ textAlign: "center", color: "#616161" }}>Прогресс до следующей звезды:</Text>
+                    <View style={{ borderRadius: 4, marginTop: 12, height: 21, backgroundColor: "#e4e4e4" }}>
+                        <View style={{ width: `${100 * this.state.profile.progress}%`, borderRadius: 4, height: 21, backgroundColor: "#edc95b" }} />
+                    </View>
+                </View>
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />
 
                 <View style={{ height: 10 }} />
@@ -86,22 +96,6 @@ class LoginComponent extends Component<void, void> {
                     <View style={{ height: 12 }} />
 
                     <ButtonComponent title="Выйти" margin={0} />
-
-                    {/*<TouchableOpacity
-                        style={{
-                            backgroundColor: "#e49421",
-                            borderRadius: 4,
-                            overflow: "hidden",
-                        }}
-                        onPress={() => { }}>
-                        <Text style={{
-                            fontWeight: "bold",
-                            fontSize: 13,
-                            textAlign: "center",
-                            padding: 15,
-                            color: "white"
-                        }}>ВОЙТИ</Text>
-                    </TouchableOpacity>*/}
                 </View>
             </View>
         )
