@@ -20,15 +20,15 @@ export interface Profile {
 export namespace Loader {
 
     export function loadProfile(name: string): Promise<Profile> {
-        return request(`/user/${name}`, "profile")
+        return request(Domain.profileUrl(name), "profile")
     }
 
     export function postDescription(id: number): Promise<Post> {
-        return request(Domain.urlPostDetails(id), "post")
+        return request(Domain.postDetailsUrl(id), "post")
     }
 
     export function posts(tag: Source): Promise<PostResponse> {
-        return request(Domain.makeUrl(tag), "posts")
+        return request(Domain.postsUrl(tag), "posts")
     }
 
     function request<T>(path: string, parse: string): Promise<T> {
@@ -52,11 +52,15 @@ export namespace Loader {
 
 export namespace Domain {
 
-    export function urlPostDetails(post: number) {
+    export function profileUrl(name: string) {
+        return `/user/${encodeURIComponent(name)}`
+    }
+
+    export function postDetailsUrl(post: number) {
         return `/post/${post}`
     }
 
-    export function makeUrl(tag: Source) {
+    export function postsUrl(tag: Source) {
         switch (tag.kind) {
             case "feed": return "/"
             case "tags": return `/tag/${encodeURIComponent(tag.name)}`
