@@ -19,10 +19,11 @@ class UserUnfoComponent extends Component<any, ProfileState> {
 
     state = {
         profile: {
-            name: "Alex",
-            avatar: "http://img1.joyreactor.cc/pics/avatar/tag/10415",
+            userName: "Alex",
+            userImage: { aspect: 1, url: "http://img1.joyreactor.cc/pics/avatar/tag/10415" },
+            rating: 666,
             stars: 3,
-            progress: 0.5,
+            progressToNewStar: 0.5,
         }
     }
 
@@ -31,7 +32,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
             <View>
                 <TitleComponent title="Профиль" />
                 <Image
-                    source={{ uri: this.state.profile.avatar }}
+                    source={{ uri: this.state.profile.userImage.url }}
                     style={{ marginTop: 20, alignSelf: "center", height: 90, width: 90, borderRadius: 45 }} />
                 <Text
                     style={{
@@ -40,7 +41,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
                         color: "#616161",
                         fontSize: 20,
                     }}
-                >{this.state.profile.name}</Text>
+                >{this.state.profile.userName}</Text>
                 <Text
                     style={{
                         alignSelf: "center",
@@ -48,7 +49,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
                         color: "#616161",
                         fontSize: 13,
                     }}
-                >Рейтинг: 999</Text>
+                >Рейтинг: {this.state.profile.rating}</Text>
 
                 <View style={{ height: 10 }} />
 
@@ -65,7 +66,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
                 <View style={{ backgroundColor: "white", padding: 20 }} >
                     <Text style={{ textAlign: "center", color: "#616161" }}>Прогресс до следующей звезды:</Text>
                     <View style={{ borderRadius: 4, marginTop: 12, height: 21, backgroundColor: "#e4e4e4" }}>
-                        <View style={{ width: `${100 * this.state.profile.progress}%`, borderRadius: 4, height: 21, backgroundColor: "#edc95b" }} />
+                        <View style={{ width: `${100 * this.state.profile.progressToNewStar}%`, borderRadius: 4, height: 21, backgroundColor: "#edc95b" }} />
                     </View>
                 </View>
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />

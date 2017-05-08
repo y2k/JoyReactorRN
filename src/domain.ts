@@ -9,7 +9,13 @@ export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
 export type Source = FeedSource | TagSource
 
-export interface Profile { name: string, avatar: string, stars: number, progress: number }
+export interface Profile {
+    userName: string,
+    userImage: Attachment,
+    rating: number,
+    stars: number,
+    progressToNewStar: number,
+}
 
 export namespace Loader {
 
