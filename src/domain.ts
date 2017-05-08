@@ -17,19 +17,16 @@ export interface Profile {
     progressToNewStar: number,
 }
 
-export namespace Loader {
+export module Loader {
 
-    export function loadProfile(name: string): Promise<Profile> {
-        return request(Domain.profileUrl(name), "profile")
-    }
+    export const loadProfile = (name: string): Promise<Profile> =>
+        request(Domain.profileUrl(name), "profile")
 
-    export function postDescription(id: number): Promise<Post> {
-        return request(Domain.postDetailsUrl(id), "post")
-    }
+    export const postDescription = (id: number): Promise<Post> =>
+        request(Domain.postDetailsUrl(id), "post")
 
-    export function posts(tag: Source): Promise<PostResponse> {
-        return request(Domain.postsUrl(tag), "posts")
-    }
+    export const posts = (tag: Source): Promise<PostResponse> =>
+        request(Domain.postsUrl(tag), "posts")
 
     function request<T>(path: string, parse: string): Promise<T> {
         return fetch(`http://joyreactor.cc${path}`)
@@ -52,13 +49,8 @@ export namespace Loader {
 
 export namespace Domain {
 
-    export function profileUrl(name: string) {
-        return `/user/${encodeURIComponent(name)}`
-    }
-
-    export function postDetailsUrl(post: number) {
-        return `/post/${post}`
-    }
+    export const profileUrl = (name: string) => `/user/${encodeURIComponent(name)}`
+    export const postDetailsUrl = (post: number) => `/post/${post}`
 
     export function postsUrl(tag: Source) {
         switch (tag.kind) {

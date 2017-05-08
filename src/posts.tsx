@@ -4,7 +4,7 @@ import {
     TouchableHighlight, Image, ListView, Dimensions
 } from 'react-native'
 
-import { Post, Attachment, Domain, Loader, TagSource, FeedSource } from './domain'
+import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource } from './domain'
 import { PostDetailsComponent } from "./post"
 import { NavigationComponent, TitleComponent } from "./components"
 
@@ -15,7 +15,7 @@ export class PostsComponent extends Component<any, State> {
     state = { message: '...', posts: [] as Post[] }
 
     componentDidMount() {
-        Loader.posts({ kind: "feed" })
+        L.posts({ kind: "feed" })
             .then(x => { this.setState({ posts: x.posts }) })
             .catch(x => this.setState({ message: "ERROR: " + x }))
     }

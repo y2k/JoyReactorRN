@@ -3,7 +3,7 @@ import {
     StyleSheet, Text, View, Button, ScrollView,
     TouchableHighlight, Image, ListView, Dimensions, ActivityIndicator
 } from 'react-native'
-import { Post, Attachment, Domain, Loader, TagSource, FeedSource, Comment } from './domain'
+import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource, Comment } from './domain'
 import { TitleComponent } from "./components"
 
 interface PostState { kind: "post", post: Post }
@@ -13,7 +13,7 @@ type State = PostState | ErrorState
 export class PostDetailsComponent extends Component<any, State> {
 
     componentDidMount() {
-        Loader.postDescription(3092583)
+        L.postDescription(3092583)
             .then(x => this.setState({ kind: "post", post: x }))
             .catch(x => this.setState({ kind: "error", message: JSON.stringify(x) }))
     }
@@ -34,7 +34,7 @@ export class PostDetailsComponent extends Component<any, State> {
                 size="large"
                 color="white" />
         )
-        
+
         switch (this.state.kind) {
             case "post": return (
                 <View>
