@@ -16,7 +16,7 @@ export class PostDetailsComponent extends Component<any, State> {
     render() {
         return (
             <View style={{ flex: 1 }}>
-                <TitleComponent title="Post" />
+                <TitleComponent title={this.state && this.state.post.title} />
                 {this.state == null && this.loadingComponent()}
                 {this.state != null && this.getViewState()}
             </View>)
@@ -45,7 +45,7 @@ export class PostDetailsComponent extends Component<any, State> {
 function componentComment(x: Comment, i: number) {
     return (
         <Text
-            style={{ padding: 4, color: "white" }}
+            style={{ padding: 4 }}
             numberOfLines={2} key={`comment${i}`}>{x.text}
         </Text>)
 }
