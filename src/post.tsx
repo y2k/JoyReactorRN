@@ -49,12 +49,13 @@ function componentComment(x: Comment, i: number) {
                 style={{ marginRight: 13, width: 36, height: 36, borderRadius: 18 }}
                 source={{ uri: x.image.url }} />
             <View style={{ flex: 1 }}>
-                <Text
-                    style={{ color: "#999", includeFontPadding: false }}
-                    numberOfLines={3}>
+                <Text style={{ color: "#999", includeFontPadding: false }} numberOfLines={3}>
                     {x.text}
                 </Text>
-                <Text style={{ alignSelf: "flex-end", color: "#616161" }}>{x.rating}</Text>
+                <View style={{ marginTop: 8, flexDirection: "row", alignSelf: "flex-end" }}>
+                    <Text style={{ fontFamily: "icomoon", color: "#ffb100" }}>{"\ue8dc"}</Text>
+                    <Text style={{ marginLeft: 8, color: "#616161" }}>{x.rating}</Text>
+                </View>
             </View>
         </View>)
 }

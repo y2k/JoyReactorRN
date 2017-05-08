@@ -15,7 +15,7 @@ export class TitleComponent extends Component<TitleProps, any> {
                         <Text style={{
                             fontFamily: "icomoon",
                             flex: 1, textAlign: "center", color: "white", fontSize: 20
-                        }}>{""}</Text>
+                        }}>{"\uea40"}</Text>
                     </TouchableOpacity>
                     <Text style={{ color: "white", fontSize: 18 }}>{this.props.title}</Text>
                 </View>
