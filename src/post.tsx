@@ -36,7 +36,7 @@ export class PostDetailsComponent extends Component<any, State> {
                 <Image
                     style={{ height: 200 }}
                     source={{ uri: this.state.post.image.url }} />
-                <Text>Лучшие комментарии:</Text>
+                <Text style={{ padding: 13 }}>Лучшие комментарии:</Text>
                 {this.state.post.comments.map((x, i) => componentComment(x, i))}
             </ScrollView>)
     }
@@ -44,8 +44,16 @@ export class PostDetailsComponent extends Component<any, State> {
 
 function componentComment(x: Comment, i: number) {
     return (
-        <Text
-            style={{ padding: 4 }}
-            numberOfLines={2} key={`comment${i}`}>{x.text}
-        </Text>)
+        <View key={`comment-${i}`} style={{ paddingBottom: 15, flexDirection: "row", paddingLeft: 13, paddingRight: 13 }}>
+            <Image
+                style={{ marginRight: 13, width: 36, height: 36, borderRadius: 18 }}
+                source={{ uri: x.image.url }} />
+            <View style={{ flex: 1 }}>
+                <Text
+                    style={{ color: "#999", includeFontPadding: false }}
+                    numberOfLines={3}>
+                    {x.text}
+                </Text>
+            </View>
+        </View>)
 }
