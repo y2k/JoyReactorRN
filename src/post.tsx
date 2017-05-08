@@ -54,6 +54,7 @@ function componentComment(x: Comment, i: number) {
                     numberOfLines={3}>
                     {x.text}
                 </Text>
+                <Text style={{ alignSelf: "flex-end", color: "#616161" }}>{x.rating}</Text>
             </View>
         </View>)
 }
