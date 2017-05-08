@@ -84,7 +84,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
     emptyComponent() {
         return (
             <ActivityIndicator
-                style={{ alignSelf: "center", flex: 1 }}
+                style={{ flex: 1 }}
                 size="large"
                 color="#ffb100" />
         )
