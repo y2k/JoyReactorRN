@@ -19,38 +19,32 @@ export interface Profile {
 
 export namespace Loader {
 
+    export function loadProfile(name: string): Promise<Profile> {
+        return request(`/user/${name}`, "profile")
+    }
+
     export function postDescription(id: number): Promise<Post> {
-        return fetch(Domain.urlPostDetails(id))
-            .then(x => x.text())
-            .then(x => {
-                let form = new FormData()
-                form.append("html", x)
-
-                let request = {
-                    method: "POST",
-                    headers: { "Content-Type": "multipart/form-data" },
-                    body: form
-                }
-
-                return fetch("http://212.47.229.214:4567/post", request)
-            })
-            .then(x => x.json())
+        return request(Domain.urlPostDetails(id), "post")
     }
 
     export function posts(tag: Source): Promise<PostResponse> {
-        return fetch(Domain.makeUrl(tag))
+        return request(Domain.makeUrl(tag), "posts")
+    }
+
+    function request<T>(path: string, parse: string): Promise<T> {
+        return fetch(`http://joyreactor.cc${path}`)
             .then(x => x.text())
             .then(x => {
-                let form = new FormData()
+                const form = new FormData()
                 form.append("html", x)
 
-                let request = {
+                const request = {
                     method: "POST",
                     headers: { "Content-Type": "multipart/form-data" },
                     body: form
                 }
 
-                return fetch("http://212.47.229.214:4567/posts", request)
+                return fetch(`http://212.47.229.214:4567/${parse}`, request)
             })
             .then(x => x.json())
     }
@@ -59,13 +53,13 @@ export namespace Loader {
 export namespace Domain {
 
     export function urlPostDetails(post: number) {
-        return `http://joyreactor.cc/post/${post}`
+        return `/post/${post}`
     }
 
     export function makeUrl(tag: Source) {
         switch (tag.kind) {
-            case "feed": return "http://joyreactor.cc/"
-            case "tags": return `http://joyreactor.cc/tag/${encodeURIComponent(tag.name)}`
+            case "feed": return "/"
+            case "tags": return `/tag/${encodeURIComponent(tag.name)}`
         }
     }
 

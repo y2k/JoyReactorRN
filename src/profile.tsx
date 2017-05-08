@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { View, StyleSheet, TextInput, Button, Text, TouchableOpacity, Image } from 'react-native'
 
-import { Loader, Profile } from './domain'
+import { Loader as L, Profile } from './domain'
 import { NavigationComponent, TitleComponent } from "./components"
 
 export class ProfileComponent extends Component<any, any> {
@@ -25,6 +25,12 @@ class UserUnfoComponent extends Component<any, ProfileState> {
             stars: 3,
             progressToNewStar: 0.5,
         }
+    }
+
+    componentDidMount() {
+        L.loadProfile("_y2k")
+            .then(x => this.setState({ profile: x }))
+            .catch(error => console.warn(error))
     }
 
     render() {
@@ -66,7 +72,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
                 <View style={{ backgroundColor: "white", padding: 20 }} >
                     <Text style={{ textAlign: "center", color: "#616161" }}>Прогресс до следующей звезды:</Text>
                     <View style={{ borderRadius: 4, marginTop: 12, height: 21, backgroundColor: "#e4e4e4" }}>
-                        <View style={{ width: `${100 * this.state.profile.progressToNewStar}%`, borderRadius: 4, height: 21, backgroundColor: "#edc95b" }} />
+                        <View style={{ width: `${this.state.profile.progressToNewStar}%`, borderRadius: 4, height: 21, backgroundColor: "#edc95b" }} />
                     </View>
                 </View>
                 <View style={{ backgroundColor: "#e4e4e4", height: 1 }} />
