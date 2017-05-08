@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, TextInput, Button, Text, TouchableOpacity, Image } from 'react-native'
+import { View, StyleSheet, TextInput, Button, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native'
 
 import { Loader as L, Profile } from './domain'
 import { NavigationComponent, TitleComponent } from "./components"
@@ -17,16 +17,6 @@ interface ProfileState { profile: Profile }
 
 class UserUnfoComponent extends Component<any, ProfileState> {
 
-    state = {
-        profile: {
-            userName: "Alex",
-            userImage: { aspect: 1, url: "http://img1.joyreactor.cc/pics/avatar/tag/10415" },
-            rating: 666,
-            stars: 3,
-            progressToNewStar: 0.5,
-        }
-    }
-
     componentDidMount() {
         L.loadProfile("_y2k")
             .then(x => this.setState({ profile: x }))
@@ -35,8 +25,16 @@ class UserUnfoComponent extends Component<any, ProfileState> {
 
     render() {
         return (
-            <View>
+            <View style={{ flex: 1 }}>
                 <TitleComponent title="Профиль" />
+                {this.state == null && this.emptyComponent()}
+                {this.state != null && this.loadedComponent()}
+            </View>)
+    }
+
+    loadedComponent() {
+        return (
+            <View>
                 <Image
                     source={{ uri: this.state.profile.userImage.url }}
                     style={{ marginTop: 20, alignSelf: "center", height: 90, width: 90, borderRadius: 45 }} />
@@ -80,6 +78,15 @@ class UserUnfoComponent extends Component<any, ProfileState> {
                 <View style={{ height: 10 }} />
                 <ButtonComponent title="Выйти" margin={20} />
             </View>
+        )
+    }
+
+    emptyComponent() {
+        return (
+            <ActivityIndicator
+                style={{ alignSelf: "center", flex: 1 }}
+                size="large"
+                color="#ffb100" />
         )
     }
 }
