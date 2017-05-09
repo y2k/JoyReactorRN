@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import {
     StyleSheet, Text, View, Button, ScrollView,
-    TouchableHighlight, Image, ListView, Dimensions
+    TouchableHighlight, Image, ListView, Dimensions, TouchableOpacity
 } from 'react-native'
 
 import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource } from './domain'
@@ -43,22 +43,25 @@ class PostComponent extends Component<PostsProps, any> {
         const image = Domain.normalizeUrl(post.image)
         const h = Domain.height(post.image)
         return (
-            <TouchableHighlight
-                style={{ paddingBottom: 0, paddingTop: 0 }}
-                underlayColor="#ffb100" onPress={() => { }}>
-                <View style={{ alignItems: "stretch" }}>
+            <TouchableOpacity style={{ margin: 4 }} onPress={() => { }}>
+                <View style={{
+                    alignItems: "stretch",
+                    backgroundColor: "white", borderColor: "#eee",
+                    borderWidth: 1, borderRadius: 8, overflow: "hidden",
+                }}>
                     {image != null &&
                         <Image
-                            style={{ height: h }}
+                            style={{ height: h, borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                             source={{ uri: image }} />
                     }
                     {post.title != null &&
-                        <Text
-                            numberOfLines={2}
-                            style={styles.text}>{post.title}</Text>
+                        <Text numberOfLines={2} style={styles.text}>
+                            {post.title}
+                        </Text>
                     }
+                    <Text style={{ margin: 10 }}>TEST</Text>
                 </View>
-            </TouchableHighlight>
+            </TouchableOpacity >
         );
     }
 }

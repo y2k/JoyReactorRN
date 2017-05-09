@@ -12,8 +12,8 @@ export default class App extends Component<any, any> {
         return (
             <View style={styles.container}>
                 <View style={{ flex: 1 }}>
-                    {/*<PostsComponent />*/}
-                    <PostDetailsComponent />
+                    <PostsComponent />
+                    {/*<PostDetailsComponent />*/}
                     {/*<ProfileComponent />*/}
                 </View>
                 <NavigationComponent />
