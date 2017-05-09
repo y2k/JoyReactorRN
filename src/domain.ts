@@ -2,7 +2,7 @@ import { AsyncStorage, Dimensions } from 'react-native'
 
 export interface Attachment { url: string, aspect: number }
 export interface Comment { text: string, image: Attachment, rating: number }
-export interface Post { title: string, image: Attachment, comments: Comment[] }
+export interface Post { userName: string, userImage: Attachment, rating: number, created: number, title: string, image: Attachment, comments: Comment[] }
 interface PostResponse { posts: Post[] }
 
 export interface TagSource { kind: "tags", name: string }

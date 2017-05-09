@@ -54,12 +54,23 @@ class PostComponent extends Component<PostsProps, any> {
                             style={{ height: h, borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                             source={{ uri: image }} />
                     }
-                    {post.title != null &&
+                    {/*{post.title != null &&
                         <Text numberOfLines={2} style={styles.text}>
                             {post.title}
                         </Text>
-                    }
-                    <Text style={{ margin: 10 }}>TEST</Text>
+                    }*/}
+                    <View style={{ flexDirection: "row", margin: 9 }}>
+                        <Image
+                            style={{ width: 36, height: 36, borderRadius: 18, marginRight: 9 }}
+                            source={{ uri: post.userImage.url }} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontWeight: "bold", fontSize: 14, color: "#616161" }}>{post.userName}</Text>
+                            <View style={{ alignSelf: "flex-end", flexDirection: "row" }}>
+                                <Text style={{ fontFamily: "icomoon", color: "#ffb100" }}>{"\ue8b5"}</Text>
+                                <Text style={{ marginLeft: 8, color: "#bcbcbc" }}>2 часа</Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
             </TouchableOpacity >
         );
