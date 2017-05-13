@@ -8,16 +8,17 @@ import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource } from './
 import { PostDetailsComponent } from "./post"
 import { NavigationComponent, TitleComponent } from "./components"
 
-interface State { message: string, posts: Post[] }
+interface State { posts: Post[] }
 
 export class PostsComponent extends Component<any, State> {
 
-    state = { message: '...', posts: [] as Post[] }
+    state = { posts: [] as Post[] }
 
     componentDidMount() {
+        L.syncPosts({ kind: "feed" })
+            .catch(x => console.warn("ERROR: " + x))
         L.posts({ kind: "feed" })
-            .then(x => { this.setState({ posts: x.posts }) })
-            .catch(x => this.setState({ message: "ERROR: " + x }))
+            .then(x => this.setState({ posts: x.posts }))
     }
 
     render() {

@@ -1,4 +1,4 @@
-import { AsyncStorage, Dimensions } from 'react-native'
+import { AsyncStorage as AS, Dimensions } from 'react-native'
 
 export interface Attachment { url: string, aspect: number }
 export interface Comment { text: string, image: Attachment, rating: number }
@@ -19,14 +19,23 @@ export interface Profile {
 
 export module Loader {
 
+    export async function syncPosts(source: Source): Promise<void> {
+        const posts = await request(Domain.postsUrl(source), "posts")
+        const json = JSON.stringify(posts)
+        await AS.setItem("posts", json)
+    }
+
+    export async function posts(source: Source): Promise<PostResponse> {
+        const json = await AS.getItem("posts")
+        if (json == null) return { posts: [] }
+        return JSON.parse(json)
+    }
+
     export const loadProfile = (name: string): Promise<Profile> =>
         request(Domain.profileUrl(name), "profile")
 
     export const postDescription = (id: number): Promise<Post> =>
         request(Domain.postDetailsUrl(id), "post")
-
-    export const posts = (tag: Source): Promise<PostResponse> =>
-        request(Domain.postsUrl(tag), "posts")
 
     function request<T>(path: string, parse: string): Promise<T> {
         return fetch(`http://joyreactor.cc${path}`)
