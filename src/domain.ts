@@ -10,7 +10,7 @@ export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
 export type Source = FeedSource | TagSource
 
-interface PostsStates {
+export interface PostsStates {
     preloaded: Post[],
     posts: Post[],
     old: Post[],
@@ -31,6 +31,7 @@ module PostsFunctions {
 export module Loader {
 
     export async function preload(source: Source): Promise<PostsStates> {
+        await AS.clear()
         const json = await AS.getItem("state")
         if (json == null) return { preloaded: [], posts: [], old: [], next: null }
         return JSON.parse(json)

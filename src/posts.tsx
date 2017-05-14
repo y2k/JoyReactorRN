@@ -1,37 +1,79 @@
 import React, { Component } from 'react'
 import {
-    StyleSheet, Text, View, Button, ScrollView,
+    StyleSheet, Text, View, Button, ScrollView, ActivityIndicator,
     TouchableHighlight, Image, ListView, Dimensions, TouchableOpacity
 } from 'react-native'
 
-import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource } from './domain'
+import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource, PostsStates } from './domain'
 import { PostDetailsComponent } from "./post"
 import { NavigationComponent, TitleComponent } from "./components"
 
-interface State { posts: Post[] }
+interface State { state: PostsStates }
 
 export class PostsComponent extends Component<any, State> {
 
-    state = { posts: [] as Post[] }
+    async componentDidMount() {
+        const state = await L.preload({ kind: "feed" })
+        this.setState({ state: state })
 
-    componentDidMount() {
-        L.syncPosts({ kind: "feed" })
-            .catch(x => console.warn("ERROR: " + x))
-        L.posts({ kind: "feed" })
-            .then(x => this.setState({ posts: x.posts }))
+        const webState = await L.loadNext(state, { kind: "feed" })
+        this.setState({ state: webState })
+
+        // L.syncPosts({ kind: "feed" })
+        //     .catch(x => console.warn("ERROR: " + x))
+        // L.posts({ kind: "feed" })
+        //     .then(x => this.setState({ posts: x.posts }))
     }
 
     render() {
         return (
             <View style={{ flex: 1 }}>
                 <TitleComponent title="Лента" />
-                <ListView
-                    enableEmptySections={true}
-                    dataSource={
-                        new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
-                            .cloneWithRows(this.state.posts)}
-                    renderRow={(rowData) => <PostComponent data={rowData} />} />
+                {this.state == null && this.loadingComponent()}
+                {this.state != null && this.postListComponent()}
             </View>
+        )
+    }
+
+    loadingComponent = () =>
+        <ActivityIndicator style={{ flex: 1 }} size="large" color="#ffb100" />
+
+    postListComponent() {
+        return (
+            <ListView
+                enableEmptySections={true}
+                stickyHeaderIndices={[0]}
+                dataSource={
+                    new ListView.DataSource({
+                        sectionHeaderHasChanged: (r1, r2) => r1 !== r2,
+                        rowHasChanged: (r1, r2) => r1 !== r2
+                    }).cloneWithRowsAndSections(this.state.state, ["posts", "preloaded"])}
+                renderSectionHeader={(x, id) => <HeaderComponent title={"" + id} />}
+                renderRow={(rowData) => <PostComponent data={rowData} />} />
+        )
+    }
+}
+
+interface ButtonProps { title: string }
+class HeaderComponent extends Component<ButtonProps, any> {
+    render() {
+        return (
+            <TouchableOpacity
+                style={{
+                    margin: 4,
+                    backgroundColor: "#e49421",
+                    borderRadius: 4,
+                    overflow: "hidden",
+                }}
+                onPress={() => { }}>
+                <Text style={{
+                    fontWeight: "bold",
+                    fontSize: 13,
+                    textAlign: "center",
+                    padding: 15,
+                    color: "white"
+                }}>{this.props.title.toUpperCase()}</Text>
+            </TouchableOpacity>
         )
     }
 }
