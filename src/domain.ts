@@ -30,8 +30,9 @@ module PostsFunctions {
 
 export module Loader {
 
-    export async function preload(source: Source): Promise<PostsStates> {
-        await AS.clear()
+    export const reset = () => AS.clear()
+
+    export async function loadFromStore(source: Source): Promise<PostsStates> {
         const json = await AS.getItem("state")
         if (json == null) return { preloaded: [], posts: [], old: [], next: null }
         return { ...JSON.parse(json), next: null }
@@ -47,18 +48,6 @@ export module Loader {
     /**
      * 
      */
-
-    export async function syncPosts(source: Source): Promise<void> {
-        const posts = await request(Domain.postsUrl(source, null), "posts")
-        const json = JSON.stringify(posts)
-        await AS.setItem("posts", json)
-    }
-
-    export async function posts(source: Source): Promise<PostResponse> {
-        const json = await AS.getItem("posts")
-        if (json == null) return { posts: [], nextPage: 0 }
-        return JSON.parse(json)
-    }
 
     export const loadProfile = (name: string): Promise<Profile> =>
         request(Domain.profileUrl(name), "profile")
