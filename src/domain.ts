@@ -1,33 +1,61 @@
 import { AsyncStorage as AS, Dimensions } from 'react-native'
 
+export interface Profile { userName: string, userImage: Attachment, rating: number, stars: number, progressToNewStar: number }
 export interface Attachment { url: string, aspect: number }
 export interface Comment { text: string, image: Attachment, rating: number }
-export interface Post { userName: string, userImage: Attachment, rating: number, created: number, title: string, image: Attachment, comments: Comment[] }
-interface PostResponse { posts: Post[] }
+export interface Post { id: number, userName: string, userImage: Attachment, rating: number, created: number, title: string, image: Attachment, comments: Comment[] }
+interface PostResponse { posts: Post[], nextPage: number }
 
 export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
 export type Source = FeedSource | TagSource
 
-export interface Profile {
-    userName: string,
-    userImage: Attachment,
-    rating: number,
-    stars: number,
-    progressToNewStar: number,
+interface PostsStates {
+    preloaded: Post[],
+    posts: Post[],
+    old: Post[],
+    next: number | null,
+}
+
+module PostsFunctions {
+
+    export function merge(state: PostsStates, posts: Post[], next: number): PostsStates {
+        const actual = state.posts
+            .map(x => posts.find(i => i.id == x.id) || x)
+            .concat(posts.filter(x => !state.posts.some(i => i.id == x.id)))
+        const old = state.old.filter(x => !posts.some(i => i.id == x.id))
+        return { ...state, posts: actual, old: old, next: next }
+    }
 }
 
 export module Loader {
 
+    export async function preload(source: Source): Promise<PostsStates> {
+        const json = await AS.getItem("state")
+        if (json == null) return { preloaded: [], posts: [], old: [], next: null }
+        return JSON.parse(json)
+    }
+
+    export async function loadNext(state: PostsStates, source: Source): Promise<PostsStates> {
+        const resp = await request<PostResponse>(Domain.postsUrl(source, state.next), "posts")
+        const newState = PostsFunctions.merge(state, resp.posts, resp.nextPage)
+        await AS.setItem("state", JSON.stringify(newState))
+        return newState
+    }
+
+    /**
+     * 
+     */
+
     export async function syncPosts(source: Source): Promise<void> {
-        const posts = await request(Domain.postsUrl(source), "posts")
+        const posts = await request(Domain.postsUrl(source, null), "posts")
         const json = JSON.stringify(posts)
         await AS.setItem("posts", json)
     }
 
     export async function posts(source: Source): Promise<PostResponse> {
         const json = await AS.getItem("posts")
-        if (json == null) return { posts: [] }
+        if (json == null) return { posts: [], nextPage: 0 }
         return JSON.parse(json)
     }
 
@@ -37,7 +65,7 @@ export module Loader {
     export const postDescription = (id: number): Promise<Post> =>
         request(Domain.postDetailsUrl(id), "post")
 
-    function request<T>(path: string, parse: string): Promise<T> {
+    function request<T>(path: string, parseApi: string): Promise<T> {
         return fetch(`http://joyreactor.cc${path}`)
             .then(x => x.text())
             .then(x => {
@@ -50,7 +78,7 @@ export module Loader {
                     body: form
                 }
 
-                return fetch(`http://212.47.229.214:4567/${parse}`, request)
+                return fetch(`http://212.47.229.214:4567/${parseApi}`, request)
             })
             .then(x => x.json())
     }
@@ -61,10 +89,15 @@ export namespace Domain {
     export const profileUrl = (name: string) => `/user/${encodeURIComponent(name)}`
     export const postDetailsUrl = (post: number) => `/post/${post}`
 
-    export function postsUrl(tag: Source) {
+    export function postsUrl(tag: Source, page: number | null) {
+        if (page == null) // TODO: объединить логику
+            switch (tag.kind) {
+                case "feed": return "/"
+                case "tags": return `/tag/${encodeURIComponent(tag.name)}`
+            }
         switch (tag.kind) {
-            case "feed": return "/"
-            case "tags": return `/tag/${encodeURIComponent(tag.name)}`
+            case "feed": return `/${page}`
+            case "tags": return `/tag/${encodeURIComponent(tag.name)}/${page}`
         }
     }
 
