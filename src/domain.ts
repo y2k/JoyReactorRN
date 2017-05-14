@@ -19,6 +19,9 @@ export interface PostsStates {
 
 module PostsFunctions {
 
+    export const reset = (state: PostsStates | null): PostsStates =>
+        (state && { ...state, next: null }) || { preloaded: [], posts: [], old: [], next: null }
+
     export function merge(state: PostsStates, posts: Post[], next: number): PostsStates {
         const actual = state.posts
             .map(x => posts.find(i => i.id == x.id) || x)
@@ -32,10 +35,8 @@ export module Loader {
 
     export const reset = () => AS.clear()
 
-    export async function loadFromStore(source: Source): Promise<PostsStates> {
-        const json = await AS.getItem("state")
-        if (json == null) return { preloaded: [], posts: [], old: [], next: null }
-        return { ...JSON.parse(json), next: null }
+    export async function loadFromStorage(source: Source): Promise<PostsStates> {
+        return PostsFunctions.reset(JSON.parse(await AS.getItem("state")))
     }
 
     export async function loadNext(state: PostsStates, source: Source): Promise<PostsStates> {

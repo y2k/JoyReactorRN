@@ -18,7 +18,7 @@ export class PostsComponent extends Component<any, State> {
     async componentDidMount() {
         await L.reset() // TODO:
 
-        const state = await L.loadFromStore({ kind: "feed" })
+        const state = await L.loadFromStorage({ kind: "feed" })
         this.setState({ state: state })
         const webState = await L.loadNext(state, { kind: "feed" })
         this.setState({ state: webState })
