@@ -11,10 +11,10 @@ export interface FeedSource { kind: "feed" }
 export type Source = FeedSource | TagSource
 
 export interface PostsStates {
-    preloaded: Post[],
-    posts: Post[],
-    old: Post[],
-    next: number | null,
+    readonly preloaded: Post[],
+    readonly posts: Post[],
+    readonly old: Post[],
+    readonly next: number | null,
 }
 
 module PostsFunctions {
