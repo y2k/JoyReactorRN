@@ -16,12 +16,9 @@ type Item = ItemPost | ItemNext
 export class PostsComponent extends Component<any, State> {
 
     async componentDidMount() {
-        await L.reset() // TODO:
-
-        const state = await L.loadFromStorage({ kind: "feed" })
-        this.setState({ state: state })
-        const webState = await L.loadNext(state, { kind: "feed" })
-        this.setState({ state: webState })
+        await L.debugReset() // TODO:
+        this.setState({ state: await L.loadFromStorage({ kind: "feed" }) })
+        this.setState({ state: await L.preload({ kind: "feed" }) })
     }
 
     render() {

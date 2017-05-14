@@ -33,10 +33,18 @@ module PostsFunctions {
 
 export module Loader {
 
-    export const reset = () => AS.clear()
+    export const debugReset = () => AS.clear()
 
     export async function loadFromStorage(source: Source): Promise<PostsStates> {
         return PostsFunctions.reset(JSON.parse(await AS.getItem("state")))
+    }
+
+    export async function preload(source: Source): Promise<PostsStates> {
+        const state = await loadFromStorage(source)
+        const resp = await request<PostResponse>(Domain.postsUrl(source, state.next), "posts")
+        const newState = PostsFunctions.merge(state, resp.posts, resp.nextPage)
+        await AS.setItem("state", JSON.stringify(newState))
+        return newState
     }
 
     export async function loadNext(state: PostsStates, source: Source): Promise<PostsStates> {
