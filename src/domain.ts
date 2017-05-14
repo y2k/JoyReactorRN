@@ -34,7 +34,7 @@ export module Loader {
         await AS.clear()
         const json = await AS.getItem("state")
         if (json == null) return { preloaded: [], posts: [], old: [], next: null }
-        return JSON.parse(json)
+        return { ...JSON.parse(json), next: null }
     }
 
     export async function loadNext(state: PostsStates, source: Source): Promise<PostsStates> {

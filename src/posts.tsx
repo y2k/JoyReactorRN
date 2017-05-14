@@ -9,20 +9,17 @@ import { PostDetailsComponent } from "./post"
 import { NavigationComponent, TitleComponent } from "./components"
 
 interface State { state: PostsStates }
+interface ItemPost { kind: "post", value: Post }
+interface ItemNext { kind: "next" }
+type Item = ItemPost | ItemNext
 
 export class PostsComponent extends Component<any, State> {
 
     async componentDidMount() {
         const state = await L.preload({ kind: "feed" })
         this.setState({ state: state })
-
         const webState = await L.loadNext(state, { kind: "feed" })
         this.setState({ state: webState })
-
-        // L.syncPosts({ kind: "feed" })
-        //     .catch(x => console.warn("ERROR: " + x))
-        // L.posts({ kind: "feed" })
-        //     .then(x => this.setState({ posts: x.posts }))
     }
 
     render() {
@@ -42,20 +39,33 @@ export class PostsComponent extends Component<any, State> {
         return (
             <ListView
                 enableEmptySections={true}
-                stickyHeaderIndices={[0]}
-                dataSource={
-                    new ListView.DataSource({
-                        sectionHeaderHasChanged: (r1, r2) => r1 !== r2,
-                        rowHasChanged: (r1, r2) => r1 !== r2
-                    }).cloneWithRowsAndSections(this.state.state, ["posts", "preloaded"])}
-                renderSectionHeader={(x, id) => <HeaderComponent title={"" + id} />}
-                renderRow={(rowData) => <PostComponent data={rowData} />} />
+                dataSource={new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
+                    .cloneWithRows(this.toUiState())}
+                renderRow={(rowData: Item) => {
+                    switch (rowData.kind) {
+                        case "next": return (<NextPageComponent onClick={() => this.loadNextPage()} />)
+                        case "post": return (<PostComponent data={rowData} />)
+                    }
+                }}
+            />
         )
+    }
+
+    toUiState() {
+        const state = this.state.state
+        return state.posts
+            .map<Item>(x => ({ kind: "post", value: x }))
+            .concat([{ kind: "next" }])
+            .concat(state.old.map<Item>(x => ({ kind: "post", value: x })))
+    }
+
+    async loadNextPage() {
+        this.setState({ state: await L.loadNext(this.state.state, { kind: "feed" }) })
     }
 }
 
-interface ButtonProps { title: string }
-class HeaderComponent extends Component<ButtonProps, any> {
+interface ButtonProps { onClick: () => void }
+class NextPageComponent extends Component<ButtonProps, any> {
     render() {
         return (
             <TouchableOpacity
@@ -65,24 +75,24 @@ class HeaderComponent extends Component<ButtonProps, any> {
                     borderRadius: 4,
                     overflow: "hidden",
                 }}
-                onPress={() => { }}>
+                onPress={this.props.onClick}>
                 <Text style={{
                     fontWeight: "bold",
                     fontSize: 13,
                     textAlign: "center",
                     padding: 15,
                     color: "white"
-                }}>{this.props.title.toUpperCase()}</Text>
+                }}>Load next page</Text>
             </TouchableOpacity>
         )
     }
 }
 
-interface PostsProps { data: Post }
+interface PostsProps { data: ItemPost }
 
 class PostComponent extends Component<PostsProps, any> {
     render(): any {
-        const post = this.props.data
+        const post = this.props.data.value
         const image = Domain.normalizeUrl(post.image)
         const h = Domain.height(post.image)
         return (
