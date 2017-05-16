@@ -1,15 +1,13 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, TextInput, Button, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native'
-
+import { View, StyleSheet, TextInput, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native'
+import { TitleComponent } from "./components"
 import { Loader as L, Profile } from './domain'
-import { NavigationComponent, TitleComponent } from "./components"
 
 export class ProfileComponent extends Component<any, any> {
     render() {
-        return (
-            // <LoginComponent />
-            <UserUnfoComponent />
-        )
+        let x = 0 // TODO: убрать
+        if (x > 0) return (<LoginComponent />)
+        return (<UserUnfoComponent />)
     }
 }
 
@@ -91,7 +89,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
     }
 }
 
-class LoginComponent extends Component<void, void> {
+class LoginComponent extends Component<any, any> {
     render() {
         return (
             <View >
@@ -111,8 +109,7 @@ class LoginComponent extends Component<void, void> {
 
                     <ButtonComponent title="Выйти" margin={0} />
                 </View>
-            </View>
-        )
+            </View>)
     }
 }
 

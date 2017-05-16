@@ -1,5 +1,6 @@
 {
   "compilerOptions": { // 1
+    "noUnusedLocals": true,
     "target": "es2015",
     "module": "es2015",
     "jsx": "react",

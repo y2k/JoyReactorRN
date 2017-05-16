@@ -1,10 +1,9 @@
 import React, { Component } from 'react'
 import { View, StyleSheet } from 'react-native'
-
-import { NavigationComponent, TitleComponent } from "./components"
-import { PostDetailsComponent } from "./post"
+import { NavigationComponent } from "./components"
 import { PostsComponent } from "./posts"
-import { ProfileComponent } from "./profile"
+// import { PostDetailsComponent } from "./post"
+// import { ProfileComponent } from "./profile"
 
 export default class App extends Component<any, any> {
 

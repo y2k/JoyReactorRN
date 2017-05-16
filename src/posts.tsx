@@ -1,12 +1,7 @@
 import React, { Component } from 'react'
-import {
-    StyleSheet, Text, View, Button, ScrollView, ActivityIndicator,
-    TouchableHighlight, Image, ListView, Dimensions, TouchableOpacity
-} from 'react-native'
-
-import { Post, Attachment, Domain, Loader as L, TagSource, FeedSource, PostsStates } from './domain'
-import { PostDetailsComponent } from "./post"
-import { NavigationComponent, TitleComponent } from "./components"
+import { Text, View, ActivityIndicator, Image, ListView, TouchableOpacity } from 'react-native'
+import { Post, Domain, Loader as L, PostsStates } from './domain'
+import { TitleComponent } from "./components"
 
 interface State { state: PostsStates }
 interface ItemPost { kind: "post", value: Post }
@@ -106,11 +101,6 @@ class PostComponent extends Component<PostsProps, any> {
                             style={{ height: h, borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                             source={{ uri: image }} />
                     }
-                    {/*{post.title != null &&
-                        <Text numberOfLines={2} style={styles.text}>
-                            {post.title}
-                        </Text>
-                    }*/}
                     <View style={{ flexDirection: "row", margin: 9 }}>
                         <Image
                             style={{ width: 36, height: 36, borderRadius: 18, marginRight: 9 }}
@@ -128,18 +118,3 @@ class PostComponent extends Component<PostsProps, any> {
         );
     }
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        backgroundColor: '#ffb100',
-    },
-    text: {
-        padding: 4,
-        backgroundColor: '#df9100',
-        color: "white",
-        fontSize: 20,
-        textAlign: 'center'
-    },
-});
