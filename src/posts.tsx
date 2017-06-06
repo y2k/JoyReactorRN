@@ -22,8 +22,7 @@ export class PostsComponent extends Component<any, State> {
                 <TitleComponent title="Лента" />
                 {this.state == null && this.loadingComponent()}
                 {this.state != null && this.postListComponent()}
-            </View>
-        )
+            </View>)
     }
 
     loadingComponent = () =>
@@ -41,8 +40,7 @@ export class PostsComponent extends Component<any, State> {
                         case "post": return (<PostComponent data={rowData} />)
                     }
                 }}
-            />
-        )
+            />)
     }
 
     toUiState() {
@@ -77,8 +75,7 @@ class NextPageComponent extends Component<ButtonProps, any> {
                     padding: 15,
                     color: "white"
                 }}>Load next page</Text>
-            </TouchableOpacity>
-        )
+            </TouchableOpacity>)
     }
 }
 
@@ -90,7 +87,7 @@ class PostComponent extends Component<PostsProps, any> {
         const image = Domain.normalizeUrl(post.image)
         const h = Domain.height(post.image)
         return (
-            <TouchableOpacity style={{ margin: 4 }} onPress={() => { }}>
+            <TouchableOpacity activeOpacity={0.7} style={{ margin: 4 }} onPress={() => { }}>
                 <View style={{
                     alignItems: "stretch",
                     backgroundColor: "white", borderColor: "#eee",
@@ -114,7 +111,6 @@ class PostComponent extends Component<PostsProps, any> {
                         </View>
                     </View>
                 </View>
-            </TouchableOpacity >
-        );
+            </TouchableOpacity >);
     }
 }
