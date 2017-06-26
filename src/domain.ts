@@ -17,7 +17,92 @@ export interface PostsStates {
     readonly next: number | null,
 }
 
+/**
+ * 
+ */
+
+export interface PostsFromCache {
+    readonly kind: "PostsFromCache",
+    readonly source: Source,
+    readonly posts: Post[],
+}
+
+export interface PostsFromCachedAndWeb {
+    readonly kind: "PostsFromCachedAndWeb",
+    readonly source: Source,
+    readonly posts: Post[],
+    readonly preloadedPosts: Post[],
+    readonly next: number | null,
+}
+
+export interface PostsWithNextPage {
+    readonly kind: "PostsWithNextPage",
+    readonly source: Source,
+    readonly posts: Post[],
+    readonly oldPosts: Post[],
+    readonly next: number | null,
+}
+
+export interface PostsError { readonly kind: "PostsError" }
+
+export type Posts_ = PostsFromCache | PostsFromCachedAndWeb | PostsWithNextPage | PostsError
+
+module Loader_ {
+
+    export const preload = async (source: Source): Promise<Posts_> => {
+        // JSON.parse(await AS.getItem("state"))
+        return {
+            kind: "PostsFromCache",
+            source: source,
+            posts: [],
+        }
+    }
+
+    export const next = async (state: Posts_): Promise<Posts_> => {
+        switch (state.kind) {
+            case "PostsFromCache": {
+                const web = await Loader.request<PostResponse>(Domain.postsUrl(state.source, null))
+                return {
+                    kind: "PostsFromCachedAndWeb",
+                    source: state.source,
+                    posts: state.posts,
+                    preloadedPosts: web.posts,
+                    next: web.nextPage,
+                }
+            }
+            case "PostsFromCachedAndWeb":
+                return {
+                    kind: "PostsWithNextPage",
+                    source: state.source,
+                    posts: state.preloadedPosts,
+                    oldPosts: PostsFunctions.clearNewPostsFromOld(state.posts, state.preloadedPosts),
+                    next: state.next,
+                }
+            case "PostsWithNextPage": {
+                const web = await Loader.request<PostResponse>(Domain.postsUrl(state.source, state.next))
+                return {
+                    kind: "PostsWithNextPage",
+                    source: state.source,
+                    posts: PostsFunctions.mergeNextPage(state.posts, web.posts),
+                    oldPosts: PostsFunctions.mergeNextPage_(state.oldPosts, state.posts, web.posts),
+                    next: web.nextPage
+                }
+            }
+        }
+        return state
+    }
+}
+
 module PostsFunctions {
+
+    export const clearNewPostsFromOld = (old: Post[], posts: Post[]): Post[] =>
+        old.filter(x => posts.every(i => i.id != x.id))
+
+    export const mergeNextPage = (posts: Post[], webPosts: Post[]): Post[] =>
+        posts.concat(webPosts.filter(x => posts.every(i => i.id != x.id)))
+
+    export const mergeNextPage_ = (old: Post[], posts: Post[], webPosts: Post[]): Post[] =>
+        old.filter(x => posts.every(i => i.id != x.id) && webPosts.every(i => i.id != x.id))
 
     export function mergeToClear(state: PostsStates | null): PostsStates {
         if (state == null) return { preloaded: [], posts: [], old: [], next: null }
@@ -66,7 +151,7 @@ export module Loader {
     export const postDescription = (id: number): Promise<Post> =>
         request(Domain.postDetailsUrl(id))
 
-    function request<T>(api: ParserApi): Promise<T> {
+    export function request<T>(api: ParserApi): Promise<T> {
         return fetch(`http://joyreactor.cc${api.path}`)
             .then(x => x.text())
             .then(x => {
