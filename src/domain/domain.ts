@@ -20,7 +20,7 @@ export module Loader {
     interface DiskState { items: Post[] }
 
     export const preload = async (source: Source): Promise<Posts_> => {
-        const state: DiskState = JSON.parse(await AS.getItem("state"))
+        const state: DiskState = JSON.parse(await AS.getItem("state")) || { items: [] }
         return {
             kind: "PostsFromCache",
             source: source,
