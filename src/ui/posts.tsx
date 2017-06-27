@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Text, View, ActivityIndicator, Image, ListView, TouchableOpacity } from 'react-native'
-import { Post, Domain, Loader as L, Posts_ } from './domain'
+import { Loader as L, Domain } from '../domain/domain'
+import { Post, Posts_ } from '../domain/types'
 import { TitleComponent } from "./components"
 
 interface ItemPost { kind: "post", value: Post }
