@@ -1,5 +1,5 @@
 import { AsyncStorage as AS, Dimensions } from "react-native"
-import { Post, Source, Posts_, Profile, Attachment } from "types"
+import { Post, Source, Posts_, Profile, Attachment, PostsWithNextPage } from "types"
 
 interface PostResponse { posts: Post[], nextPage: number }
 
@@ -40,23 +40,30 @@ export module Loader {
                     next: web.nextPage,
                 }
             }
-            case "PostsFromCachedAndWeb":
-                return {
+            case "PostsFromCachedAndWeb": {
+                const old = PostsFunctions.clearNewPostsFromOld(state.posts, state.preloadedPosts)
+                await AS.setItem("state", JSON.stringify({ items: state.preloadedPosts.concat(old) }))
+                const r: PostsWithNextPage = {
                     kind: "PostsWithNextPage",
                     source: state.source,
                     posts: state.preloadedPosts,
-                    oldPosts: PostsFunctions.clearNewPostsFromOld(state.posts, state.preloadedPosts),
+                    oldPosts: old,
                     next: state.next,
                 }
+                await AS.setItem("state", JSON.stringify({ items: r.posts.concat(r.oldPosts) }))
+                return r
+            }
             case "PostsWithNextPage": {
                 const web = await Loader.request<PostResponse>(Domain.postsUrl(state.source, state.next))
-                return {
+                const r: PostsWithNextPage = {
                     kind: "PostsWithNextPage",
                     source: state.source,
                     posts: PostsFunctions.mergeNextPage(state.posts, web.posts),
                     oldPosts: PostsFunctions.mergeNextPage_(state.oldPosts, state.posts, web.posts),
                     next: web.nextPage
                 }
+                await AS.setItem("state", JSON.stringify({ items: r.posts.concat(r.oldPosts) }))
+                return r
             }
         }
         return state

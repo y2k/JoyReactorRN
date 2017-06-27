@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { ScrollView, ActivityIndicator, View, Image, Text } from 'react-native'
-import { Post, Loader as L, Comment } from './domain'
+import { Loader as L } from "../domain/domain"
+import { Post, Comment } from "../domain/types"
 import { TitleComponent } from "./components"
 
 interface State { post: Post }

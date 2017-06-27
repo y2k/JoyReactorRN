@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import { View, StyleSheet, TextInput, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native'
 import { TitleComponent } from "./components"
-import { Loader as L, Profile } from './domain'
+import { Loader as L } from '../domain/domain'
+import { Profile } from '../domain/types'
 
 export class ProfileComponent extends Component<any, any> {
     render() {

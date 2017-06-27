@@ -2,8 +2,6 @@ import React, { Component } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { NavigationComponent } from "./components"
 import { PostsComponent } from "./posts"
-// import { PostDetailsComponent } from "./post"
-// import { ProfileComponent } from "./profile"
 
 export default class App extends Component<any, any> {
 
@@ -27,4 +25,4 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         backgroundColor: '#fafafa',
     },
-});
+})
