@@ -1,19 +1,17 @@
 import React, { Component } from 'react'
 import { Text, View, ActivityIndicator, Image, ListView, TouchableOpacity } from 'react-native'
-import { Post, Domain, Loader as L, PostsStates } from './domain'
+import { Post, Domain, Loader as L, Posts_ } from './domain'
 import { TitleComponent } from "./components"
 
-interface State { state: PostsStates }
 interface ItemPost { kind: "post", value: Post }
 interface ItemNext { kind: "next" }
 type Item = ItemPost | ItemNext
 
-export class PostsComponent extends Component<any, State> {
+export class PostsComponent extends Component<any, Posts_> {
 
     async componentDidMount() {
-        await L.debugReset() // TODO:
-        this.setState({ state: await L.loadFromStorage({ kind: "feed" }) })
-        this.setState({ state: await L.preload({ kind: "feed" }) })
+        this.setState(await L.preload({ kind: "feed" }))
+        this.setState(await L.next(this.state))
     }
 
     render() {
@@ -43,16 +41,25 @@ export class PostsComponent extends Component<any, State> {
             />)
     }
 
-    toUiState() {
-        const state = this.state.state
-        return state.posts
-            .map<Item>(x => ({ kind: "post", value: x }))
-            .concat([{ kind: "next" }])
-            .concat(state.old.map<Item>(x => ({ kind: "post", value: x })))
+    toUiState(): Item[] {
+        const state = this.state
+        switch (state.kind) {
+            case "PostsFromCache":
+                return state.posts.map<Item>(x => ({ kind: "post", value: x }))
+            case "PostsFromCachedAndWeb":
+                return new Array<Item>()
+                    .concat({ kind: "next" })
+                    .concat(state.posts.map<Item>(x => ({ kind: "post", value: x })))
+            case "PostsWithNextPage":
+                return state.posts.map<Item>(x => ({ kind: "post", value: x }))
+                    .concat({ kind: "next" })
+                    .concat(state.oldPosts.map<Item>(x => ({ kind: "post", value: x })))
+        }
+        return []
     }
 
     async loadNextPage() {
-        this.setState({ state: await L.loadNext(this.state.state, { kind: "feed" }) })
+        this.setState(await L.next(this.state))
     }
 }
 
