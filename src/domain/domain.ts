@@ -17,12 +17,14 @@ module PostsFunctions {
 
 export module Loader {
 
+    interface DiskState { items: Post[] }
+
     export const preload = async (source: Source): Promise<Posts_> => {
-        // JSON.parse(await AS.getItem("state"))
+        const state: DiskState = JSON.parse(await AS.getItem("state"))
         return {
             kind: "PostsFromCache",
             source: source,
-            posts: [],
+            posts: state.items,
         }
     }
 
