@@ -2,22 +2,29 @@ import React, { Component } from 'react'
 import { ScrollView, ActivityIndicator, View, Image, Text } from 'react-native'
 import { Loader as L } from "../domain/domain"
 import { Post, Comment } from "../domain/types"
-import { TitleComponent } from "./components"
 
 interface State { post: Post }
 
 export class PostDetailsComponent extends Component<any, State> {
 
+    static navigationOptions = {
+        title: "Пост",
+        headerTintColor: "white",
+        headerStyle: {
+            backgroundColor: "#ffb100"
+        }
+    }
+
     componentDidMount() {
-        L.postDescription(3092583)
+        const { params } = this.props.navigation.state;
+        L.postDescription(params.id)
             .then(x => this.setState({ post: x }))
             .catch(error => console.warn(error))
     }
 
     render() {
         return (
-            <View style={{ flex: 1 }}>
-                <TitleComponent title={this.state && this.state.post.title} />
+            <View style={{ flex: 1, backgroundColor: "#fafafa" }}>
                 {this.state == null && this.loadingComponent()}
                 {this.state != null && this.getViewState()}
             </View>)

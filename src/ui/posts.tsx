@@ -42,10 +42,11 @@ export class PostsComponent extends Component<any, Posts_> {
                 renderRow={(rowData: Item) => {
                     switch (rowData.kind) {
                         case "next": return (<NextPageComponent onClick={() => this.loadNextPage()} />)
-                        case "post": return (<PostComponent data={rowData} />)
+                        case "post": return (<PostComponent
+                            data={rowData}
+                            onClick={() => this.props.navigation.navigate('Post', { id: rowData.value.id })} />)
                     }
-                }}
-            />)
+                }} />)
     }
 
     toUiState(): Item[] {
@@ -93,15 +94,14 @@ class NextPageComponent extends Component<ButtonProps, any> {
     }
 }
 
-interface PostsProps { data: ItemPost }
-
+interface PostsProps { data: ItemPost, onClick: () => void }
 class PostComponent extends Component<PostsProps, any> {
     render(): any {
         const post = this.props.data.value
         const image = Domain.normalizeUrl(post.image)
         const h = Domain.height(post.image)
         return (
-            <TouchableOpacity activeOpacity={0.7} style={{ margin: 4 }} onPress={() => { }}>
+            <TouchableOpacity activeOpacity={0.7} style={{ margin: 4 }} onPress={() => this.props.onClick()}>
                 <View style={{
                     alignItems: "stretch",
                     backgroundColor: "white", borderColor: "#eee",
