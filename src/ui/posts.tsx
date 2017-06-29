@@ -2,13 +2,20 @@ import React, { Component } from 'react'
 import { Text, View, ActivityIndicator, Image, ListView, TouchableOpacity } from 'react-native'
 import { Loader as L, Domain } from '../domain/domain'
 import { Post, Posts_ } from '../domain/types'
-import { TitleComponent } from "./components"
 
 interface ItemPost { kind: "post", value: Post }
 interface ItemNext { kind: "next" }
 type Item = ItemPost | ItemNext
 
 export class PostsComponent extends Component<any, Posts_> {
+
+    static navigationOptions = {
+        title: "Лента",
+        headerTintColor: "white",
+        headerStyle: {
+            backgroundColor: "#ffb100"
+        }
+    }
 
     async componentDidMount() {
         this.setState(await L.preload({ kind: "feed" }))
@@ -17,8 +24,7 @@ export class PostsComponent extends Component<any, Posts_> {
 
     render() {
         return (
-            <View style={{ flex: 1 }}>
-                <TitleComponent title="Лента" />
+            <View style={{ flex: 1, backgroundColor: "#fafafa" }}>
                 {this.state == null && this.loadingComponent()}
                 {this.state != null && this.postListComponent()}
             </View>)
