@@ -5,6 +5,15 @@ import { Loader as L } from '../domain/domain'
 import { Profile } from '../domain/types'
 
 export class ProfileComponent extends Component<any, any> {
+
+    static navigationOptions = {
+        title: "Профиль",
+        headerTintColor: "white",
+        headerStyle: {
+            backgroundColor: "#ffb100"
+        }
+    }
+
     render() {
         let x = 0 // TODO: убрать
         if (x > 0) return (<LoginComponent />)
@@ -24,8 +33,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
 
     render() {
         return (
-            <View style={{ flex: 1 }}>
-                <TitleComponent title="Профиль" />
+            <View style={{ flex: 1, backgroundColor: "#fafafa" }}>
                 {this.state == null && this.emptyComponent()}
                 {this.state != null && this.loadedComponent()}
             </View>)
