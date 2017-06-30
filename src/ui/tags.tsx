@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ListView, View, StyleSheet, Text, TouchableOpacity, Image, ActivityIndicator, TouchableHighlight } from 'react-native'
+import { ListView, View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native'
 import { Loader as L } from '../domain/domain'
 import { Tag } from '../domain/types'
 
@@ -8,9 +8,7 @@ export class TagsComponent extends Component<Tag[], any> {
     static navigationOptions = {
         title: "Теги",
         headerTintColor: "white",
-        headerStyle: {
-            backgroundColor: "#ffb100"
-        }
+        headerStyle: { backgroundColor: "#ffb100" }
     }
 
     async componentDidMount() {
@@ -27,10 +25,8 @@ export class TagsComponent extends Component<Tag[], any> {
                     renderRow={(rowData: Tag) =>
                         <TouchableOpacity activeOpacity={0.4} onPress={() => console.log("pressed")}>
                             <View style={{ flexDirection: "row", padding: 8 }}>
-                                <Image
-                                    style={{ width: 48, height: 48, borderRadius: 24, marginRight: 8 }}
-                                    source={{ uri: rowData.image }} />
-                                <Text style={{ fontSize: 18, color: "#404040", alignSelf: "center" }}>{rowData.title}</Text>
+                                <Image style={style.image} source={{ uri: rowData.image }} />
+                                <Text style={style.label}>{rowData.title}</Text>
                             </View>
                         </TouchableOpacity>
                     } />
@@ -39,16 +35,7 @@ export class TagsComponent extends Component<Tag[], any> {
     }
 }
 
-// const style = StyleSheet.create({
-//     edit: {
-//         backgroundColor: "white",
-//         color: "black",
-//         padding: 4,
-//         height: 45,
-//         fontSize: 16,
-//         paddingLeft: 18,
-//         borderColor: "#ececec",
-//         borderWidth: 1,
-//         borderRadius: 4
-//     }
-// })
+const style = StyleSheet.create({
+    image: { width: 48, height: 48, borderRadius: 24, marginRight: 8 },
+    label: { fontSize: 18, color: "#404040", alignSelf: "center" },
+})
