@@ -17,13 +17,8 @@ module PostsFunctions {
 
 export module Loader {
 
-    export const tags = async (): Promise<Tag[]> => {
-        return [
-            { id: "1", title: "Котэ", image: "http://img1.joyreactor.cc/pics/avatar/tag/1481" },
-            { id: "2", title: "Эротика", image: "http://img0.joyreactor.cc/pics/avatar/tag/676" },
-            { id: "3", title: "Overwatch", image: "http://img1.joyreactor.cc/pics/avatar/tag/155873" },
-        ]
-    }
+    export const tags = async (): Promise<Tag[]> =>
+        await request<Tag[]>(Domain.tagsReqest("Raizel Knight"))
 
     interface DiskState { items: Post[] }
 
@@ -39,7 +34,7 @@ export module Loader {
     export const next = async (state: Posts_): Promise<Posts_> => {
         switch (state.kind) {
             case "PostsFromCache": {
-                const web = await Loader.request<PostResponse>(Domain.postsUrl(state.source, null))
+                const web = await request<PostResponse>(Domain.postsUrl(state.source, null))
                 return {
                     kind: "PostsFromCachedAndWeb",
                     source: state.source,
@@ -62,7 +57,7 @@ export module Loader {
                 return r
             }
             case "PostsWithNextPage": {
-                const web = await Loader.request<PostResponse>(Domain.postsUrl(state.source, state.next))
+                const web = await request<PostResponse>(Domain.postsUrl(state.source, state.next))
                 const r: PostsWithNextPage = {
                     kind: "PostsWithNextPage",
                     source: state.source,
@@ -112,6 +107,8 @@ interface ParserApi { readonly path: string, readonly parser: string }
 
 export namespace Domain {
 
+    export const tagsReqest = (user: string): ParserApi =>
+        ({ path: `/user/${encodeURIComponent(user)}`, parser: "tags" })
     export const profileUrl = (name: string): ParserApi =>
         ({ path: `/user/${encodeURIComponent(name)}`, parser: "profile" })
     export const postDetailsUrl = (post: number): ParserApi =>

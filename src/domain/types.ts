@@ -18,8 +18,7 @@ export interface Post {
     comments: Comment[],
 }
 export interface Tag {
-    id: string,
-    title: string,
+    name: string,
     image: string,
 }
 

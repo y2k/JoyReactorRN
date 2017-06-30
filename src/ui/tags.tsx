@@ -26,7 +26,7 @@ export class TagsComponent extends Component<Tag[], any> {
                         <TouchableOpacity activeOpacity={0.4} onPress={() => console.log("pressed")}>
                             <View style={{ flexDirection: "row", padding: 8 }}>
                                 <Image style={style.image} source={{ uri: rowData.image }} />
-                                <Text style={style.label}>{rowData.title}</Text>
+                                <Text style={style.label}>{rowData.name}</Text>
                             </View>
                         </TouchableOpacity>
                     } />
