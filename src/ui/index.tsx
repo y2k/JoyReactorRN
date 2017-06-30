@@ -2,10 +2,11 @@ import { StackNavigator, TabNavigator } from "react-navigation"
 import { PostsComponent } from "./posts"
 import { PostDetailsComponent } from "./post"
 import { ProfileComponent } from "./profile"
+import { TagsComponent } from "./tags"
 
 const MainScreenNavigator = TabNavigator({
   Home: { screen: PostsComponent },
-  Tags: { screen: ProfileComponent },
+  Tags: { screen: TagsComponent },
   Messages: { screen: ProfileComponent },
   Profile: { screen: ProfileComponent },
 }, {

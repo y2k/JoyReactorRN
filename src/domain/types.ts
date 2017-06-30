@@ -15,7 +15,12 @@ export interface Post {
     created: number,
     title: string,
     image: Attachment,
-    comments: Comment[]
+    comments: Comment[],
+}
+export interface Tag {
+    id: string,
+    title: string,
+    image: string,
 }
 
 export interface TagSource { kind: "tags", name: string }
@@ -46,7 +51,7 @@ export interface PostsWithNextPage {
 
 export interface PostsError { readonly kind: "PostsError" }
 
-export type Posts_ = PostsFromCache 
-                   | PostsFromCachedAndWeb 
-                   | PostsWithNextPage 
-                   | PostsError
+export type Posts_ = PostsFromCache
+    | PostsFromCachedAndWeb
+    | PostsWithNextPage
+    | PostsError

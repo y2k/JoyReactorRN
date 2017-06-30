@@ -1,5 +1,5 @@
 import { AsyncStorage as AS, Dimensions } from "react-native"
-import { Post, Source, Posts_, Profile, Attachment, PostsWithNextPage } from "types"
+import { Post, Source, Posts_, Profile, Attachment, PostsWithNextPage, Tag } from "types"
 
 interface PostResponse { posts: Post[], nextPage: number }
 
@@ -16,6 +16,14 @@ module PostsFunctions {
 }
 
 export module Loader {
+
+    export const tags = async (): Promise<Tag[]> => {
+        return [
+            { id: "1", title: "Котэ", image: "http://img1.joyreactor.cc/pics/avatar/tag/1481" },
+            { id: "2", title: "Эротика", image: "http://img0.joyreactor.cc/pics/avatar/tag/676" },
+            { id: "3", title: "Overwatch", image: "http://img1.joyreactor.cc/pics/avatar/tag/155873" },
+        ]
+    }
 
     interface DiskState { items: Post[] }
 
