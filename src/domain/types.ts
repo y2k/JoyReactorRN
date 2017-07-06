@@ -5,6 +5,7 @@ export interface Profile {
     stars: number,
     progressToNewStar: number
 }
+
 export interface Attachment { url: string, aspect: number }
 export interface Comment { text: string, image: Attachment, rating: number }
 export interface Post {
@@ -17,14 +18,21 @@ export interface Post {
     image: Attachment,
     comments: Comment[],
 }
+
 export interface Tag {
     name: string,
     image: string,
 }
 
+export type Source = FeedSource | TagSource
 export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
-export type Source = FeedSource | TagSource
+
+export type Posts = 
+    | PostsFromCache
+    | PostsFromCachedAndWeb
+    | PostsWithNextPage
+    | PostsError
 
 export interface PostsFromCache {
     readonly kind: "PostsFromCache",
@@ -34,24 +42,19 @@ export interface PostsFromCache {
 
 export interface PostsFromCachedAndWeb {
     readonly kind: "PostsFromCachedAndWeb",
-    readonly source: Source,
-    readonly posts: Post[],
-    readonly preloadedPosts: Post[],
-    readonly next: number | null,
+    readonly state: PostState,
 }
 
 export interface PostsWithNextPage {
     readonly kind: "PostsWithNextPage",
+    readonly state: PostState,
+}
+
+export interface PostState {
     readonly source: Source,
     readonly posts: Post[],
-    readonly oldPosts: Post[],
+    readonly bufferdPosts: Post[],
     readonly next: number | null,
 }
 
 export interface PostsError { readonly kind: "PostsError" }
-
-export type Posts = 
-    | PostsFromCache
-    | PostsFromCachedAndWeb
-    | PostsWithNextPage
-    | PostsError

@@ -37,35 +37,41 @@ export module Loader {
                 const web = await request<PostResponse>(Domain.postsUrl(state.source, null))
                 return {
                     kind: "PostsFromCachedAndWeb",
-                    source: state.source,
-                    posts: state.posts,
-                    preloadedPosts: web.posts,
-                    next: web.nextPage,
+                    state: {
+                        source: state.source,
+                        posts: state.posts,
+                        bufferdPosts: web.posts,
+                        next: web.nextPage,
+                    }
                 }
             }
             case "PostsFromCachedAndWeb": {
-                const old = PostsFunctions.clearNewPostsFromOld(state.posts, state.preloadedPosts)
-                await AS.setItem("state", JSON.stringify({ items: state.preloadedPosts.concat(old) }))
+                const old = PostsFunctions.clearNewPostsFromOld(state.state.posts, state.state.bufferdPosts)
+                await AS.setItem("state", JSON.stringify({ items: state.state.bufferdPosts.concat(old) }))
                 const r: PostsWithNextPage = {
                     kind: "PostsWithNextPage",
-                    source: state.source,
-                    posts: state.preloadedPosts,
-                    oldPosts: old,
-                    next: state.next,
+                    state: {
+                        source: state.state.source,
+                        posts: state.state.bufferdPosts,
+                        bufferdPosts: old,
+                        next: state.state.next,
+                    }
                 }
-                await AS.setItem("state", JSON.stringify({ items: r.posts.concat(r.oldPosts) }))
+                await AS.setItem("state", JSON.stringify({ items: r.state.posts.concat(r.state.bufferdPosts) }))
                 return r
             }
             case "PostsWithNextPage": {
-                const web = await request<PostResponse>(Domain.postsUrl(state.source, state.next))
+                const web = await request<PostResponse>(Domain.postsUrl(state.state.source, state.state.next))
                 const r: PostsWithNextPage = {
                     kind: "PostsWithNextPage",
-                    source: state.source,
-                    posts: PostsFunctions.mergeNextPage(state.posts, web.posts),
-                    oldPosts: PostsFunctions.mergeNextPage_(state.oldPosts, state.posts, web.posts),
-                    next: web.nextPage
+                    state: {
+                        source: state.state.source,
+                        posts: PostsFunctions.mergeNextPage(state.state.posts, web.posts),
+                        bufferdPosts: PostsFunctions.mergeNextPage_(state.state.bufferdPosts, state.state.posts, web.posts),
+                        next: web.nextPage,
+                    }
                 }
-                await AS.setItem("state", JSON.stringify({ items: r.posts.concat(r.oldPosts) }))
+                await AS.setItem("state", JSON.stringify({ items: r.state.posts.concat(r.state.bufferdPosts) }))
                 return r
             }
         }

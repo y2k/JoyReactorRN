@@ -57,11 +57,11 @@ export class PostsComponent extends Component<any, Posts> {
             case "PostsFromCachedAndWeb":
                 return new Array<Item>()
                     .concat({ kind: "next" })
-                    .concat(state.posts.map<Item>(x => ({ kind: "post", value: x })))
+                    .concat(state.state.posts.map<Item>(x => ({ kind: "post", value: x })))
             case "PostsWithNextPage":
-                return state.posts.map<Item>(x => ({ kind: "post", value: x }))
+                return state.state.posts.map<Item>(x => ({ kind: "post", value: x }))
                     .concat({ kind: "next" })
-                    .concat(state.oldPosts.map<Item>(x => ({ kind: "post", value: x })))
+                    .concat(state.state.bufferdPosts.map<Item>(x => ({ kind: "post", value: x })))
         }
         return []
     }
