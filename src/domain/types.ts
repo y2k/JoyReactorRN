@@ -50,7 +50,7 @@ export interface PostsWithNextPage {
 
 export interface PostsError { readonly kind: "PostsError" }
 
-export type Posts_ = PostsFromCache
+export type Posts = PostsFromCache
     | PostsFromCachedAndWeb
     | PostsWithNextPage
     | PostsError

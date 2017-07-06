@@ -1,13 +1,13 @@
 import React, { Component } from 'react'
 import { Text, View, ActivityIndicator, Image, ListView, TouchableOpacity } from 'react-native'
 import { Loader as L, Domain } from '../domain/domain'
-import { Post, Posts_ } from '../domain/types'
+import { Post, Posts } from '../domain/types'
 
 interface ItemPost { kind: "post", value: Post }
 interface ItemNext { kind: "next" }
 type Item = ItemPost | ItemNext
 
-export class PostsComponent extends Component<any, Posts_> {
+export class PostsComponent extends Component<any, Posts> {
 
     static navigationOptions = {
         title: "Лента",

@@ -1,5 +1,5 @@
 import { AsyncStorage as AS, Dimensions } from "react-native"
-import { Post, Source, Posts_, Profile, Attachment, PostsWithNextPage, Tag } from "types"
+import { Post, Source, Posts, Profile, Attachment, PostsWithNextPage, Tag } from "types"
 
 interface PostResponse { posts: Post[], nextPage: number }
 
@@ -22,7 +22,7 @@ export module Loader {
 
     interface DiskState { items: Post[] }
 
-    export const preload = async (source: Source): Promise<Posts_> => {
+    export const preload = async (source: Source): Promise<Posts> => {
         const state: DiskState = JSON.parse(await AS.getItem("state")) || { items: [] }
         return {
             kind: "PostsFromCache",
@@ -31,7 +31,7 @@ export module Loader {
         }
     }
 
-    export const next = async (state: Posts_): Promise<Posts_> => {
+    export const next = async (state: Posts): Promise<Posts> => {
         switch (state.kind) {
             case "PostsFromCache": {
                 const web = await request<PostResponse>(Domain.postsUrl(state.source, null))
