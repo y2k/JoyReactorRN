@@ -28,27 +28,11 @@ export type Source = FeedSource | TagSource
 export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
 
-export type Posts = 
-    | PostsFromCache
-    | PostsFromCachedAndWeb
-    | PostsWithNextPage
-    | PostsError
-
-export interface PostsFromCache {
-    readonly kind: "PostsFromCache",
-    readonly source: Source,
-    readonly posts: Post[],
-}
-
-export interface PostsFromCachedAndWeb {
-    readonly kind: "PostsFromCachedAndWeb",
-    readonly state: PostState,
-}
-
-export interface PostsWithNextPage {
-    readonly kind: "PostsWithNextPage",
-    readonly state: PostState,
-}
+export type Posts =
+    | { readonly kind: "fromCache", readonly source: Source, readonly posts: Post[], }
+    | { readonly kind: "fromCachedAndWeb", readonly state: PostState, }
+    | { readonly kind: "withNextPage", readonly state: PostState, }
+    | { readonly kind: "error" }
 
 export interface PostState {
     readonly source: Source,
@@ -56,5 +40,3 @@ export interface PostState {
     readonly bufferdPosts: Post[],
     readonly next: number | null,
 }
-
-export interface PostsError { readonly kind: "PostsError" }

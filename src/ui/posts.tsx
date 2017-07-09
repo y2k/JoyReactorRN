@@ -52,13 +52,13 @@ export class PostsComponent extends Component<any, Posts> {
     toUiState(): Item[] {
         const state = this.state
         switch (state.kind) {
-            case "PostsFromCache":
+            case "fromCache":
                 return state.posts.map<Item>(x => ({ kind: "post", value: x }))
-            case "PostsFromCachedAndWeb":
+            case "fromCachedAndWeb":
                 return new Array<Item>()
                     .concat({ kind: "next" })
                     .concat(state.state.posts.map<Item>(x => ({ kind: "post", value: x })))
-            case "PostsWithNextPage":
+            case "withNextPage":
                 return state.state.posts.map<Item>(x => ({ kind: "post", value: x }))
                     .concat({ kind: "next" })
                     .concat(state.state.bufferdPosts.map<Item>(x => ({ kind: "post", value: x })))

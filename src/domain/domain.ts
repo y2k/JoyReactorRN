@@ -1,5 +1,5 @@
 import { AsyncStorage as AS, Dimensions } from "react-native"
-import { Post, Source, Posts, Profile, Attachment, PostsWithNextPage, Tag } from "types"
+import { Post, Source, Posts, Profile, Attachment, Tag } from "types"
 
 interface PostResponse { posts: Post[], nextPage: number }
 
@@ -25,7 +25,7 @@ export module Loader {
     export const preload = async (source: Source): Promise<Posts> => {
         const state: DiskState = JSON.parse(await AS.getItem("state")) || { items: [] }
         return {
-            kind: "PostsFromCache",
+            kind: "fromCache",
             source: source,
             posts: state.items,
         }
@@ -33,10 +33,10 @@ export module Loader {
 
     export const next = async (state: Posts): Promise<Posts> => {
         switch (state.kind) {
-            case "PostsFromCache": {
+            case "fromCache": {
                 const web = await request<PostResponse>(Domain.postsUrl(state.source, null))
                 return {
-                    kind: "PostsFromCachedAndWeb",
+                    kind: "fromCachedAndWeb",
                     state: {
                         source: state.source,
                         posts: state.posts,
@@ -45,11 +45,11 @@ export module Loader {
                     }
                 }
             }
-            case "PostsFromCachedAndWeb": {
+            case "fromCachedAndWeb": {
                 const old = PostsFunctions.clearNewPostsFromOld(state.state.posts, state.state.bufferdPosts)
                 await AS.setItem("state", JSON.stringify({ items: state.state.bufferdPosts.concat(old) }))
-                const r: PostsWithNextPage = {
-                    kind: "PostsWithNextPage",
+                const r: Posts = {
+                    kind: "withNextPage",
                     state: {
                         source: state.state.source,
                         posts: state.state.bufferdPosts,
@@ -60,10 +60,10 @@ export module Loader {
                 await AS.setItem("state", JSON.stringify({ items: r.state.posts.concat(r.state.bufferdPosts) }))
                 return r
             }
-            case "PostsWithNextPage": {
+            case "withNextPage": {
                 const web = await request<PostResponse>(Domain.postsUrl(state.state.source, state.state.next))
-                const r: PostsWithNextPage = {
-                    kind: "PostsWithNextPage",
+                const r: Posts = {
+                    kind: "withNextPage",
                     state: {
                         source: state.state.source,
                         posts: PostsFunctions.mergeNextPage(state.state.posts, web.posts),
