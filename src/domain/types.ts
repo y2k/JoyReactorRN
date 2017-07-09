@@ -29,9 +29,9 @@ export interface TagSource { kind: "tags", name: string }
 export interface FeedSource { kind: "feed" }
 
 export type Posts =
-    | { readonly kind: "fromCache", readonly source: Source, readonly posts: Post[], }
-    | { readonly kind: "fromCachedAndWeb", readonly state: PostState, }
-    | { readonly kind: "withNextPage", readonly state: PostState, }
+    | { readonly kind: "cache", readonly source: Source, readonly posts: Post[] }
+    | { readonly kind: "cachedAndWeb", readonly state: PostState }
+    | { readonly kind: "nextPage", readonly state: PostState }
     | { readonly kind: "error" }
 
 export interface PostState {

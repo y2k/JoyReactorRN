@@ -25,7 +25,7 @@ export module Loader {
     export const preload = async (source: Source): Promise<Posts> => {
         const state: DiskState = JSON.parse(await AS.getItem("state")) || { items: [] }
         return {
-            kind: "fromCache",
+            kind: "cache",
             source: source,
             posts: state.items,
         }
@@ -33,10 +33,10 @@ export module Loader {
 
     export const next = async (state: Posts): Promise<Posts> => {
         switch (state.kind) {
-            case "fromCache": {
+            case "cache": {
                 const web = await request<PostResponse>(Domain.postsUrl(state.source, null))
                 return {
-                    kind: "fromCachedAndWeb",
+                    kind: "cachedAndWeb",
                     state: {
                         source: state.source,
                         posts: state.posts,
@@ -45,11 +45,11 @@ export module Loader {
                     }
                 }
             }
-            case "fromCachedAndWeb": {
+            case "cachedAndWeb": {
                 const old = PostsFunctions.clearNewPostsFromOld(state.state.posts, state.state.bufferdPosts)
                 await AS.setItem("state", JSON.stringify({ items: state.state.bufferdPosts.concat(old) }))
                 const r: Posts = {
-                    kind: "withNextPage",
+                    kind: "nextPage",
                     state: {
                         source: state.state.source,
                         posts: state.state.bufferdPosts,
@@ -60,10 +60,10 @@ export module Loader {
                 await AS.setItem("state", JSON.stringify({ items: r.state.posts.concat(r.state.bufferdPosts) }))
                 return r
             }
-            case "withNextPage": {
+            case "nextPage": {
                 const web = await request<PostResponse>(Domain.postsUrl(state.state.source, state.state.next))
                 const r: Posts = {
-                    kind: "withNextPage",
+                    kind: "nextPage",
                     state: {
                         source: state.state.source,
                         posts: PostsFunctions.mergeNextPage(state.state.posts, web.posts),
