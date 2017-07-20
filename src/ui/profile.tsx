@@ -43,24 +43,10 @@ class UserUnfoComponent extends Component<any, ProfileState> {
         return (
             <View>
                 <Image
-                    source={{ uri: this.state.profile.userImage.url }}
-                    style={{ marginTop: 20, alignSelf: "center", height: 90, width: 90, borderRadius: 45 }} />
-                <Text
-                    style={{
-                        alignSelf: "center",
-                        marginTop: 20,
-                        color: "#616161",
-                        fontSize: 20,
-                    }}
-                >{this.state.profile.userName}</Text>
-                <Text
-                    style={{
-                        alignSelf: "center",
-                        marginTop: 8,
-                        color: "#616161",
-                        fontSize: 13,
-                    }}
-                >Рейтинг: {this.state.profile.rating}</Text>
+                    style={style.image1}
+                    source={{ uri: this.state.profile.userImage.url }} />
+                <Text style={style.label1}>{this.state.profile.userName}</Text>
+                <Text style={style.label2}>Рейтинг: {this.state.profile.rating}</Text>
 
                 <View style={{ height: 10 }} />
 
@@ -101,7 +87,7 @@ class UserUnfoComponent extends Component<any, ProfileState> {
 class LoginComponent extends Component<any, any> {
     render() {
         return (
-            <View >
+            <View>
                 <TitleComponent title="Авторизация" />
                 <View style={{ padding: 20, flexDirection: "column" }} >
                     <TextInput style={style.edit}
@@ -148,6 +134,25 @@ class ButtonComponent extends Component<ButtonProps, any> {
 }
 
 const style = StyleSheet.create({
+    image1: {
+        marginTop: 20,
+        alignSelf: "center",
+        height: 90,
+        width: 90,
+        borderRadius: 45
+    },
+    label2: {
+        alignSelf: "center",
+        marginTop: 8,
+        color: "#616161",
+        fontSize: 13,
+    },
+    label1: {
+        alignSelf: "center",
+        marginTop: 20,
+        color: "#616161",
+        fontSize: 20
+    },
     edit: {
         backgroundColor: "white",
         color: "black",
