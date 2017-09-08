@@ -27,7 +27,10 @@ let init =
     { posts = emptyDataSource(); nextPage = None }, Cmd.ofMsg (LoadPosts FeedSource)
 
 let postsToItems posts =
-    posts |> List.map Actual |> List.toArray
+    posts 
+    |> List.map Actual 
+    |> fun xs -> xs @ [Divider]
+    |> List.toArray
 
 let update model msg : Model * Cmd<Msg> = 
     match msg with
@@ -38,6 +41,22 @@ let update model msg : Model * Cmd<Msg> =
           nextPage = nextPage }, Cmd.none
     | LoadResult (Error _) ->
         model, Cmd.none
+
+let nextButton () =
+    touchableOpacity 
+        [ TouchableWithoutFeedbackProperties.Style 
+            [ Margin 4. 
+              BackgroundColor "#e49421"
+              BorderRadius 4.
+              Overflow Overflow.Hidden ] ] 
+        [ text 
+            [ TextProperties.Style 
+                [ FontWeight FontWeight.Bold
+                  FontSize 13.
+                  TextAlign TextAlignment.Center
+                  Padding 15.
+                  Color "white" ] ] 
+            "Load next page" ]
 
 let view state = 
     listView state.posts [
@@ -53,6 +72,7 @@ let view state =
                         |> Option.defaultValue ("", 0.)
                     image [ ImageProperties.Style [ Height h ]
                             Source [ Uri img ] ]
+                | Divider -> nextButton ()
                 | _ -> text [] "=== STUB ==="
                 ))
     ]
