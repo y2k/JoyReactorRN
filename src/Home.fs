@@ -1,0 +1,58 @@
+module Home
+
+open System
+open Fable.Import.JS
+open Fable.Helpers.ReactNative
+open Fable.Import.ReactNative
+open Fable.Helpers.ReactNative.Props
+open Elmish
+open JoyReactor
+
+module S = Service
+
+type PostState =
+| Actual of Post
+| Divider
+| Old of Post
+
+type Msg = 
+    | LoadPosts of Source
+    | LoadResult of Result<Post list * int option, string>
+
+type Model = 
+    { posts : ListViewDataSource<PostState>
+      nextPage : int option }
+
+let init =
+    { posts = emptyDataSource(); nextPage = None }, Cmd.ofMsg (LoadPosts FeedSource)
+
+let postsToItems posts =
+    posts |> List.map Actual |> List.toArray
+
+let update model msg : Model * Cmd<Msg> = 
+    match msg with
+    | LoadPosts _ ->
+        model, Cmd.ofPromise (S.loadPosts 0) LoadResult
+    | LoadResult (Ok (posts, nextPage)) ->
+        { posts = updateDataSource (posts |> postsToItems) model.posts
+          nextPage = nextPage }, Cmd.none
+    | LoadResult (Error _) ->
+        model, Cmd.none
+
+let view state = 
+    listView state.posts [
+        ListViewProperties.RenderRow
+            (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
+                match i with
+                | Actual x ->
+                    let (img, h) = 
+                        x.image 
+                        |> Option.map (fun x -> 
+                            let h = Globals.Dimensions.get("screen").width / (max 1.2 x.aspect)
+                            x.url, h) 
+                        |> Option.defaultValue ("", 0.)
+                    image [ ImageProperties.Style [ Height h ]
+                            Source [ Uri img ] ]
+                | _ -> text [] "=== STUB ==="
+                ))
+    ]

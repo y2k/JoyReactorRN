@@ -1,0 +1,6 @@
+dotnet-fable
+Fable.Core
+Fable.Import.Browser
+
+Fable.React
+Fable.React.Native

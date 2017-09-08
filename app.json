@@ -1,4 +1,8 @@
 {
   "name": "joyreact",
-  "displayName": "joyreact"
+  "displayName": "joyreact",
+  "expo": {
+    "sdkVersion": "20.0.0",
+    "slug": "todo"
+  }
 }
