@@ -10,14 +10,12 @@ open JoyReactor
 
 module S = Service
 
-type PostState =
-| Actual of Post
-| Divider
-| Old of Post
+type PostState = Actual of Post | Divider | Old of Post
 
 type Msg = 
     | LoadPosts of Source
     | LoadResult of Result<Post list * int option, string>
+    | LoadNextPage
 
 type Model = 
     { posts : ListViewDataSource<PostState>
@@ -29,7 +27,7 @@ let init =
 let postsToItems posts =
     posts 
     |> List.map Actual 
-    |> fun xs -> xs @ [Divider]
+    |> fun xs -> List.append xs [Divider]
     |> List.toArray
 
 let update model msg : Model * Cmd<Msg> = 
@@ -41,6 +39,8 @@ let update model msg : Model * Cmd<Msg> =
           nextPage = nextPage }, Cmd.none
     | LoadResult (Error _) ->
         model, Cmd.none
+    | LoadNextPage ->
+        model, Cmd.none
 
 let nextButton () =
     touchableOpacity 
@@ -48,7 +48,8 @@ let nextButton () =
             [ Margin 4. 
               BackgroundColor "#e49421"
               BorderRadius 4.
-              Overflow Overflow.Hidden ] ] 
+              Overflow Overflow.Hidden ]
+          TouchableWithoutFeedbackProperties.OnPress (dispatch LoadNextPage) ]
         [ text 
             [ TextProperties.Style 
                 [ FontWeight FontWeight.Bold
