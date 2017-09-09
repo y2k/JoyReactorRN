@@ -19,28 +19,32 @@ type Msg =
 
 type Model = 
     { posts : ListViewDataSource<PostState>
+      rawPosts : Post list
       nextPage : int option }
 
 let init =
-    { posts = emptyDataSource(); nextPage = None }, Cmd.ofMsg (LoadPosts FeedSource)
+    { posts = emptyDataSource(); rawPosts = []; nextPage = None }, 
+    Cmd.ofMsg (LoadPosts FeedSource)
 
-let postsToItems posts =
+let postsToItems posts olds =
     posts 
     |> List.map Actual 
     |> fun xs -> List.append xs [Divider]
+    |> fun xs -> List.append xs (olds |> List.map Old)
     |> List.toArray
 
 let update model msg : Model * Cmd<Msg> = 
     match msg with
-    | LoadPosts _ ->
-        model, Cmd.ofPromise (S.loadPosts 0) LoadResult
+    | LoadPosts source ->
+        model, Cmd.ofPromise (S.loadPosts source model.nextPage) LoadResult
     | LoadResult (Ok (posts, nextPage)) ->
-        { posts = updateDataSource (posts |> postsToItems) model.posts
+        { posts = updateDataSource (postsToItems posts model.rawPosts) model.posts
+          rawPosts = posts
           nextPage = nextPage }, Cmd.none
     | LoadResult (Error _) ->
         model, Cmd.none
     | LoadNextPage ->
-        model, Cmd.none
+        model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
 
 let nextButton () =
     touchableOpacity 

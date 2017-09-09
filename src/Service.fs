@@ -24,21 +24,21 @@ type Post =
 
 type PostResponse = 
     { posts : Post list
-      nextPage : int }
+      nextPage : int option }
 
 module Service =
-    open Fable.Import.Browser
+    open System.Text.RegularExpressions
     open Fable.Core.JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
-    open System.Text.RegularExpressions
+    module B = Fable.Import.Browser
 
     let loadPost id =
         promise {
             let! response = fetch (sprintf "http://joyreactor.cc/post/%i" id) []
             let! text = response.text()
             let url = "http://212.47.229.214:4567/post"
-            let form = FormData.Create()
+            let form = B.FormData.Create()
             form.append ("html", text)
 
             let! response = fetchAs<Post> url [ Method HttpMethod.POST
@@ -47,16 +47,17 @@ module Service =
             return response
         }
 
-    let loadPosts _ = 
+    let loadPosts source page = 
         promise { 
-            let! response = fetch "http://joyreactor.cc/" []
+            let sp = match page with | Some (x : int) -> string x | _ -> ""
+            let! response = fetch ("http://joyreactor.cc/" + sp) []
             let! text = response.text()
             let url = "http://212.47.229.214:4567/posts"
-            let form = FormData.Create()
+            let form = B.FormData.Create()
             form.append ("html", text)
 
             let! response = fetchAs<PostResponse> url [ Method HttpMethod.POST
                                                         requestHeaders [ ContentType "multipart/form-data" ]
                                                         Body !^form ]
-            return response.posts, Some 0
+            return response.posts, response.nextPage
         }
