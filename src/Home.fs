@@ -46,14 +46,14 @@ let update model msg : Model * Cmd<Msg> =
     | LoadNextPage ->
         model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
 
-let nextButton () =
+let nextButton dispatch =
     touchableOpacity 
         [ TouchableWithoutFeedbackProperties.Style 
             [ Margin 4. 
               BackgroundColor "#e49421"
               BorderRadius 4.
               Overflow Overflow.Hidden ]
-          TouchableWithoutFeedbackProperties.OnPress (dispatch LoadNextPage) ]
+          TouchableWithoutFeedbackProperties.OnPress (fun _ -> dispatch LoadNextPage) ]
         [ text 
             [ TextProperties.Style 
                 [ FontWeight FontWeight.Bold
@@ -63,7 +63,7 @@ let nextButton () =
                   Color "white" ] ] 
             "Load next page" ]
 
-let view state = 
+let view state dispatch = 
     listView state.posts [
         ListViewProperties.RenderRow
             (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
@@ -77,7 +77,7 @@ let view state =
                         |> Option.defaultValue ("", 0.)
                     image [ ImageProperties.Style [ Height h ]
                             Source [ Uri img ] ]
-                | Divider -> nextButton ()
+                | Divider -> nextButton dispatch
                 | _ -> text [] "=== STUB ==="
                 ))
     ]

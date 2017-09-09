@@ -3,8 +3,6 @@ module Elmish
 open Fable.Import.JS
 open Fable.PowerPack
 
-let dispatch _ unit = ()
-
 type Cmd<'a> =
 | EmptyCommand
 | PromiseCommand of Promise<'a>

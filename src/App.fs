@@ -43,5 +43,5 @@ type PostComponent(props) =
                     currentCmd <- cmd2
         } |> Promise.start
 
-    member this.render() = 
-        Page.view this.state.model
+    member this.render() : ReactElement = 
+        Page.view this.state.model ignore
