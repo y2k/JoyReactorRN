@@ -63,21 +63,23 @@ let nextButton dispatch =
                   Color "white" ] ] 
             "Load next page" ]
 
+let itemView x =
+    let (img, h) = 
+        x.image 
+        |> Option.map (fun x -> 
+            let h = Globals.Dimensions.get("screen").width / (max 1.2 x.aspect)
+            x.url, h) 
+        |> Option.defaultValue ("", 0.)
+    image [ ImageProperties.Style [ Height h ]
+            Source [ Uri img ] ]
+
 let view state dispatch = 
     listView state.posts [
         ListViewProperties.RenderRow
             (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
                 match i with
-                | Actual x ->
-                    let (img, h) = 
-                        x.image 
-                        |> Option.map (fun x -> 
-                            let h = Globals.Dimensions.get("screen").width / (max 1.2 x.aspect)
-                            x.url, h) 
-                        |> Option.defaultValue ("", 0.)
-                    image [ ImageProperties.Style [ Height h ]
-                            Source [ Uri img ] ]
+                | Actual x -> itemView x
+                | Old x -> itemView x
                 | Divider -> nextButton dispatch
-                | _ -> text [] "=== STUB ==="
                 ))
     ]
