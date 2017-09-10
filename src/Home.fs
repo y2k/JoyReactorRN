@@ -26,10 +26,10 @@ let init =
     { posts = emptyDataSource(); rawPosts = []; nextPage = None }, 
     Cmd.ofMsg (LoadPosts FeedSource)
 
-let postsToItems posts olds =
-    posts 
-    |> List.map Actual 
-    |> fun xs -> List.append xs [Divider]
+let postsToItems posts olds = 
+    posts
+    |> List.map Actual
+    |> fun xs -> List.append xs [ Divider ]
     |> fun xs -> List.append xs (olds |> List.map Old)
     |> List.toArray
 
