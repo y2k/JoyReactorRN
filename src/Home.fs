@@ -20,17 +20,18 @@ type Msg =
 type Model = 
     { posts : ListViewDataSource<PostState>
       rawPosts : Post list
+      cache: PostsWithLevels
       nextPage : int option }
 
 let init =
-    { posts = emptyDataSource(); rawPosts = []; nextPage = None }, 
+    { posts = emptyDataSource(); rawPosts = []; nextPage = None; cache = { actual = []; old = [] } }, 
     Cmd.ofMsg (LoadPosts FeedSource)
 
-let postsToItems posts olds = 
-    posts
-    |> List.map Actual
-    |> fun xs -> List.append xs [ Divider ]
-    |> fun xs -> List.append xs (olds |> List.map Old)
+let postsToItems xs =
+    []
+    |> List.append (xs.old |> List.map Old)
+    |> List.append [ Divider ]
+    |> List.append (xs.actual |> List.map Actual)
     |> List.toArray
 
 let update model msg : Model * Cmd<Msg> = 
@@ -38,8 +39,10 @@ let update model msg : Model * Cmd<Msg> =
     | LoadPosts source ->
         model, Cmd.ofPromise (S.loadPosts source model.nextPage) LoadResult
     | LoadResult (Ok (posts, nextPage)) ->
-        { posts = updateDataSource (postsToItems posts model.rawPosts) model.posts
+        let merged = Domain.mergeNextPage model.cache posts
+        { posts = updateDataSource (postsToItems merged) model.posts
           rawPosts = posts
+          cache = merged
           nextPage = nextPage }, Cmd.none
     | LoadResult (Error _) ->
         model, Cmd.none

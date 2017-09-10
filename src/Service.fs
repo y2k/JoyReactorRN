@@ -26,6 +26,22 @@ type PostResponse =
     { posts : Post list
       nextPage : int option }
 
+type PostsWithLevels = {
+    actual: Post list
+    old: Post list
+}
+
+module Domain = 
+    let mergeNextPage state newPosts = 
+        let newActual = 
+            newPosts
+            |> List.append state.actual
+            |> List.distinctBy (fun x -> x.id)
+        let newOld = 
+            state.old
+            |> List.filter (fun x -> List.forall (fun x2 -> x2.id <> x.id) newPosts)
+        { actual = newActual; old = newOld }
+
 module Service =
     open System.Text.RegularExpressions
     open Fable.Core.JsInterop
