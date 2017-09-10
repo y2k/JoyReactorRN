@@ -21,11 +21,8 @@ type PostComponent(props) =
     inherit React.Component<obj, State>(props)
     do base.setInitState { model = fst Page.init }
 
-    member this.componentDidMount() = 
+    member private this.dispatch (cmd: Cmd<Page.Msg>) =
         promise {
-            let model, cmd = Page.init
-            this.setState { model = model }
-
             let mutable doWhile = true
             let mutable currentCmd = cmd
             while doWhile do
@@ -43,5 +40,10 @@ type PostComponent(props) =
                     currentCmd <- cmd2
         } |> Promise.start
 
+    member this.componentDidMount() = 
+        let model, cmd = Page.init
+        this.setState { model = model }
+        this.dispatch cmd
+
     member this.render() : ReactElement = 
-        Page.view this.state.model ignore
+        Page.view this.state.model (Cmd.ofMsg >> this.dispatch)
