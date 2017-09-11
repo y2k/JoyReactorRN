@@ -3,24 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "fable-splitter": "^0.1.10",
-    "jest-expo": "~20.0.0",
     "react-native-scripts": "1.3.1",
+    "jest-expo": "~20.0.0",
     "react-test-renderer": "16.0.0-alpha.12",
 
-    "babel-loader": "7.1.2",
-    "babel-plugin-transform-runtime": "6.23.0",
-    "babel-preset-es2015": "6.24.1",
-    "fable-loader": "1.0.7",
-    "fable-utils": "^1.0.2",
-    "loglevel": "^1.4.1",
-    "webpack": "3.5.5",
-    "webpack-dev-server": "2.7.1"
+    "babel-core": "^6.26.0",
+    "fable-splitter": "^0.1.15"
   },
   "main": "./node_modules/react-native-scripts/build/bin/crna-entry.js",
   "scripts": {
-    "build": "fable-splitter src/fable_part.fsproj --outDir out",
+    "build": "fable-splitter src/joyreact.fsproj --outDir out",
     "start": "react-native-scripts start",
     "eject": "react-native-scripts eject",
     "android": "react-native-scripts android",
