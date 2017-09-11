@@ -31,9 +31,6 @@ let update model msg =
     | LoadPostResult (Error error) -> 
         { model with error = Some error }, Cmd.none
 
-
-
-
 let viewItem (comment : Comment) = 
       view [ ViewProperties.Style [ PaddingBottom 15.
                                     PaddingHorizontal 13.
@@ -55,11 +52,6 @@ let viewItem (comment : Comment) =
             ]
         ]
     ]
-
-
-
-
-
 
 let view state =
     let contentView =
