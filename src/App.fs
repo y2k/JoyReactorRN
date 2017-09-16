@@ -11,6 +11,9 @@ open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open Elmish
 
+[<Emit("require($0)")>]
+let require (path: string) = jsNative
+
 module Page = Home
 
 [<Pojo>]
@@ -41,9 +44,14 @@ type PostComponent(props) =
         } |> Promise.start
 
     member this.componentDidMount() = 
-        let model, cmd = Page.init
-        this.setState { model = model }
-        this.dispatch cmd
+        promise {
+            let font = import "Font" "expo"
+            do! !!font?loadAsync(createObj [ "icomoon" ==> require("../assets/fonts/icomoon.ttf") ])
+
+            let model, cmd = Page.init
+            this.setState { model = model }
+            this.dispatch cmd
+        } |> Promise.start
 
     member this.render() : ReactElement = 
         Page.view this.state.model (Cmd.ofMsg >> this.dispatch)
