@@ -73,18 +73,48 @@ let getImageUrlWithHeight x =
         x.url, h) 
     |> Option.defaultValue ("", 0.)
 
-let viewItem x =
-    let (img, h) = getImageUrlWithHeight x
-    image [ ImageProperties.Style [ Height h ]
-            Source [ Uri img ] ]
+let viewItem post dispatch =
+    let (img, h) = getImageUrlWithHeight post
+    touchableHighlight 
+        [ TouchableHighlightProperties.Style [ Margin 4. ] 
+          TouchableHighlightProperties.ActiveOpacity 0.7
+          OnPress ignore ]
+        [ view [ ViewProperties.Style 
+                     [ AlignItems ItemAlignment.Stretch
+                       BackgroundColor "white"
+                       BorderColor "#eee"
+                       BorderWidth 1.
+                       BorderRadius 8.
+                       Overflow Overflow.Hidden ] ] 
+               [ image [ ImageProperties.Style 
+                             [ Height h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
+                         Source [ Uri img ] ]
+                 view [ ViewProperties.Style
+                            [ FlexDirection FlexDirection.Row; Margin 9. ] ] 
+                      [ image [ ImageProperties.Style 
+                                  [ Width 36.; Height 36.; BorderRadius 18.; MarginRight 9. ]
+                                Source [ Uri post.userImage.url ] ]
+                        view [ ViewProperties.Style [ Flex 1. ] ] 
+                             [ text [ TextProperties.Style 
+                                          [ FontWeight FontWeight.Bold; FontSize 14.; Color "#616161" ] ] 
+                                    post.userName
+                               view [ ViewProperties.Style 
+                                          [ AlignSelf Alignment.FlexEnd
+                                            FlexDirection FlexDirection.Row ] ] 
+                                    [ text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] 
+                                           "\ue8b5"
+                                      text [ TextProperties.Style [ MarginLeft 8.; Color "#bcbcbc" ] ] 
+                                           "2 часа" ] ] ]
+            ]
+        ]
 
 let view state dispatch = 
     listView state.posts [
         ListViewProperties.RenderRow
             (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
                 match i with
-                | Actual x -> viewItem x
-                | Old x -> viewItem x
+                | Actual x -> viewItem x dispatch
+                | Old x -> viewItem x dispatch
                 | Divider -> viewNextButton dispatch
                 ))
     ]

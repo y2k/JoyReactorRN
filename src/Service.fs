@@ -16,6 +16,7 @@ type Comment =
 type Post = 
     { id : int
       userName : string
+      userImage: Attachment
       rating : float
       created : System.DateTime
       image : Attachment option
