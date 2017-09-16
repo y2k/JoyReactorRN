@@ -49,7 +49,7 @@ let update model msg : Model * Cmd<Msg> =
     | LoadNextPage ->
         model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
 
-let nextButton dispatch =
+let viewNextButton dispatch =
     touchableOpacity 
         [ TouchableWithoutFeedbackProperties.Style 
             [ Margin 4. 
@@ -66,13 +66,15 @@ let nextButton dispatch =
                   Color "white" ] ] 
             "Load next page" ]
 
-let itemView x =
-    let (img, h) = 
-        x.image 
-        |> Option.map (fun x -> 
-            let h = Globals.Dimensions.get("screen").width / (max 1.2 x.aspect)
-            x.url, h) 
-        |> Option.defaultValue ("", 0.)
+let getImageUrlWithHeight x =
+    x.image 
+    |> Option.map (fun x -> 
+        let h = Globals.Dimensions.get("screen").width / (max 1.2 x.aspect)
+        x.url, h) 
+    |> Option.defaultValue ("", 0.)
+
+let viewItem x =
+    let (img, h) = getImageUrlWithHeight x
     image [ ImageProperties.Style [ Height h ]
             Source [ Uri img ] ]
 
@@ -81,8 +83,8 @@ let view state dispatch =
         ListViewProperties.RenderRow
             (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
                 match i with
-                | Actual x -> itemView x
-                | Old x -> itemView x
-                | Divider -> nextButton dispatch
+                | Actual x -> viewItem x
+                | Old x -> viewItem x
+                | Divider -> viewNextButton dispatch
                 ))
     ]
