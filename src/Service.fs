@@ -32,6 +32,20 @@ type PostsWithLevels = {
     old: Post list
 }
 
+module Image =
+    let normilize url (w : float) (h : float) =
+        sprintf
+            "http://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
+            (int w)
+            (int h)
+            (Fable.Import.JS.encodeURIComponent url)
+
+    let urlWithHeight limitWidth attachment = 
+        let aspect = max 1.2 attachment.aspect
+        let w = limitWidth
+        let h = w / aspect
+        normilize attachment.url w h, h
+
 module Domain = 
     let mergeNextPage state newPosts = 
         let newActual = 

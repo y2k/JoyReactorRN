@@ -66,15 +66,23 @@ let viewNextButton dispatch =
                   Color "white" ] ] 
             "Load next page" ]
 
-let getImageUrlWithHeight x =
-    x.image 
-    |> Option.map (fun x -> 
-        let h = Globals.Dimensions.get("screen").width / (max 1.2 x.aspect)
-        x.url, h) 
-    |> Option.defaultValue ("", 0.)
+let todo attachment limitWidth = 
+    let aspect = max 1.2 attachment.aspect
+    let w = limitWidth
+    let h = w / aspect
+    Image.normilize attachment.url w h, h
+
+let viewPostImage post =
+    post.image 
+    |> Option.map (Image.urlWithHeight (Globals.Dimensions.get("screen").width))
+    |> function
+       | Some (img, h) ->
+             image [ ImageProperties.Style 
+                         [ Height h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
+                     Source [ Uri img ] ]
+       | None -> view [] []
 
 let viewItem post dispatch =
-    let (img, h) = getImageUrlWithHeight post
     touchableHighlight 
         [ TouchableHighlightProperties.Style [ Margin 4. ] 
           TouchableHighlightProperties.ActiveOpacity 0.7
@@ -86,9 +94,7 @@ let viewItem post dispatch =
                        BorderWidth 1.
                        BorderRadius 8.
                        Overflow Overflow.Hidden ] ] 
-               [ image [ ImageProperties.Style 
-                             [ Height h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
-                         Source [ Uri img ] ]
+               [ viewPostImage post
                  view [ ViewProperties.Style
                             [ FlexDirection FlexDirection.Row; Margin 9. ] ] 
                       [ image [ ImageProperties.Style 

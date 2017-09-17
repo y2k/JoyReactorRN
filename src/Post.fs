@@ -46,14 +46,14 @@ let viewItem (comment : Comment) =
               view [  ViewProperties.Style [ FlexDirection FlexDirection.Row
                                              MarginTop 8.
                                              AlignSelf Alignment.FlexEnd ] ] [
-                  text [ TextProperties.Style [ Color "#ffb100" ] ] "\ue8dc"
+                  text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] "\ue8dc"
                   text [ TextProperties.Style [ MarginLeft 8.; Color "#616161" ] ] 
                        (string comment.rating)
             ]
         ]
     ]
 
-let view state =
+let view state dispatch =
     let contentView =
         match state with
         | { error = Some e } -> text [] ("ERROR: " + e)
