@@ -14,44 +14,39 @@ open Elmish
 [<Emit("require($0)")>]
 let require (path: string) = jsNative
 
-module Page = Home
-
-[<Pojo>]
-type State =
-    { model : Page.Model }
+module App =
+    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost
+    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model
+    type Model = { subModel : SubModel }
+    let init = Home.init |> fun (model, cmd) -> { subModel = HomeModel model }, Cmd.map HomeMsg cmd
+    let update model msg : Model * Cmd<Msg> =
+        match msg, model.subModel with
+        | HomeMsg (Home.OpenPost _), _ -> model, Cmd.none // FIXME: Open post
+        | HomeMsg subMsg, HomeModel subModel -> 
+            Home.update subModel subMsg
+            |> fun (m, cmd) -> { subModel = HomeModel m }, Cmd.map HomeMsg cmd
+        | PostMsg subMsg, PostModel subModel -> 
+            PostScreen.update subModel subMsg
+            |> fun (m, cmd) -> { subModel = PostModel m }, Cmd.map PostMsg cmd
+        | _ -> model, Cmd.none
+    let view model dispatch =
+        match model.subModel with
+        | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)
+        | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
 
 type PostComponent(props) =
-    inherit React.Component<obj, State>(props)
-    do base.setInitState { model = fst Page.init }
-
-    member private this.dispatch (cmd: Cmd<Page.Msg>) =
-        promise {
-            let mutable doWhile = true
-            let mutable currentCmd = cmd
-            while doWhile do
-                match currentCmd with
-                | EmptyCommand -> 
-                    doWhile <- false
-                | MsgCommand msg -> 
-                    let model2, cmd2 = Page.update this.state.model msg
-                    this.setState { model = model2 }
-                    currentCmd <- cmd2
-                | PromiseCommand msgPromise -> 
-                    let! msg = msgPromise
-                    let model2, cmd2 = Page.update this.state.model msg
-                    this.setState { model = model2 }
-                    currentCmd <- cmd2
-        } |> Promise.start
+    inherit React.Component<obj, State<App.Model>>(props)
+    do base.setInitState { model = fst App.init }
 
     member this.componentDidMount() = 
         promise {
             let font = import "Font" "expo"
             do! !!font?loadAsync(createObj [ "icomoon" ==> require("../assets/fonts/icomoon.ttf") ])
 
-            let model, cmd = Page.init
+            let model, cmd = App.init
             this.setState { model = model }
-            this.dispatch cmd
+            Cmd.dispatch this App.update cmd
         } |> Promise.start
 
     member this.render() : ReactElement = 
-        Page.view this.state.model (Cmd.ofMsg >> this.dispatch)
+        App.view this.state.model (Cmd.ofMsg >> (Cmd.dispatch this App.update))

@@ -53,9 +53,9 @@ let viewItem (comment : Comment) =
         ]
     ]
 
-let view state dispatch =
+let view model dispatch =
     let contentView =
-        match state with
+        match model with
         | { error = Some e } -> text [] ("ERROR: " + e)
         | { post = Some post } ->
               scrollView [] ([   image [ ImageProperties.Style [ Height 200. ] 

@@ -16,6 +16,7 @@ type Msg =
     | LoadPosts of Source
     | LoadResult of Result<Post list * int option, string>
     | LoadNextPage
+    | OpenPost of Post
 
 type Model = 
     { posts : ListViewDataSource<PostState>
@@ -48,6 +49,7 @@ let update model msg : Model * Cmd<Msg> =
         model, Cmd.none
     | LoadNextPage ->
         model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
+    | _ -> model, Cmd.none
 
 let viewNextButton dispatch =
     touchableOpacity 
@@ -86,7 +88,7 @@ let viewItem post dispatch =
     touchableHighlight 
         [ TouchableHighlightProperties.Style [ Margin 4. ] 
           TouchableHighlightProperties.ActiveOpacity 0.7
-          OnPress ignore ]
+          OnPress (fun _ -> OpenPost post |> dispatch) ]
         [ view [ ViewProperties.Style 
                      [ AlignItems ItemAlignment.Stretch
                        BackgroundColor "white"
@@ -114,8 +116,8 @@ let viewItem post dispatch =
             ]
         ]
 
-let view state dispatch = 
-    listView state.posts [
+let view model dispatch = 
+    listView model.posts [
         ListViewProperties.RenderRow
             (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
                 match i with
