@@ -27,10 +27,16 @@ type PostResponse =
     { posts : Post list
       nextPage : int option }
 
-type PostsWithLevels = {
-    actual: Post list
-    old: Post list
-}
+type PostsWithLevels = 
+    { actual: Post list
+      old: Post list }
+
+type Profile = 
+    { userName: string
+      userImage: Attachment
+      rating: float
+      stars: int
+      progressToNewStar: float }
 
 module Image =
     let normilize url (w : float) (h : float) =

@@ -19,8 +19,8 @@ type Msg =
 | LoadPost of int
 | LoadPostResult of Result<Post, string>
 
-let init =
-    { post = None; error = None }, Cmd.ofMsg (LoadPost 3224383)
+let init id =
+    { post = None; error = None }, Cmd.ofMsg (LoadPost id)
 
 let update model msg =
     match msg with
