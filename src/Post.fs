@@ -31,27 +31,30 @@ let update model msg =
     | LoadPostResult (Error error) -> 
         { model with error = Some error }, Cmd.none
 
+module private Styles =
+    let home = ViewProperties.Style [ PaddingBottom 15.
+                                      PaddingHorizontal 13.
+                                      FlexDirection FlexDirection.Row ]
+    let image = ImageProperties.Style [ MarginRight 13.
+                                        Width 36.
+                                        Height 36.
+                                        BorderRadius 18. ]
+    let panel = ViewProperties.Style [ FlexDirection FlexDirection.Row
+                                       MarginTop 8.
+                                       AlignSelf Alignment.FlexEnd ]
+
 let viewItem (comment : Comment) = 
-      view [ ViewProperties.Style [ PaddingBottom 15.
-                                    PaddingHorizontal 13.
-                                    FlexDirection FlexDirection.Row ] ] [
-          image [ ImageProperties.Style [ MarginRight 13.
-                                          Width 36.
-                                          Height 36.
-                                          BorderRadius 18. ]
+      view [ Styles.home ] [
+          image [ Styles.image
                   Source [ Uri comment.image.url ] ]
           view [ ViewProperties.Style [ Flex 1. ] ] [
               text [ NumberOfLines 3.
                      TextProperties.Style [ Color "#999" ] ] comment.text
-              view [  ViewProperties.Style [ FlexDirection FlexDirection.Row
-                                             MarginTop 8.
-                                             AlignSelf Alignment.FlexEnd ] ] [
+              view [ Styles.panel ] [
                   text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] "\ue8dc"
                   text [ TextProperties.Style [ MarginLeft 8.; Color "#616161" ] ] 
-                       (string comment.rating)
-            ]
-        ]
-    ]
+                       (string comment.rating) 
+              ] ] ]
 
 let view model dispatch =
     let contentView =
