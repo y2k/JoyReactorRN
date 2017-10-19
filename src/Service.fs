@@ -1,5 +1,8 @@
 namespace JoyReactor
 
+module String =
+    let toUpper (x: string) = x.ToUpper()
+
 type Source =
 | FeedSource
 | TagSource of string
