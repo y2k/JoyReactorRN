@@ -71,7 +71,23 @@ module Service =
     open Fable.Core.JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
+    open Fable.Import.JS
     module B = Fable.Import.Browser
+
+    let loadProfile userName =
+        promise {
+            let encodedUserName = encodeURIComponent userName
+            let! response = fetch (sprintf "http://joyreactor.cc/user/%s" encodedUserName) []
+            let! text = response.text()
+            let url = "http://212.47.229.214:4567/profile"
+            let form = B.FormData.Create()
+            form.append ("html", text)
+
+            let! response = fetchAs<Profile> url [ Method HttpMethod.POST
+                                                   requestHeaders [ ContentType "multipart/form-data" ]
+                                                   Body !^form ]
+            return response
+        }
 
     let loadPost id =
         promise {

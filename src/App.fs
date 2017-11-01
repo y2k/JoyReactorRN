@@ -4,22 +4,19 @@ open Fable.Core
 open Fable.Core.JsInterop
 open Fable.Import
 open Fable.Import.React
-open Fable.Import.ReactNative
 open Fable.PowerPack
-
 open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
-open JoyReactor
 open Elmish
 
 [<Emit("require($0)")>]
 let require (path: string) = jsNative
 
 module App =
-    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack
-    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model
+    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg
+    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
-    let init = Home.init |> fun (model, cmd) -> { subModel = HomeModel model; history = [] }, Cmd.map HomeMsg cmd
+    // let init = Home.init |> fun (model, cmd) -> { subModel = HomeModel model; history = [] }, Cmd.map HomeMsg cmd
+    let init = ProfileScreen.init |> fun (model, cmd) -> { subModel = ProfileModel model; history = [] }, Cmd.map ProfileMsg cmd
     let update model msg : Model * Cmd<Msg> =
         match msg, model.subModel with
         | NavigateBack, _ ->
@@ -41,11 +38,15 @@ module App =
         | PostMsg subMsg, PostModel subModel -> 
             PostScreen.update subModel subMsg
             |> fun (m, cmd) -> { model with subModel = PostModel m }, Cmd.map PostMsg cmd
+        | ProfileMsg subMsg, ProfileModel subModel ->
+            ProfileScreen.update subModel subMsg
+            |> fun (m, cmd) -> { model with subModel = ProfileModel m }, Cmd.map ProfileMsg cmd
         | _ -> model, Cmd.none
     let view model dispatch =
         match model.subModel with
         | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
+        | ProfileModel subModel -> ProfileScreen.view subModel
 
 type PostComponent(props) =
     inherit React.Component<obj, State<App.Model>>(props)
