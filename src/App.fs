@@ -12,10 +12,11 @@ open Elmish
 let require (path: string) = jsNative
 
 module App =
-    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg | LoginMsg of LoginScreen.Msg
-    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model
+    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg | LoginMsg of LoginScreen.Msg | TagsMsg of TagsScreen.Msg
+    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model | TagsModel of TagsScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
-    let init = LoginScreen.init |> fun (model, cmd) -> { subModel = LoginModel model; history = [] }, Cmd.map LoginMsg cmd
+    let init = TagsScreen.init 
+               |> fun (model, cmd) -> { subModel = TagsModel model; history = [] }, Cmd.map TagsMsg cmd
     let update model msg : Model * Cmd<Msg> =
         match msg, model.subModel with
         | NavigateBack, _ ->
@@ -40,6 +41,9 @@ module App =
         | ProfileMsg subMsg, ProfileModel subModel ->
             ProfileScreen.update subModel subMsg
             |> fun (m, cmd) -> { model with subModel = ProfileModel m }, Cmd.map ProfileMsg cmd
+        | TagsMsg subMsg, TagsModel subModel ->
+            TagsScreen.update subModel subMsg
+            |> fun (m, cmd) -> { model with subModel = TagsModel m }, Cmd.map TagsMsg cmd
         | _ -> model, Cmd.none
     let view model dispatch =
         match model.subModel with
@@ -47,6 +51,7 @@ module App =
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
         | ProfileModel subModel -> ProfileScreen.view subModel
         | LoginModel subModel -> LoginScreen.view subModel
+        | TagsModel subModel -> TagsScreen.view subModel
 
 type PostComponent(props) =
     inherit React.Component<obj, State<App.Model>>(props)

@@ -1,10 +1,9 @@
 module Home
 
 open System
-open Fable.Import.JS
-open Fable.Helpers.ReactNative
 open Fable.Import.ReactNative
 open Fable.Helpers.ReactNative.Props
+open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
 
@@ -58,7 +57,7 @@ let viewNextButton dispatch =
               BackgroundColor "#e49421"
               BorderRadius 4.
               Overflow Overflow.Hidden ]
-          TouchableWithoutFeedbackProperties.OnPress (fun _ -> dispatch LoadNextPage) ]
+          OnPress (fun _ -> dispatch LoadNextPage) ]
         [ text 
             [ TextProperties.Style 
                 [ FontWeight FontWeight.Bold

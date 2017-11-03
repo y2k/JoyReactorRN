@@ -7,6 +7,10 @@ type Source =
 | FeedSource
 | TagSource of string
 
+type Tag = 
+    { name: string
+      image: string }
+
 type Attachment = 
     { url : string
       aspect : float }
@@ -41,6 +45,9 @@ type Profile =
       stars: int
       progressToNewStar: float }
 
+module Utils =
+    let flip f a b = f b a
+
 module Image =
     let normilize url (w : float) (h : float) =
         sprintf
@@ -73,6 +80,21 @@ module Service =
     open Fable.PowerPack
     open Fable.Import.JS
     module B = Fable.Import.Browser
+
+    let loadTags userName =
+        promise {
+            let encodedUserName = encodeURIComponent userName
+            let! response = fetch (sprintf "http://joyreactor.cc/user/%s" encodedUserName) []
+            let! text = response.text()
+            let url = "http://212.47.229.214:4567/tags"
+            let form = B.FormData.Create()
+            form.append ("html", text)
+
+            let! response = fetchAs<Tag list> url [ Method HttpMethod.POST
+                                                    requestHeaders [ ContentType "multipart/form-data" ]
+                                                    Body !^form ]
+            return response
+        }
 
     let loadProfile userName =
         promise {

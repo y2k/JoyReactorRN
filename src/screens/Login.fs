@@ -16,7 +16,7 @@ module private Styles =
     let buttonText =
         TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; Color "white" ]
 
-let init: Model * Cmd<Msg> = Model, Cmd.none
+let init = Model, Cmd<Msg>.none
 
 let private viewButton title margin =
     touchableOpacity [ Styles.button margin ] [
