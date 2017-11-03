@@ -4,8 +4,8 @@ open JoyReactor
 open Elmish
 
 open Fable.Core
-open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
+open Fable.Helpers.ReactNative
 module R = Fable.Helpers.ReactNative
 module S = JoyReactor.Service
 

@@ -1,6 +1,6 @@
 module ProfileScreen
-open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
+open Fable.Helpers.ReactNative
 open JoyReactor
 open Elmish
 

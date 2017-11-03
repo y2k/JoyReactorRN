@@ -5,8 +5,8 @@
   <ItemGroup>
     <Compile Include="Elmish.fs" />
     <Compile Include="Service.fs" />
-    <Compile Include="Post.fs" />
-    <Compile Include="Home.fs" />
+    <Compile Include="screens/Post.fs" />
+    <Compile Include="screens/Home.fs" />
     <Compile Include="screens/Login.fs" />
     <Compile Include="screens/Profile.fs" />
     <Compile Include="screens/Tags.fs" />

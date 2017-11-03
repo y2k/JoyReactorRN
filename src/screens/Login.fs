@@ -1,7 +1,7 @@
 module LoginScreen
 
-open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
+open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
 
