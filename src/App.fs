@@ -12,11 +12,10 @@ open Elmish
 let require (path: string) = jsNative
 
 module App =
-    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg
-    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model
+    type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg | LoginMsg of LoginScreen.Msg
+    type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
-    // let init = Home.init |> fun (model, cmd) -> { subModel = HomeModel model; history = [] }, Cmd.map HomeMsg cmd
-    let init = ProfileScreen.init |> fun (model, cmd) -> { subModel = ProfileModel model; history = [] }, Cmd.map ProfileMsg cmd
+    let init = LoginScreen.init |> fun (model, cmd) -> { subModel = LoginModel model; history = [] }, Cmd.map LoginMsg cmd
     let update model msg : Model * Cmd<Msg> =
         match msg, model.subModel with
         | NavigateBack, _ ->
@@ -47,6 +46,7 @@ module App =
         | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
         | ProfileModel subModel -> ProfileScreen.view subModel
+        | LoginModel subModel -> LoginScreen.view subModel
 
 type PostComponent(props) =
     inherit React.Component<obj, State<App.Model>>(props)
