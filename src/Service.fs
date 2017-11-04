@@ -74,7 +74,6 @@ module Domain =
         { actual = newActual; old = newOld }
 
 module Service =
-    open System.Text.RegularExpressions
     open Fable.Core.JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack

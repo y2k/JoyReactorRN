@@ -1,9 +1,9 @@
 module Scenes
 
-open Fable.Core
 open Fable.Core.JsInterop
-open Fable.Import
+open Fable.Core
 open Fable.Import.React
+open Fable.Import
 open Fable.PowerPack
 open Fable.Helpers.ReactNative
 open Elmish
