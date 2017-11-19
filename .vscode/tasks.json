@@ -1,10 +1,8 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "build",
+            "label": "build",
             "command": "dotnet build",
             "type": "shell",
             "group": "build",
@@ -14,7 +12,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "taskName": "fable",
+            "label": "fable",
             "command": "dotnet fable npm-build",
             "type": "shell",
             "group": {

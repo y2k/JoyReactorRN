@@ -5,8 +5,8 @@ open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
 
-type Model = Model
-type Msg = Msg
+type Model = Model | LoginInProgress
+type Msg = LoginMsg | LoginResult of Result<Unit, string>
 
 module private Styles =
     let edit = 
@@ -16,17 +16,31 @@ module private Styles =
     let buttonText =
         TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; Color "white" ]
 
-let init = Model, Cmd<Msg>.none
+let init = LoginInProgress, Cmd<Msg>.none
+
+let private loginAsync =
+    Fable.PowerPack.Promise.sleep 1000
+
+let update _ msg: Model * Cmd<Msg> =
+    match msg with
+    | LoginMsg -> LoginInProgress, Cmd.ofPromise loginAsync LoginResult
+    | LoginResult _ -> Model, Cmd.none
 
 let private viewButton title margin =
     touchableOpacity [ Styles.button margin ] [
         text [ Styles.buttonText ] <| String.toUpper title ]
 
-let view _ =
-    view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] [
-        textInput [ Styles.edit; TextInput.PlaceholderTextColor "gray"; TextInput.Placeholder "Логин" ] ""
-        view [ ViewProperties.Style [ Height 12. ] ] []
-        textInput [ Styles.edit; TextInput.PlaceholderTextColor "gray"; TextInput.Placeholder "Пароль" ] ""
-        view [ ViewProperties.Style [ Height 12. ] ] []
-        viewButton "Войти" 0.
-    ]
+let view model =
+    match model with
+    | LoginInProgress -> 
+        activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
+                            ActivityIndicator.Size Size.Large
+                            ActivityIndicator.Color "#ffb100" ]
+    | Model ->
+        view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] [
+            textInput [ Styles.edit; TextInput.PlaceholderTextColor "gray"; TextInput.Placeholder "Логин" ] ""
+            view [ ViewProperties.Style [ Height 12. ] ] []
+            textInput [ Styles.edit; TextInput.PlaceholderTextColor "gray"; TextInput.Placeholder "Пароль" ] ""
+            view [ ViewProperties.Style [ Height 12. ] ] []
+            viewButton "Войти" 0.
+        ]

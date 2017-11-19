@@ -15,8 +15,10 @@ module App =
     type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg | LoginMsg of LoginScreen.Msg | TagsMsg of TagsScreen.Msg
     type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model | TagsModel of TagsScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
-    let init = TagsScreen.init 
-               |> fun (model, cmd) -> { subModel = TagsModel model; history = [] }, Cmd.map TagsMsg cmd
+    
+    let init = LoginScreen.init 
+               |> fun (model, cmd) -> { subModel = LoginModel model; history = [] }, Cmd.map LoginMsg cmd
+    
     let update model msg : Model * Cmd<Msg> =
         match msg, model.subModel with
         | NavigateBack, _ ->
@@ -44,7 +46,11 @@ module App =
         | TagsMsg subMsg, TagsModel subModel ->
             TagsScreen.update subModel subMsg
             |> fun (m, cmd) -> { model with subModel = TagsModel m }, Cmd.map TagsMsg cmd
+        | LoginMsg subMsg, LoginModel subModel ->
+            LoginScreen.update subModel subMsg
+            |> fun (m, cmd) -> { model with subModel = LoginModel m }, Cmd.map LoginMsg cmd
         | _ -> model, Cmd.none
+
     let view model dispatch =
         match model.subModel with
         | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)

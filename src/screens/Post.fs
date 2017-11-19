@@ -66,7 +66,7 @@ let view model dispatch =
                                  text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
                              ] @ List.map viewItem post.comments)
         | _ -> 
-              activityIndicator [ ActivityIndicator.Style [ FlexStyle.Flex 1. ]
+              activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                                   ActivityIndicator.Size Size.Large
                                   ActivityIndicator.Color "#ffb100" ]
     view [ ViewProperties.Style [ Flex 1.; BackgroundColor "#fafafa" ] ] 
