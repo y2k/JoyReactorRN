@@ -26,8 +26,8 @@ type Cmd<'a> =
                 let! result = p
                 return okMessage <| Ok result
             with
-            | _ -> 
-                return okMessage <| Result.Error "todo error"
+            | e -> 
+                return okMessage <| Result.Error (string e.Message)
         } |> PromiseCommand
     static member dispatch (this : React.Component<obj, State<'a>>) update cmd =
         promise {

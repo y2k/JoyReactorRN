@@ -3,7 +3,6 @@ module Scenes
 open Fable.Core.JsInterop
 open Fable.Core
 open Fable.Import.React
-open Fable.Import
 open Fable.PowerPack
 open Fable.Helpers.ReactNative
 open Elmish
@@ -56,11 +55,11 @@ module App =
         | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
         | ProfileModel subModel -> ProfileScreen.view subModel
-        | LoginModel subModel -> LoginScreen.view subModel
+        | LoginModel subModel -> LoginScreen.view subModel (LoginMsg >> dispatch)
         | TagsModel subModel -> TagsScreen.view subModel
 
 type PostComponent(props) =
-    inherit React.Component<obj, State<App.Model>>(props)
+    inherit Component<obj, State<App.Model>>(props)
     do base.setInitState { model = fst App.init }
 
     member this.componentDidMount() = 

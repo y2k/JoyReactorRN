@@ -4,9 +4,10 @@ open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
+module S = JoyReactor.Service
 
-type Model = Model | LoginInProgress
-type Msg = LoginMsg | LoginResult of Result<Unit, string>
+type Model = { username: string; password: string; isBusy: bool; error: string option }
+type Msg = LoginMsg | LoginResultMsg of Result<Unit, string> | UsernameMsg of string | PasswordMsg of string
 
 module private Styles =
     let edit = 
@@ -16,31 +17,46 @@ module private Styles =
     let buttonText =
         TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; Color "white" ]
 
-let init = LoginInProgress, Cmd<Msg>.none
+let init = { username = ""; password = ""; isBusy = false; error = None }, Cmd<Msg>.none
 
-let private loginAsync =
-    Fable.PowerPack.Promise.sleep 1000
-
-let update _ msg: Model * Cmd<Msg> =
+let update model msg: Model * Cmd<Msg> =
     match msg with
-    | LoginMsg -> LoginInProgress, Cmd.ofPromise loginAsync LoginResult
-    | LoginResult _ -> Model, Cmd.none
+    | LoginMsg -> 
+        { model with isBusy = true; error = None }, 
+        Cmd.ofPromise (S.login model.username model.password) LoginResultMsg
+    | LoginResultMsg (Ok _) -> { model with isBusy = false }, Cmd.none
+    | LoginResultMsg (Error e) -> { model with isBusy = false; error = Some e }, Cmd.none
+    | UsernameMsg x -> { model with username = x }, Cmd.none
+    | PasswordMsg x -> { model with password = x }, Cmd.none
 
-let private viewButton title margin =
-    touchableOpacity [ Styles.button margin ] [
-        text [ Styles.buttonText ] <| String.toUpper title ]
+let private viewButton dispatch title margin =
+    touchableOpacity 
+        [ Styles.button margin 
+          OnPress (fun _ -> LoginMsg |> dispatch) ] 
+        [ text [ Styles.buttonText ] <| String.toUpper title ]
 
-let view model =
-    match model with
-    | LoginInProgress -> 
+let view model dispatch =
+    match model.isBusy with
+    | true -> 
         activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                             ActivityIndicator.Size Size.Large
                             ActivityIndicator.Color "#ffb100" ]
-    | Model ->
+    | false ->
         view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] [
-            textInput [ Styles.edit; TextInput.PlaceholderTextColor "gray"; TextInput.Placeholder "Логин" ] ""
+            textInput 
+                [ Styles.edit
+                  TextInput.PlaceholderTextColor "gray"
+                  TextInput.Placeholder "Логин" 
+                  TextInput.OnChangeText (UsernameMsg >> dispatch) ] model.username
             view [ ViewProperties.Style [ Height 12. ] ] []
-            textInput [ Styles.edit; TextInput.PlaceholderTextColor "gray"; TextInput.Placeholder "Пароль" ] ""
+            textInput 
+                [ Styles.edit
+                  TextInput.PlaceholderTextColor "gray"
+                  TextInput.Placeholder "Пароль" 
+                  TextInput.SecureTextEntry true
+                  TextInput.OnChangeText (PasswordMsg >> dispatch) ] model.password
             view [ ViewProperties.Style [ Height 12. ] ] []
-            viewButton "Войти" 0.
+            viewButton dispatch "Войти" 0.
+            text [ TextProperties.Style [ Color "red"; Padding 10.; FontSize 20. ] ] 
+                 (model.error |> Option.defaultValue "")
         ]
