@@ -82,7 +82,7 @@ module Domain =
         if m.Success then Some <| m.Groups.[1].Value else None
 
 module Service =
-    open Fable.Core.JsInterop
+    open JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
     open Fable.Import.JS
@@ -130,7 +130,7 @@ module Service =
             let! response = fetch (sprintf "http://joyreactor.cc/user/%s" encodedUserName) []
             let! text = response.text()
             let url = "http://212.47.229.214:4567/tags"
-            let form = B.FormData.Create()
+            let form = FormData.Create()
             form.append ("html", text)
 
             let! response = fetchAs<Tag list> url [ Method HttpMethod.POST
@@ -145,7 +145,7 @@ module Service =
             let! response = fetch (sprintf "http://joyreactor.cc/user/%s" encodedUserName) []
             let! text = response.text()
             let url = "http://212.47.229.214:4567/profile"
-            let form = B.FormData.Create()
+            let form = FormData.Create()
             form.append ("html", text)
 
             let! response = fetchAs<Profile> url [ Method HttpMethod.POST
@@ -159,7 +159,7 @@ module Service =
             let! response = fetch (sprintf "http://joyreactor.cc/post/%i" id) []
             let! text = response.text()
             let url = "http://212.47.229.214:4567/post"
-            let form = B.FormData.Create()
+            let form = FormData.Create()
             form.append ("html", text)
 
             let! response = fetchAs<Post> url [ Method HttpMethod.POST
@@ -174,7 +174,7 @@ module Service =
             let! response = fetch ("http://joyreactor.cc/" + sp) []
             let! text = response.text()
             let url = "http://212.47.229.214:4567/posts"
-            let form = B.FormData.Create()
+            let form = FormData.Create()
             form.append ("html", text)
 
             let! response = fetchAs<PostResponse> url [ Method HttpMethod.POST
