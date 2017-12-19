@@ -3,6 +3,45 @@ namespace JoyReactor
 open System.Text.RegularExpressions
 open Fable.Import.Browser
 open Fable.Core
+open Fable.PowerPack.Experimental
+
+module Utils =
+    let always a b = a
+    let flip f a b = f b a
+
+module CommonUi =
+    open Fable.Helpers.ReactNative.Props
+    open Fable.Helpers.ReactNative
+
+    module private Styles =
+        let tabButtonOuter selected = 
+            TouchableWithoutFeedbackProperties.Style 
+                [ Flex 1.
+                  Margin 4. 
+                  BackgroundColor (if selected then "#d48411" else "#e49421")
+                  BorderRadius 4.
+                  Overflow Overflow.Hidden ]
+        let tabButtonInner =
+            TextProperties.Style 
+                [ FontWeight FontWeight.Bold
+                  FontSize 13.
+                  TextAlign TextAlignment.Center
+                  Padding 15.
+                  Color "white" ]
+
+    let viewNavigationBar selected onSelect =
+        let button title index = 
+            touchableOpacity 
+                [ Styles.tabButtonOuter (selected = index)
+                  OnPress (fun _ -> onSelect index) ]
+                [ text [ Styles.tabButtonInner ] title ]
+
+        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] 
+             [ button "Home" 0
+               button "Tags" 1
+               button "Messages" 2
+               button "Profile" 3 ]
+
 
 module String =
     let toUpper (x: string) = x.ToUpper()
@@ -48,9 +87,6 @@ type Profile =
       rating: float
       stars: int
       progressToNewStar: float }
-
-module Utils =
-    let flip f a b = f b a
 
 module Image =
     let normilize url (w : float) (h : float) =
@@ -100,20 +136,6 @@ module Service =
             form.append("signin[username]", username)
             form.append("signin[password]", password)
             form.append("signin[_csrf_token]", tokenOpt.Value)
-
-            let form2 = 
-                sprintf 
-                    "signin[username]=%s&signin[password]=%ssignin[_csrf_token]=%s"
-                    username password tokenOpt.Value
-
-            let request = XMLHttpRequest.Create()
-            request.``open``("POST", "http://joyreactor.cc/login")
-            request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-            request.addEventListener_readystatechange (
-                fun state ->
-                    printfn "STATE :: %O" (request.getAllResponseHeaders())
-                    obj())
-            request.send(Some form2)
 
             let! response =
                 fetch "http://joyreactor.cc/login" 

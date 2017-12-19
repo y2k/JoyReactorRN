@@ -6,6 +6,8 @@ open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
+open JoyReactor.Utils
+open JoyReactor.CommonUi
 
 module S = Service
 
@@ -50,22 +52,40 @@ let update model msg : Model * Cmd<Msg> =
         model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none
 
-let viewNextButton dispatch =
-    touchableOpacity 
-        [ TouchableWithoutFeedbackProperties.Style 
+module private Styles =
+    let nextButtonOutter =
+        TouchableWithoutFeedbackProperties.Style 
             [ Margin 4. 
               BackgroundColor "#e49421"
               BorderRadius 4.
               Overflow Overflow.Hidden ]
-          OnPress (fun _ -> dispatch LoadNextPage) ]
-        [ text 
-            [ TextProperties.Style 
-                [ FontWeight FontWeight.Bold
-                  FontSize 13.
-                  TextAlign TextAlignment.Center
-                  Padding 15.
-                  Color "white" ] ] 
-            "Load next page" ]
+    let nextButtonInner =
+        TextProperties.Style 
+            [ FontWeight FontWeight.Bold
+              FontSize 13.
+              TextAlign TextAlignment.Center
+              Padding 15.
+              Color "white" ]
+    let card =
+        ViewProperties.Style 
+            [ AlignItems ItemAlignment.Stretch
+              BackgroundColor "white"
+              BorderColor "#eee"
+              BorderWidth 1.
+              BorderRadius 8.
+              Overflow Overflow.Hidden ]
+    let avatar =
+        ImageProperties.Style 
+            [ Width 36.; Height 36.; BorderRadius 18.; MarginRight 9. ]
+    let userName =
+        TextProperties.Style 
+            [ FontWeight FontWeight.Bold; FontSize 14.; Color "#616161" ]
+
+let viewNextButton dispatch =
+    touchableOpacity 
+        [ Styles.nextButtonOutter
+          OnPress (fun _ -> dispatch LoadNextPage) ] // TODO:
+        [ text [ Styles.nextButtonInner ] "Load next page" ]
 
 let todo attachment limitWidth = 
     let aspect = max 1.2 attachment.aspect
@@ -87,23 +107,15 @@ let viewItem post dispatch =
     touchableHighlight 
         [ TouchableHighlightProperties.Style [ Margin 4. ] 
           TouchableHighlightProperties.ActiveOpacity 0.7
-          OnPress (fun _ -> OpenPost post |> dispatch) ]
-        [ view [ ViewProperties.Style 
-                     [ AlignItems ItemAlignment.Stretch
-                       BackgroundColor "white"
-                       BorderColor "#eee"
-                       BorderWidth 1.
-                       BorderRadius 8.
-                       Overflow Overflow.Hidden ] ] 
+          OnPress (always (OpenPost post) >> dispatch) ]
+        [ view [ Styles.card ]
                [ viewPostImage post
                  view [ ViewProperties.Style
                             [ FlexDirection FlexDirection.Row; Margin 9. ] ] 
-                      [ image [ ImageProperties.Style 
-                                  [ Width 36.; Height 36.; BorderRadius 18.; MarginRight 9. ]
+                      [ image [ Styles.avatar
                                 Source [ Uri post.userImage.url ] ]
                         view [ ViewProperties.Style [ Flex 1. ] ] 
-                             [ text [ TextProperties.Style 
-                                          [ FontWeight FontWeight.Bold; FontSize 14.; Color "#616161" ] ] 
+                             [ text [ Styles.userName ] 
                                     post.userName
                                view [ ViewProperties.Style 
                                           [ AlignSelf Alignment.FlexEnd
@@ -111,17 +123,20 @@ let viewItem post dispatch =
                                     [ text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] 
                                            "\ue8b5"
                                       text [ TextProperties.Style [ MarginLeft 8.; Color "#bcbcbc" ] ] 
-                                           "2 часа" ] ] ]
-            ]
-        ]
+                                           "2 часа" ] ] ] ] ]
+
+let viewList model dispatch = 
+    listView 
+        model.posts 
+        [ ListViewProperties.RenderRow
+              (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
+                  match i with
+                  | Actual x -> viewItem x dispatch
+                  | Old x -> viewItem x dispatch
+                  | Divider -> viewNextButton dispatch
+                  )) ]
 
 let view model dispatch = 
-    listView model.posts [
-        ListViewProperties.RenderRow
-            (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
-                match i with
-                | Actual x -> viewItem x dispatch
-                | Old x -> viewItem x dispatch
-                | Divider -> viewNextButton dispatch
-                ))
-    ]
+    view [ ViewProperties.Style [ Flex 1. ] ] 
+         [ view [ ViewProperties.Style [ Flex 1. ] ] [ viewList model dispatch ]
+           viewNavigationBar 0 (fun _ -> dispatch LoadNextPage) ]

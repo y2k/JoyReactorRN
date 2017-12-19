@@ -15,8 +15,8 @@ module App =
     type SubModel = HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model | TagsModel of TagsScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
     
-    let init = LoginScreen.init 
-               |> fun (model, cmd) -> { subModel = LoginModel model; history = [] }, Cmd.map LoginMsg cmd
+    let init = Home.init 
+               |> fun (model, cmd) -> { subModel = HomeModel model; history = [] }, Cmd.map HomeMsg cmd
     
     let update model msg : Model * Cmd<Msg> =
         match msg, model.subModel with

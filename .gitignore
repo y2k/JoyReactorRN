@@ -4,3 +4,4 @@ npm-debug.*
 src/obj
 src/bin
 out
+*.user
