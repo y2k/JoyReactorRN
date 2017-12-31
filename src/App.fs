@@ -1,14 +1,11 @@
 module Scenes
 
 open Fable.Core.JsInterop
-open Fable.Core
 open Fable.Import.React
 open Fable.PowerPack
 open Fable.Helpers.ReactNative
 open Elmish
-
-[<Emit("require($0)")>]
-let require (path: string) = jsNative
+open JoyReactor.Utils
 
 module App =
     type Msg = HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg | LoginMsg of LoginScreen.Msg | TagsMsg of TagsScreen.Msg

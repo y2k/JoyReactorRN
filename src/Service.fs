@@ -3,9 +3,11 @@ namespace JoyReactor
 open System.Text.RegularExpressions
 open Fable.Import.Browser
 open Fable.Core
-open Fable.PowerPack.Experimental
 
 module Utils =
+    [<Emit("require($0)")>]
+    let require (path: string) = jsNative
+
     let always a b = a
     let flip f a b = f b a
 
