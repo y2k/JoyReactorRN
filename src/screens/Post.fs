@@ -2,6 +2,7 @@ module PostScreen
 
 open JoyReactor
 open Elmish
+open JoyReactor.Types
 
 open Fable.Core
 open Fable.Helpers.ReactNative.Props
@@ -56,7 +57,7 @@ let viewItem (comment : Comment) =
                        (string comment.rating) 
               ] ] ]
 
-let view model dispatch =
+let view model _ =
     let contentView =
         match model with
         | { error = Some e } -> text [] ("ERROR: " + e)

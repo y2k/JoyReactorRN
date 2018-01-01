@@ -7,7 +7,7 @@ open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
 open JoyReactor.Utils
-open JoyReactor.CommonUi
+open JoyReactor.Types
 
 module S = Service
 
@@ -23,7 +23,7 @@ type Model =
     { posts : ListViewDataSource<PostState>
       rawPosts : Post list
       cache: PostsWithLevels
-      nextPage : int option }
+      nextPage : Int32 option }
 
 let init =
     { posts = emptyDataSource(); rawPosts = []; nextPage = None; cache = { actual = []; old = [] } }, 
@@ -125,7 +125,7 @@ let viewItem post dispatch =
                                       text [ TextProperties.Style [ MarginLeft 8.; Color "#bcbcbc" ] ] 
                                            "2 часа" ] ] ] ] ]
 
-let viewList model dispatch = 
+let view model dispatch = 
     listView 
         model.posts 
         [ ListViewProperties.RenderRow
@@ -135,8 +135,3 @@ let viewList model dispatch =
                   | Old x -> viewItem x dispatch
                   | Divider -> viewNextButton dispatch
                   )) ]
-
-let view model dispatch = 
-    view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ view [ ViewProperties.Style [ Flex 1. ] ] [ viewList model dispatch ]
-           viewNavigationBar 0 (fun _ -> dispatch LoadNextPage) ]

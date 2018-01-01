@@ -3,6 +3,7 @@ open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
 open JoyReactor
 open Elmish
+open JoyReactor.Types
 
 type Msg = ProfileMsg of Result<Profile, string>
 type Model = { profile : Profile option }

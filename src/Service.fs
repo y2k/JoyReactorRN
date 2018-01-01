@@ -1,15 +1,24 @@
 namespace JoyReactor
 
+open System
 open System.Text.RegularExpressions
-open Fable.Import.Browser
 open Fable.Core
+
+module Array =
+    let tryMaxBy f xs =
+        try
+            xs |> Array.maxBy f |> Some
+        with
+        | _ -> None
 
 module Utils =
     [<Emit("require($0)")>]
-    let require (path: string) = jsNative
-
-    let always a b = a
+    let require (_: string) = jsNative
+    let always a _ = a
     let flip f a b = f b a
+    let longToTimeDelay _ = "2 часа"
+    let curry f a b = f (a,b)
+    let uncurry f (a,b) = f a b
 
 module CommonUi =
     open Fable.Helpers.ReactNative.Props
@@ -31,6 +40,12 @@ module CommonUi =
                   Padding 15.
                   Color "white" ]
 
+    let indicatorView =
+        activityIndicator 
+            [ ViewProperties.Style [ Flex 1. ]
+              ActivityIndicator.Size Size.Large
+              ActivityIndicator.Color "#ffb100" ]    
+
     let viewNavigationBar selected onSelect =
         let button title index = 
             touchableOpacity 
@@ -44,67 +59,79 @@ module CommonUi =
                button "Messages" 2
                button "Profile" 3 ]
 
-
 module String =
     let toUpper (x: string) = x.ToUpper()
 
-type Source =
-| FeedSource
-| TagSource of string
+module Types = 
+    type Source =
+    | FeedSource
+    | TagSource of string
 
-type Tag = 
-    { name: string
-      image: string }
+    type Tag = 
+        { name: string
+          image: string }
 
-type Attachment = 
-    { url : string
-      aspect : float }
+    type Attachment = 
+        { url : string
+          aspect : float }
 
-type Comment = 
-    { text : string
-      image : Attachment
-      rating : float }
+    type Comment = 
+        { text : string
+          image : Attachment
+          rating : float }
 
-type Post = 
-    { id : int
-      userName : string
-      userImage: Attachment
-      rating : float
-      created : System.DateTime
-      image : Attachment option
-      title : string
-      comments : Comment list }
+    type Post = 
+        { id : int
+          userName : string
+          userImage: Attachment
+          rating : float
+          created : System.DateTime
+          image : Attachment option
+          title : string
+          comments : Comment list }
 
-type PostResponse = 
-    { posts : Post list
-      nextPage : int option }
+    type PostResponse = 
+        { posts : Post list
+          nextPage : int option }
 
-type PostsWithLevels = 
-    { actual: Post list
-      old: Post list }
+    type PostsWithLevels = 
+        { actual: Post list
+          old: Post list }
 
-type Profile = 
-    { userName: string
-      userImage: Attachment
-      rating: float
-      stars: int
-      progressToNewStar: float }
+    type Profile = 
+        { userName: string
+          userImage: Attachment
+          rating: float
+          stars: int
+          progressToNewStar: float }
+
+    type Message = 
+        { text: String
+          date: Int64
+          isMine: Boolean
+          userName: String
+          userImage: String }
 
 module Image =
+    open Types
+    open Fable.Import.JS
+
     let normilize url (w : float) (h : float) =
         sprintf
             "http://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
             (int w)
             (int h)
-            (Fable.Import.JS.encodeURIComponent url)
+            (encodeURIComponent url)
 
-    let urlWithHeight limitWidth attachment = 
+    let urlWithHeight limitWidth (attachment: Attachment) = 
         let aspect = max 1.2 attachment.aspect
         let w = limitWidth
         let h = w / aspect
         normilize attachment.url w h, h
 
 module Domain = 
+    open Types
+
     let mergeNextPage state newPosts = 
         let newActual = 
             newPosts
@@ -119,20 +146,113 @@ module Domain =
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
         if m.Success then Some <| m.Groups.[1].Value else None
 
+    let selectThreads (xs: Message []) = 
+        xs
+        |> Array.sortBy (fun x -> x.date)
+        |> Array.distinctBy (fun x -> x.userName)
+
+    let filterNewMessages (messages: Message[]) offset = 
+        messages |> Array.filter (fun x -> x.date > offset)
+
+    let checkMessagesIsOld (messages: Message[]) offset = 
+        messages |> Array.exists (fun x -> x.date <= offset)
+
+module UrlBuilder =
+    open Fable.Import.JS
+    
+    let messages page =
+        page 
+        |> Option.defaultValue "/private/list"
+        |> (+) "http://joyreactor.cc"
+    
+    let user userName =
+        encodeURIComponent userName
+        |> sprintf "http://joyreactor.cc/user/%s"
+
+    let post id = sprintf "http://joyreactor.cc/post/%i" id
+
+    let posts _ (page: Int32 option) =
+        page 
+        |> Option.map string 
+        |> Option.defaultValue ""
+        |> (+) "http://joyreactor.cc/"
+
 module Service =
     open JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
-    open Fable.Import.JS
-    module B = Fable.Import.Browser
-    module P = Fable.PowerPack.Promise
+    open Utils
+    open Types
+    module JS = Fable.Import.JS
+    let FormData = Fable.Import.Browser.FormData
+    let JSON = Fable.Import.JS.JSON
+    let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
+    
+    let loadThreadsFromCache = 
+        AsyncStorage.getItem("messages")
+        |> Promise.map (JSON.parse >> unbox<Message []>)
+        |> Promise.map (fun x -> if isNull x then [||] else x)
+        |> Promise.map Domain.selectThreads
+
+    let private loadAndParse<'a> parse url = 
+        promise {
+            let! html =
+                url
+                |> flip fetch []
+                |> Promise.bind (fun response -> response.text())
+            let form = FormData.Create()
+            form.append ("html", html)
+            return!
+                fetchAs<'a> 
+                    (sprintf "http://212.47.229.214:4567/%s" parse)
+                    [ Method HttpMethod.POST
+                      requestHeaders [ ContentType "multipart/form-data" ]
+                      Body !^form ]
+        }
+
+    type MessagesWithNext = { message: Message[]; nextPage: String option }
+    let getMessagesAndNextPageFromJR (page: String option) = 
+        UrlBuilder.messages page
+        |> loadAndParse<MessagesWithNext> "messages"
+        |> Promise.map (fun response -> response.message, response.nextPage)
+
+    let getLastOffsetOrDefault = 
+        loadThreadsFromCache
+        |> Promise.map (fun xs -> 
+            xs |> Array.tryMaxBy(fun x -> x.date) 
+               |> Option.map (fun x -> x.date) 
+               |> Option.defaultValue 0L)
+
+    let loadThreadsFromWeb =
+        let rec loadPageRec pageNumber lastOffset parentMessages =
+            promise {
+                let! messages, nextPage = getMessagesAndNextPageFromJR pageNumber
+                let newMessages = Array.append parentMessages (Domain.filterNewMessages messages lastOffset)
+                let flagIsStop = Domain.checkMessagesIsOld messages lastOffset
+                if flagIsStop || nextPage.IsNone then return newMessages
+                else return! loadPageRec nextPage lastOffset newMessages
+            }
+
+        promise {
+            let! lastOffset = getLastOffsetOrDefault
+            let! oldMessages = loadThreadsFromCache
+            let! newMessages = loadPageRec None lastOffset [||]
+
+            let messages = newMessages |> Array.append oldMessages
+            do! messages
+                |> JSON.stringify
+                |> curry AsyncStorage.setItem ""
+                |> Promise.map ignore
+
+            return messages
+        }
 
     let login username password =
         promise {
             let! tokenOpt =
                 fetch "http://joyreactor.cc/ads" []
-                |> P.bind (fun x -> x.text())
-                |> P.map Domain.getCsrfToken
+                |> Promise.bind (fun x -> x.text())
+                |> Promise.map Domain.getCsrfToken
 
             let form = FormData.Create ()
             form.append("signin[username]", username)
@@ -149,60 +269,13 @@ module Service =
         }
 
     let loadTags userName =
-        promise {
-            let encodedUserName = encodeURIComponent userName
-            let! response = fetch (sprintf "http://joyreactor.cc/user/%s" encodedUserName) []
-            let! text = response.text()
-            let url = "http://212.47.229.214:4567/tags"
-            let form = FormData.Create()
-            form.append ("html", text)
-
-            let! response = fetchAs<Tag list> url [ Method HttpMethod.POST
-                                                    requestHeaders [ ContentType "multipart/form-data" ]
-                                                    Body !^form ]
-            return response
-        }
+        UrlBuilder.user userName |> loadAndParse<Tag list> "tags"
 
     let loadProfile userName =
-        promise {
-            let encodedUserName = encodeURIComponent userName
-            let! response = fetch (sprintf "http://joyreactor.cc/user/%s" encodedUserName) []
-            let! text = response.text()
-            let url = "http://212.47.229.214:4567/profile"
-            let form = FormData.Create()
-            form.append ("html", text)
-
-            let! response = fetchAs<Profile> url [ Method HttpMethod.POST
-                                                   requestHeaders [ ContentType "multipart/form-data" ]
-                                                   Body !^form ]
-            return response
-        }
+        UrlBuilder.user userName |> loadAndParse<Profile> "profile"
 
     let loadPost id =
-        promise {
-            let! response = fetch (sprintf "http://joyreactor.cc/post/%i" id) []
-            let! text = response.text()
-            let url = "http://212.47.229.214:4567/post"
-            let form = FormData.Create()
-            form.append ("html", text)
-
-            let! response = fetchAs<Post> url [ Method HttpMethod.POST
-                                                requestHeaders [ ContentType "multipart/form-data" ]
-                                                Body !^form ]
-            return response
-        }
+        UrlBuilder.post id |> loadAndParse<Post> "post"
 
     let loadPosts source page = 
-        promise { 
-            let sp = match page with | Some (x : int) -> string x | _ -> ""
-            let! response = fetch ("http://joyreactor.cc/" + sp) []
-            let! text = response.text()
-            let url = "http://212.47.229.214:4567/posts"
-            let form = FormData.Create()
-            form.append ("html", text)
-
-            let! response = fetchAs<PostResponse> url [ Method HttpMethod.POST
-                                                        requestHeaders [ ContentType "multipart/form-data" ]
-                                                        Body !^form ]
-            return response.posts, response.nextPage
-        }
+        UrlBuilder.posts source page |> loadAndParse "posts"

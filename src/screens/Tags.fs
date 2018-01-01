@@ -7,6 +7,7 @@ open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor.Utils
 open JoyReactor
+open JoyReactor.Types
 
 type Model = { dataSource: ListViewDataSource<Tag>; loaded: Boolean }
 type Msg = TagsLoaded of Result<Tag list, string>
