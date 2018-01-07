@@ -46,8 +46,8 @@ let update model msg : Model * Cmd<Msg> =
           rawPosts = posts
           cache = merged
           nextPage = nextPage }, Cmd.none
-    | LoadResult (Error _) ->
-        model, Cmd.none
+    | LoadResult (Error e) ->
+        log e model, Cmd.none
     | LoadNextPage ->
         model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none

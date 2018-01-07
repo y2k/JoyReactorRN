@@ -19,33 +19,22 @@ type Msg =
     | ThreadSelected of String
     | ReloadThreads
 
-module Fake =
-    let loadThreadsFromWeb = 
-        promise {
-            do! Promise.sleep 2500
-            return [| 
-                { text = "...Hello"; date = 0L; isMine = false; userName = "Alex"; userImage = "http://img0.joyreactor.cc/images/default_avatar.jpeg" }
-                { text = "...World"; date = 0L; isMine = false; userName = "Exler"; userImage = "http://img0.joyreactor.cc/images/default_avatar.jpeg" }
-                { text = "...2018"; date = 0L; isMine = false; userName = "Make"; userImage = "http://img0.joyreactor.cc/images/default_avatar.jpeg" }
-            |]
-        }
-
 let init: Model * Cmd<Msg> = 
     { items = emptyDataSource(); status = None }, 
     Cmd.ofPromise Service.loadThreadsFromCache ThreadsFromCache
 
-let updateDS resultItems dataSource =
-    match resultItems with
-    | Ok x -> updateDataSource x dataSource
-    | Error _ -> dataSource
-
 let update model msg =
     match msg with
-    | ThreadsFromCache x ->
-        { model with items = updateDS x model.items }, 
-        Cmd.ofPromise Fake.loadThreadsFromWeb ThreadsFromWeb
-    | ThreadsFromWeb x ->
-        { model with items = updateDS x model.items; status = Result.map ignore x |> Some }, Cmd.none
+    | ThreadsFromCache (Ok x) ->
+        { model with items = updateDataSource x model.items }, 
+        Cmd.ofPromise Service.loadThreadsFromWeb ThreadsFromWeb
+    | ThreadsFromCache (Error e) -> log e model, Cmd.none
+    | ThreadsFromWeb (Ok x) ->
+        { model with
+            items = updateDataSource x model.items
+            status = Some <| Ok () }, Cmd.none
+    | ThreadsFromWeb (Error e) -> 
+        { model with status = log e (Some <| Error e) }, Cmd.none
     | ThreadSelected _ -> failwith "Not Implemented"
     | ReloadThreads -> failwith "Not Implemented"
 

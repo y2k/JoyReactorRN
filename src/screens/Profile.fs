@@ -4,6 +4,7 @@ open Fable.Helpers.ReactNative
 open JoyReactor
 open Elmish
 open JoyReactor.Types
+open JoyReactor.Utils
 
 type Msg = ProfileMsg of Result<Profile, string>
 type Model = { profile : Profile option }
@@ -14,7 +15,7 @@ let init: Model * Cmd<Msg> =
 let update model msg =
     match msg with
     | ProfileMsg (Ok p) -> { model with profile = Some p }, Cmd.none
-    | ProfileMsg (Error _) -> model, Cmd.none
+    | ProfileMsg (Error e) -> log e model, Cmd.none
 
 module private Styles =
     let rating = 

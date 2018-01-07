@@ -19,6 +19,9 @@ module Utils =
     let longToTimeDelay _ = "2 часа"
     let curry f a b = f (a,b)
     let uncurry f (a,b) = f a b
+    let log msg x =
+        printfn "%s" msg
+        x
 
 module CommonUi =
     open Fable.Helpers.ReactNative.Props
@@ -184,7 +187,6 @@ module Service =
     open Utils
     open Types
     module JS = Fable.Import.JS
-    let FormData = Fable.Import.Browser.FormData
     let JSON = Fable.Import.JS.JSON
     let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
     
@@ -194,13 +196,13 @@ module Service =
         |> Promise.map (fun x -> if isNull x then [||] else x)
         |> Promise.map Domain.selectThreads
 
-    let private loadAndParse<'a> parse url = 
+    let inline private loadAndParse<'a> parse url = 
         promise {
             let! html =
                 url
                 |> flip fetch []
                 |> Promise.bind (fun response -> response.text())
-            let form = FormData.Create()
+            let form = Fable.Import.Browser.FormData.Create()
             form.append ("html", html)
             return!
                 fetchAs<'a> 
@@ -210,11 +212,11 @@ module Service =
                       Body !^form ]
         }
 
-    type MessagesWithNext = { message: Message[]; nextPage: String option }
+    type MessagesWithNext = { messages: Message[]; nextPage: String option }
     let getMessagesAndNextPageFromJR (page: String option) = 
         UrlBuilder.messages page
         |> loadAndParse<MessagesWithNext> "messages"
-        |> Promise.map (fun response -> response.message, response.nextPage)
+        |> Promise.map (fun response -> response.messages, response.nextPage)
 
     let getLastOffsetOrDefault = 
         loadThreadsFromCache
@@ -254,7 +256,7 @@ module Service =
                 |> Promise.bind (fun x -> x.text())
                 |> Promise.map Domain.getCsrfToken
 
-            let form = FormData.Create ()
+            let form = Fable.Import.Browser.FormData.Create ()
             form.append("signin[username]", username)
             form.append("signin[password]", password)
             form.append("signin[_csrf_token]", tokenOpt.Value)
@@ -278,4 +280,6 @@ module Service =
         UrlBuilder.post id |> loadAndParse<Post> "post"
 
     let loadPosts source page = 
-        UrlBuilder.posts source page |> loadAndParse "posts"
+        UrlBuilder.posts source page 
+        |> loadAndParse<PostResponse> "posts"
+        |> Promise.map (fun response -> response.posts, response.nextPage)
