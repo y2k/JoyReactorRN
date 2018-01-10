@@ -1,7 +1,6 @@
 module ThreadsScreen
 
 open System
-open Fable.PowerPack
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open Fable.Import.ReactNative
