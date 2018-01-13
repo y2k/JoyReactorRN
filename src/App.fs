@@ -77,11 +77,11 @@ module TabsScreen =
         view [ ViewProperties.Style [ Flex 1. ] ] [
             view [ ViewProperties.Style [ Flex 1. ] ] 
                  [ renderContent model dispatch ]
-            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] [
-                button "Home" 0
-                button "Tags" 1
-                button "Threads" 2
-                button "Profile" 3 ] ]
+            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] 
+                 [ button "Home" 0
+                   button "Tags" 1
+                   button "Messages" 2
+                   button "Profile" 3 ] ]
 
 module App =
     type Msg = 

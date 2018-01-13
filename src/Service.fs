@@ -110,7 +110,7 @@ module Types =
 
     type Message = 
         { text: String
-          date: Int64
+          date: Double
           isMine: Boolean
           userName: String
           userImage: String }
@@ -151,7 +151,7 @@ module Domain =
 
     let selectThreads (xs: Message []) = 
         xs
-        |> Array.sortBy (fun x -> x.date)
+        |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
 
     let filterNewMessages (messages: Message[]) offset = 
@@ -163,7 +163,7 @@ module Domain =
     let getLastOffsetOrDefault xs =
         xs |> Array.tryMaxBy(fun x -> x.date) 
            |> Option.map (fun x -> x.date) 
-           |> Option.defaultValue 0L
+           |> Option.defaultValue 0.
 
 module UrlBuilder =
     open Fable.Import.JS
@@ -217,6 +217,7 @@ module Service =
                       Body !^form ]
         }
 
+    [<Pojo>]
     type MessagesWithNext = { messages: Message[]; nextPage: String option }
     let getMessagesAndNextPageFromJR (page: String option) = 
         UrlBuilder.messages page
@@ -245,6 +246,8 @@ module Service =
                 |> Promise.map ignore
             return messages
         }
+
+    let loadMessages (_: String): JS.Promise<Message[]> = failwith "TODO"
 
     let login username password =
         promise {
