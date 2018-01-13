@@ -5,3 +5,5 @@ src/obj
 src/bin
 out
 *.user
+test/bin
+test/obj

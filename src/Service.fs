@@ -160,6 +160,11 @@ module Domain =
     let checkMessagesIsOld (messages: Message[]) offset = 
         messages |> Array.exists (fun x -> x.date <= offset)
 
+    let getLastOffsetOrDefault xs =
+        xs |> Array.tryMaxBy(fun x -> x.date) 
+           |> Option.map (fun x -> x.date) 
+           |> Option.defaultValue 0L
+
 module UrlBuilder =
     open Fable.Import.JS
     
@@ -218,13 +223,6 @@ module Service =
         |> loadAndParse<MessagesWithNext> "messages"
         |> Promise.map (fun response -> response.messages, response.nextPage)
 
-    let getLastOffsetOrDefault = 
-        loadThreadsFromCache
-        |> Promise.map (fun xs -> 
-            xs |> Array.tryMaxBy(fun x -> x.date) 
-               |> Option.map (fun x -> x.date) 
-               |> Option.defaultValue 0L)
-
     let loadThreadsFromWeb =
         let rec loadPageRec pageNumber lastOffset parentMessages =
             promise {
@@ -236,16 +234,15 @@ module Service =
             }
 
         promise {
-            let! lastOffset = getLastOffsetOrDefault
             let! oldMessages = loadThreadsFromCache
+            let lastOffset = Domain.getLastOffsetOrDefault oldMessages
             let! newMessages = loadPageRec None lastOffset [||]
 
             let messages = newMessages |> Array.append oldMessages
             do! messages
                 |> JSON.stringify
-                |> curry AsyncStorage.setItem ""
+                |> curry AsyncStorage.setItem "messages"
                 |> Promise.map ignore
-
             return messages
         }
 
