@@ -42,21 +42,20 @@ let view model dispatch =
                             ActivityIndicator.Size Size.Large
                             ActivityIndicator.Color "#ffb100" ]
     | false ->
-        view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] [
-            textInput 
-                [ Styles.edit
-                  TextInput.PlaceholderTextColor "gray"
-                  TextInput.Placeholder "Логин" 
-                  TextInput.OnChangeText (UsernameMsg >> dispatch) ] model.username
-            view [ ViewProperties.Style [ Height 12. ] ] []
-            textInput 
-                [ Styles.edit
-                  TextInput.PlaceholderTextColor "gray"
-                  TextInput.Placeholder "Пароль" 
-                  TextInput.SecureTextEntry true
-                  TextInput.OnChangeText (PasswordMsg >> dispatch) ] model.password
-            view [ ViewProperties.Style [ Height 12. ] ] []
-            viewButton dispatch "Войти" 0.
-            text [ TextProperties.Style [ Color "red"; Padding 10.; FontSize 20. ] ] 
-                 (model.error |> Option.defaultValue "")
-        ]
+        view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] 
+             [ textInput [ Styles.edit
+                           TextInput.PlaceholderTextColor "gray"
+                           TextInput.Placeholder "Логин" 
+                           TextInput.OnChangeText (UsernameMsg >> dispatch) ] 
+                         model.username
+               view [ ViewProperties.Style [ Height 12. ] ] []
+               textInput [ Styles.edit
+                           TextInput.PlaceholderTextColor "gray"
+                           TextInput.Placeholder "Пароль" 
+                           TextInput.SecureTextEntry true
+                           TextInput.OnChangeText (PasswordMsg >> dispatch) ] 
+                         model.password
+               view [ ViewProperties.Style [ Height 12. ] ] []
+               viewButton dispatch "Войти" 0.
+               text [ TextProperties.Style [ Color "red"; Padding 10.; FontSize 20. ] ] 
+                    (model.error |> Option.defaultValue "") ]

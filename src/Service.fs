@@ -149,10 +149,15 @@ module Domain =
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
         if m.Success then Some <| m.Groups.[1].Value else None
 
-    let selectThreads (xs: Message []) = 
-        xs
+    let selectThreads messages = 
+        messages
         |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
+
+    let selectMessageForUser userName messages =
+        messages
+        |> Array.filter (fun x -> x.userName = userName)
+        |> Array.sortByDescending (fun x -> x.date)
 
     let filterNewMessages (messages: Message[]) offset = 
         messages |> Array.filter (fun x -> x.date > offset)
@@ -185,20 +190,37 @@ module UrlBuilder =
         |> Option.defaultValue ""
         |> (+) "http://joyreactor.cc/"
 
+module Storage =
+    open Fable.PowerPack
+    open Utils
+    let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
+    let JSON = Fable.Import.JS.JSON
+
+    let load<'a> key =
+        AsyncStorage.getItem(key)
+        |> Promise.map (fun json -> 
+            if isNull json then None 
+            else json |> (JSON.parse >> unbox<'a>) |> Some)
+
+    let save key value =
+        value
+        |> JSON.stringify
+        |> curry AsyncStorage.setItem key
+        |> Promise.map ignore
+
 module Service =
     open JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
     open Utils
     open Types
-    module JS = Fable.Import.JS
-    let JSON = Fable.Import.JS.JSON
-    let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
-    
+
+    let loadAllMessageFromStorage =
+        Storage.load<Message[]> "messages"
+        |> Promise.map (Option.defaultValue [||])
+
     let loadThreadsFromCache = 
-        AsyncStorage.getItem("messages")
-        |> Promise.map (JSON.parse >> unbox<Message []>)
-        |> Promise.map (fun x -> if isNull x then [||] else x)
+        loadAllMessageFromStorage
         |> Promise.map Domain.selectThreads
 
     let inline private loadAndParse<'a> parse url = 
@@ -219,7 +241,7 @@ module Service =
 
     [<Pojo>]
     type MessagesWithNext = { messages: Message[]; nextPage: String option }
-    let getMessagesAndNextPageFromJR (page: String option) = 
+    let getMessagesAndNextPage page = 
         UrlBuilder.messages page
         |> loadAndParse<MessagesWithNext> "messages"
         |> Promise.map (fun response -> response.messages, response.nextPage)
@@ -227,7 +249,7 @@ module Service =
     let loadThreadsFromWeb =
         let rec loadPageRec pageNumber lastOffset parentMessages =
             promise {
-                let! messages, nextPage = getMessagesAndNextPageFromJR pageNumber
+                let! messages, nextPage = getMessagesAndNextPage pageNumber
                 let newMessages = Array.append parentMessages (Domain.filterNewMessages messages lastOffset)
                 let flagIsStop = Domain.checkMessagesIsOld messages lastOffset
                 if flagIsStop || nextPage.IsNone then return newMessages
@@ -240,14 +262,13 @@ module Service =
             let! newMessages = loadPageRec None lastOffset [||]
 
             let messages = newMessages |> Array.append oldMessages
-            do! messages
-                |> JSON.stringify
-                |> curry AsyncStorage.setItem "messages"
-                |> Promise.map ignore
+            do! Storage.save "messages" messages
             return messages
         }
 
-    let loadMessages (_: String): JS.Promise<Message[]> = failwith "TODO"
+    let loadMessages username = 
+        loadAllMessageFromStorage
+        |> Promise.map (Domain.selectMessageForUser username)
 
     let login username password =
         promise {

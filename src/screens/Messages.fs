@@ -4,9 +4,9 @@ open System
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open Fable.Import.ReactNative
-open JoyReactor.Types
 open Elmish
 open JoyReactor
+open JoyReactor.Types
 
 type Model = { messages: ListViewDataSource<Message> }
 type Msg = MessagesMsg of Result<Message[], String>

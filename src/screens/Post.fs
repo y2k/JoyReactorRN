@@ -45,17 +45,18 @@ module private Styles =
                                        AlignSelf Alignment.FlexEnd ]
 
 let viewItem (comment : Comment) = 
-      view [ Styles.home ] [
-          image [ Styles.image
-                  Source [ Uri comment.image.url ] ]
-          view [ ViewProperties.Style [ Flex 1. ] ] [
-              text [ NumberOfLines 3.
-                     TextProperties.Style [ Color "#999" ] ] comment.text
-              view [ Styles.panel ] [
-                  text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] "\ue8dc"
-                  text [ TextProperties.Style [ MarginLeft 8.; Color "#616161" ] ] 
-                       (string comment.rating) 
-              ] ] ]
+      view [ Styles.home ] 
+           [ image [ Styles.image
+                     Source [ Uri comment.image.url ] ]
+             view [ ViewProperties.Style [ Flex 1. ] ] 
+                  [ text [ NumberOfLines 3.
+                           TextProperties.Style [ Color "#999" ] ] 
+                         comment.text
+                    view [ Styles.panel ] 
+                         [ text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] 
+                                "\ue8dc"
+                           text [ TextProperties.Style [ MarginLeft 8.; Color "#616161" ] ] 
+                                (string comment.rating) ] ] ]
 
 let view model _ =
     let contentView =

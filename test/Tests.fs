@@ -13,7 +13,22 @@ let private def =
       userImage = "" }
 
 [<Fact>]
-let ``getLastOffsetOrDefault is valid`` () =
+let ``selectMessageForUser is success`` () =
+    let actual =
+        [| { def with userName = "1"; date = 1. }
+           { def with userName = "2"; date = 110. }
+           { def with userName = "1"; date = 100. }
+           { def with userName = "3"; date = 90. }
+           { def with userName = "1"; date = 10. } |]
+        |> selectMessageForUser "1"
+    let expected =
+        [| { def with userName = "1"; date = 100. }
+           { def with userName = "1"; date = 10. }
+           { def with userName = "1"; date = 1. } |]
+    Assert.Equal(expected |> Array.toList, actual)
+
+[<Fact>]
+let ``getLastOffsetOrDefault is success`` () =
     Assert.Equal(0., getLastOffsetOrDefault [||])
     getLastOffsetOrDefault 
         [| { def with date = 1. }
@@ -22,7 +37,7 @@ let ``getLastOffsetOrDefault is valid`` () =
     |> curry Assert.Equal 100.
 
 [<Fact>]
-let ``Domain is valid`` () =
+let ``selectThreads is success`` () =
     let actual =
         [| { def with userName = "1"; date = 1. }
            { def with userName = "2"; date = 110. }
