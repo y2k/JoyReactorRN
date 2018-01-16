@@ -8,6 +8,7 @@ open Elmish
 open JoyReactor
 open JoyReactor.Utils
 open JoyReactor.Types
+open JoyReactor.CommonUi
 
 type Model = 
     { items: ListViewDataSource<Message>
@@ -51,13 +52,7 @@ let private itemView i =
                        (longToTimeDelay i.date) ] ]
 
 let private listView items =
-    listView
-        items 
-        [ ViewProperties.Style [ Flex 1. ]
-          ListViewProperties.RenderRow
-              (Func<_,_,_,_,_>(fun (i: Message) _ _ _ -> itemView i))
-          ListViewProperties.RenderSeparator
-              (Func<_,_,_,_>(fun _ _ _ -> view [ ViewProperties.Style [ Height 1.; BackgroundColor "#f8f8f8" ] ] [])) ]
+    myListView items itemView
 
 let statusView status = 
     match status with

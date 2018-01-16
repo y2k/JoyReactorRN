@@ -26,6 +26,7 @@ module Utils =
 module CommonUi =
     open Fable.Helpers.ReactNative.Props
     open Fable.Helpers.ReactNative
+    open Fable.Import.ReactNative
 
     module private Styles =
         let tabButtonOuter selected = 
@@ -42,6 +43,15 @@ module CommonUi =
                   TextAlign TextAlignment.Center
                   Padding 15.
                   Color "white" ]
+
+    let myListView<'a> (items: ListViewDataSource<'a>) f =
+        listView
+            items
+            [ ViewProperties.Style [ Flex 1. ]
+              ListViewProperties.RenderRow
+                  (Func<_,_,_,_,_>(fun (i: 'a) _ _ _ -> f i))
+              ListViewProperties.RenderSeparator
+                  (Func<_,_,_,_>(fun _ _ _ -> view [ ViewProperties.Style [ Height 1.; BackgroundColor "#f8f8f8" ] ] [])) ]
 
     let indicatorView =
         activityIndicator 

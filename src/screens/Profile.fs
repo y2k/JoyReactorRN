@@ -36,29 +36,27 @@ module private Styles =
         TextProperties.Style [ FontSize 25.; Color color ]
 
 let private viewButton title margin =
-    touchableOpacity [ Styles.button margin ] [
-        text [ Styles.buttonText ] <| String.toUpper title ]
+    touchableOpacity [ Styles.button margin ] 
+                     [ text [ Styles.buttonText ] <| String.toUpper title ]
 
 let private viewProfile (profile : Profile) =
-    view [] [
-        image [ Styles.avatar; Source [ Uri profile.userImage.url ] ]
-        text [ Styles.userName ] profile.userName
-        text [ Styles.rating ] (sprintf "Рейтинг: %g" profile.rating)
-        view [ ViewProperties.Style [ Height 10. ] ] []
-        view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
-        view [ Styles.starsPanel ] [
-            text [ Styles.star "#edc95b" ] (String.replicate profile.stars "★")
-            text [ Styles.star "#e4e6e7" ] (String.replicate (max 0 (10 - profile.stars)) "★") ]
-        view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
-        view [ ViewProperties.Style [ Padding 20.; BackgroundColor "white" ] ] [
-            text [] "Прогресс до следующей звезды:"
-            view [ ViewProperties.Style [ BorderRadius 4.; MarginTop 12.; Height 21.; BackgroundColor "#e4e4e4" ] ] [
-                view [ Styles.progressToNewStar profile.progressToNewStar ] []
-            ]
-        ]
-        view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
-        view [ ViewProperties.Style [ Height 10. ] ] []
-        viewButton "Выйти" 20. ]
+    view [] 
+         [ image [ Styles.avatar; Source [ Uri profile.userImage.url ] ]
+           text [ Styles.userName ] profile.userName
+           text [ Styles.rating ] (sprintf "Рейтинг: %g" profile.rating)
+           view [ ViewProperties.Style [ Height 10. ] ] []
+           view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
+           view [ Styles.starsPanel ] 
+                [ text [ Styles.star "#edc95b" ] (String.replicate profile.stars "★")
+                  text [ Styles.star "#e4e6e7" ] (String.replicate (max 0 (10 - profile.stars)) "★") ]
+           view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
+           view [ ViewProperties.Style [ Padding 20.; BackgroundColor "white" ] ] 
+                [ text [] "Прогресс до следующей звезды:"
+                  view [ ViewProperties.Style [ BorderRadius 4.; MarginTop 12.; Height 21.; BackgroundColor "#e4e4e4" ] ] 
+                       [ view [ Styles.progressToNewStar profile.progressToNewStar ] [] ] ]
+           view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
+           view [ ViewProperties.Style [ Height 10. ] ] []
+           viewButton "Выйти" 20. ]
 
 let view model =
     let content =
