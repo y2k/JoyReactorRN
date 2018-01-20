@@ -51,9 +51,6 @@ let private itemView i =
                   text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; Color "#bdbdbd" ] ] 
                        (longToTimeDelay i.date) ] ]
 
-let private listView items =
-    myListView items itemView
-
 let statusView status = 
     match status with
     | Some (Ok _) -> view [] []
@@ -66,5 +63,5 @@ let statusView status =
 
 let view model =
     view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ listView model.items 
+         [ myListView model.items itemView
            statusView model.status ]

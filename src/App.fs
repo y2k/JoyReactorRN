@@ -16,14 +16,16 @@ module TabsScreen =
         | TagsMsg of TagsScreen.Msg
         | ThreadsMsg of ThreadsScreen.Msg
         | ProfileMsg of ProfileScreen.Msg
+        | MessagesMsg of MessagesScreen.Msg
     type Model = 
         | HomeModel of Home.Model 
         | TagsModel of TagsScreen.Model
         | ThreadsModel of ThreadsScreen.Model
         | ProfileModel of ProfileScreen.Model
+        | MessagesModel of MessagesScreen.Model
 
     let init = 
-        ThreadsScreen.init |> fun (model, cmd) -> ThreadsModel model, Cmd.map ThreadsMsg cmd
+        MessagesScreen.init "" |> fun (model, cmd) -> MessagesModel model, Cmd.map MessagesMsg cmd
 
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
@@ -43,6 +45,9 @@ module TabsScreen =
         | ProfileMsg subMsg, ProfileModel subModel ->
             ProfileScreen.update subModel subMsg
             |> fun (m, cmd) -> ProfileModel m, Cmd.map ProfileMsg cmd
+        | MessagesMsg subMsg, MessagesModel subModel ->
+            MessagesScreen.update subModel subMsg
+            |> fun (m, cmd) -> MessagesModel m, Cmd.map MessagesMsg cmd
         | _ -> model, Cmd.none
 
     let private renderContent (model: Model) dispatch =
@@ -51,6 +56,7 @@ module TabsScreen =
         | TagsModel sm -> TagsScreen.view sm
         | ThreadsModel sm -> ThreadsScreen.view sm
         | ProfileModel sm -> ProfileScreen.view sm
+        | MessagesModel sm -> MessagesScreen.view sm (MessagesMsg >> dispatch)
     
     let view model dispatch =
         let button title id =
@@ -143,7 +149,7 @@ type PostComponent(props) =
     inherit Component<obj, State<App.Model>>(props)
     do base.setInitState { model = fst App.init }
 
-    member this.componentDidMount() = 
+    override this.componentDidMount() = 
         setOnHardwareBackPressHandler
             (fun _ -> Cmd.dispatch this App.update (Cmd.ofMsg App.NavigateBack); true)
         promise {
@@ -155,5 +161,5 @@ type PostComponent(props) =
             Cmd.dispatch this App.update cmd
         } |> Promise.start
 
-    member this.render() : ReactElement = 
+    override this.render() : ReactElement = 
         App.view this.state.model (Cmd.ofMsg >> (Cmd.dispatch this App.update))

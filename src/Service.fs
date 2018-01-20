@@ -44,6 +44,27 @@ module CommonUi =
                   Padding 15.
                   Color "white" ]
 
+    let testButton title f =
+        let nextButtonOutter =
+            TouchableWithoutFeedbackProperties.Style 
+                [ Margin 4. 
+                  BackgroundColor "#e49421"
+                  BorderRadius 4.
+                  Flex 1.
+                  Height 48.
+                  Overflow Overflow.Hidden ]
+        let tabButtonInner =
+            TextProperties.Style 
+                [ FontWeight FontWeight.Bold
+                  FontSize 13.
+                  TextAlign TextAlignment.Center
+                  Padding 15.
+                  Color "white" ]
+        touchableOpacity 
+            [ nextButtonOutter
+              OnPress f ]
+            [ text [ tabButtonInner ] title ]
+
     let myListView<'a> (items: ListViewDataSource<'a>) f =
         listView
             items
@@ -166,7 +187,7 @@ module Domain =
 
     let selectMessageForUser userName messages =
         messages
-        |> Array.filter (fun x -> x.userName = userName)
+        // |> Array.filter (fun x -> x.userName = userName)
         |> Array.sortByDescending (fun x -> x.date)
 
     let filterNewMessages (messages: Message[]) offset = 
@@ -272,6 +293,9 @@ module Service =
             let! newMessages = loadPageRec None lastOffset [||]
 
             let messages = newMessages |> Array.append oldMessages
+
+            printfn "Message count = %O" (messages.Length)
+
             do! Storage.save "messages" messages
             return messages
         }
@@ -300,6 +324,13 @@ module Service =
 
             printfn "HEADERS: %O | %O" response.Url response.Headers
         }
+
+    let testReloadMessages =
+        Fable.Import.ReactNative.Globals.AsyncStorage.clear null
+        |> Promise.bind (fun _ -> login "..." "...")
+        |> Promise.catch ignore
+        |> Promise.bind (fun _ -> loadThreadsFromWeb)
+        |> Promise.map ignore
 
     let loadTags userName =
         UrlBuilder.user userName |> loadAndParse<Tag list> "tags"

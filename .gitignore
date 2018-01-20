@@ -7,3 +7,4 @@ out
 *.user
 test/bin
 test/obj
+paket-files
