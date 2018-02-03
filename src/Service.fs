@@ -4,6 +4,13 @@ open System
 open System.Text.RegularExpressions
 open Fable.Core
 
+module Promise =
+    open Fable.PowerPack
+    let next p2 p = 
+        p |> Promise.bind (fun _ -> p2)
+    let bind2 f p =
+        p |> Promise.bind (fun (a, b) -> f a b)
+
 module Array =
     let tryMaxBy f xs =
         try
@@ -20,7 +27,10 @@ module Utils =
     let curry f a b = f (a,b)
     let uncurry f (a,b) = f a b
     let log msg x =
-        printfn "%s" msg
+        printfn "%O" msg
+        x
+    let trace msg x =
+        printfn msg x
         x
 
 module CommonUi =
@@ -187,7 +197,7 @@ module Domain =
 
     let selectMessageForUser userName messages =
         messages
-        // |> Array.filter (fun x -> x.userName = userName)
+        |> Array.filter (fun x -> x.userName = userName)
         |> Array.sortByDescending (fun x -> x.date)
 
     let filterNewMessages (messages: Message[]) offset = 
@@ -201,9 +211,19 @@ module Domain =
            |> Option.map (fun x -> x.date) 
            |> Option.defaultValue 0.
 
+    let private isStop messages lastOffset nextPage newMessages =
+        let flagIsStop = checkMessagesIsOld messages lastOffset
+        flagIsStop || Option.isNone nextPage || Array.length newMessages >= 200 
+    
+    let mergeMessages parentMessages messages nextPage =
+        let lastOffset = getLastOffsetOrDefault parentMessages
+        let newMessages = Array.append parentMessages (filterNewMessages messages lastOffset)
+        let stop = isStop messages lastOffset nextPage newMessages
+        newMessages, stop
+
 module UrlBuilder =
     open Fable.Import.JS
-    
+
     let messages page =
         page 
         |> Option.defaultValue "/private/list"
@@ -220,6 +240,28 @@ module UrlBuilder =
         |> Option.map string 
         |> Option.defaultValue ""
         |> (+) "http://joyreactor.cc/"
+
+module Requests =
+    open JsInterop
+    open Fable.PowerPack.Fetch
+
+    let login (username: string) (password: string) (token: string) =
+        let form = Fable.Import.Browser.FormData.Create ()
+        form.append("signin[username]", username)
+        form.append("signin[password]", password)
+        form.append("signin[_csrf_token]", token)
+        "http://joyreactor.cc/login",
+        [ Method HttpMethod.POST
+          Credentials RequestCredentials.Sameorigin
+          Body !^ form ]
+
+    let parse parseApi (html: string) =
+        let form = Fable.Import.Browser.FormData.Create()
+        form.append ("html", html)
+        (sprintf "http://212.47.229.214:4567/%s" parseApi),
+        [ Method HttpMethod.POST
+          requestHeaders [ ContentType "multipart/form-data" ]
+          Body !^ form ]
 
 module Storage =
     open Fable.PowerPack
@@ -240,7 +282,6 @@ module Storage =
         |> Promise.map ignore
 
 module Service =
-    open JsInterop
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
     open Utils
@@ -254,21 +295,11 @@ module Service =
         loadAllMessageFromStorage
         |> Promise.map Domain.selectThreads
 
-    let inline private loadAndParse<'a> parse url = 
-        promise {
-            let! html =
-                url
-                |> flip fetch []
-                |> Promise.bind (fun response -> response.text())
-            let form = Fable.Import.Browser.FormData.Create()
-            form.append ("html", html)
-            return!
-                fetchAs<'a> 
-                    (sprintf "http://212.47.229.214:4567/%s" parse)
-                    [ Method HttpMethod.POST
-                      requestHeaders [ ContentType "multipart/form-data" ]
-                      Body !^form ]
-        }
+    let inline private loadAndParse<'a> parseApi url = 
+        fetch url []
+        |> Promise.bind (fun response -> response.text())
+        |> Promise.map (Requests.parse parseApi)
+        |> Promise.bind2 fetchAs<'a>
 
     [<Pojo>]
     type MessagesWithNext = { messages: Message[]; nextPage: String option }
@@ -277,53 +308,34 @@ module Service =
         |> loadAndParse<MessagesWithNext> "messages"
         |> Promise.map (fun response -> response.messages, response.nextPage)
 
-    let loadThreadsFromWeb =
-        let rec loadPageRec pageNumber lastOffset parentMessages =
+    let private syncMessageWithWeb =
+        let rec loadPageRec pageNumber parentMessages =
             promise {
                 let! messages, nextPage = getMessagesAndNextPage pageNumber
-                let newMessages = Array.append parentMessages (Domain.filterNewMessages messages lastOffset)
-                let flagIsStop = Domain.checkMessagesIsOld messages lastOffset
-                if flagIsStop || nextPage.IsNone then return newMessages
-                else return! loadPageRec nextPage lastOffset newMessages
+                let newMessages, stop = Domain.mergeMessages parentMessages messages nextPage
+                return!
+                    if stop then Promise.lift newMessages
+                    else loadPageRec nextPage newMessages
             }
+        loadAllMessageFromStorage
+        |> Promise.bind (loadPageRec None)
+        |> Promise.map (trace "Message count = %A")
+        |> Promise.bind (Storage.save "messages")
 
-        promise {
-            let! oldMessages = loadThreadsFromCache
-            let lastOffset = Domain.getLastOffsetOrDefault oldMessages
-            let! newMessages = loadPageRec None lastOffset [||]
-
-            let messages = newMessages |> Array.append oldMessages
-
-            printfn "Message count = %O" (messages.Length)
-
-            do! Storage.save "messages" messages
-            return messages
-        }
+    let loadThreadsFromWeb =
+        syncMessageWithWeb 
+        |> Promise.next loadThreadsFromCache
 
     let loadMessages username = 
         loadAllMessageFromStorage
         |> Promise.map (Domain.selectMessageForUser username)
 
     let login username password =
-        promise {
-            let! tokenOpt =
-                fetch "http://joyreactor.cc/ads" []
-                |> Promise.bind (fun x -> x.text())
-                |> Promise.map Domain.getCsrfToken
-
-            let form = Fable.Import.Browser.FormData.Create ()
-            form.append("signin[username]", username)
-            form.append("signin[password]", password)
-            form.append("signin[_csrf_token]", tokenOpt.Value)
-
-            let! response =
-                fetch "http://joyreactor.cc/login" 
-                      [ Method HttpMethod.POST
-                        Credentials RequestCredentials.Sameorigin
-                        Body <| U3.Case2 form ]
-
-            printfn "HEADERS: %O | %O" response.Url response.Headers
-        }
+        fetch "http://joyreactor.cc/ads" []
+        |> Promise.bind (fun x -> x.text())
+        |> Promise.map (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
+        |> Promise.bind2 fetch
+        |> Promise.map ignore
 
     let testReloadMessages =
         Fable.Import.ReactNative.Globals.AsyncStorage.clear null
