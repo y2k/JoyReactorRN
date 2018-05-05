@@ -162,7 +162,8 @@ module Image =
 
     let normilize url (w : float) (h : float) =
         sprintf
-            "http://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
+            // "http://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
+            "http://192.168.0.100:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
             (int w)
             (int h)
             (encodeURIComponent url)
@@ -258,7 +259,8 @@ module Requests =
     let parse parseApi (html: string) =
         let form = Fable.Import.Browser.FormData.Create()
         form.append ("html", html)
-        (sprintf "http://212.47.229.214:4567/%s" parseApi),
+        // (sprintf "http://212.47.229.214:4567/%s" parseApi),
+        (sprintf "http://192.168.0.100:8081/%s" parseApi),
         [ Method HttpMethod.POST
           requestHeaders [ ContentType "multipart/form-data" ]
           Body !^ form ]

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  remotecache:
+    image: "y2khub/remotecache"
+    ports:
+      - "8080:8080"
+    environment:
+      - RC_FFMPEG_DIR=.
+  parseserver:
+    image: "y2khub/joyreactor_server"
+    ports:
+      - "8081:4567"

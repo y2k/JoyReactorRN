@@ -8,3 +8,5 @@ out
 test/bin
 test/obj
 paket-files
+.idea
+.DS_Store
