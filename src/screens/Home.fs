@@ -39,7 +39,7 @@ let postsToItems xs =
 let update model msg : Model * Cmd<Msg> = 
     match msg with
     | LoadPosts source ->
-        model, Cmd.ofPromise (S.loadPosts source model.nextPage) LoadResult
+        model, Cmd.ofPromise_ (S.loadPosts source model.nextPage) LoadResult
     | LoadResult (Ok (posts, nextPage)) ->
         let merged = Domain.mergeNextPage model.cache posts
         { posts = updateDataSource (postsToItems merged) model.posts
@@ -49,7 +49,7 @@ let update model msg : Model * Cmd<Msg> =
     | LoadResult (Error e) ->
         log e model, Cmd.none
     | LoadNextPage ->
-        model, Cmd.ofPromise (S.loadPosts FeedSource model.nextPage) LoadResult
+        model, Cmd.ofPromise_ (S.loadPosts FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none
 
 module private Styles =
@@ -131,7 +131,7 @@ let view model dispatch =
         [ ListViewProperties.RenderRow
               (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
                   match i with
-                  | Actual x -> viewItem x dispatch
-                  | Old x -> viewItem x dispatch
+                  | Actual post -> viewItem post dispatch
+                  | Old post -> viewItem post dispatch
                   | Divider -> viewNextButton dispatch
                   )) ]

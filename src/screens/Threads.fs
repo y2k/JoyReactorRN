@@ -21,13 +21,13 @@ type Msg =
 
 let init: Model * Cmd<Msg> = 
     { items = emptyDataSource(); status = None }, 
-    Cmd.ofPromise Service.loadThreadsFromCache ThreadsFromCache
+    Cmd.ofPromise_ Service.loadThreadsFromCache ThreadsFromCache
 
 let update model msg =
     match msg with
     | ThreadsFromCache (Ok x) ->
         { model with items = updateDataSource x model.items }, 
-        Cmd.ofPromise Service.loadThreadsFromWeb ThreadsFromWeb
+        Cmd.ofPromise_ Service.loadThreadsFromWeb ThreadsFromWeb
     | ThreadsFromCache (Error e) -> log e model, Cmd.none
     | ThreadsFromWeb (Ok x) ->
         { model with

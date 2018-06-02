@@ -3,7 +3,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Elmish.fs" />
     <Compile Include="Service.fs" />
     <Compile Include="screens/Messages.fs" />
     <Compile Include="screens/Threads.fs" />

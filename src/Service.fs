@@ -1,8 +1,14 @@
 namespace JoyReactor
 
+module Cmd =
+    open Elmish
+    let ofPromise_ p f =
+        Cmd.ofPromise (fun () -> p) () (Result.Ok >> f) (string >> Result.Error >> f)
+
 open System
 open System.Text.RegularExpressions
 open Fable.Core
+open System.Net.Http.Headers
 
 module Promise =
     open Fable.PowerPack
@@ -298,7 +304,8 @@ module Service =
         |> Promise.map Domain.selectThreads
 
     let inline private loadAndParse<'a> parseApi url = 
-        fetch url []
+        [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
+        |> fetch url
         |> Promise.bind (fun response -> response.text())
         |> Promise.map (Requests.parse parseApi)
         |> Promise.bind2 fetchAs<'a>

@@ -1,11 +1,10 @@
 module Scenes
 
-// open Fable.Core.JsInterop
-open Fable.Import.React
-open Fable.PowerPack
 open Fable.Helpers.ReactNative
 open Elmish
-// open JoyReactor.Utils
+open Elmish.React
+open Elmish.ReactNative
+open Elmish.HMR
 
 module TabsScreen =
     open Fable.Helpers.ReactNative.Props
@@ -25,7 +24,7 @@ module TabsScreen =
         | MessagesModel of MessagesScreen.Model
 
     let init = 
-        MessagesScreen.init "" |> fun (model, cmd) -> MessagesModel model, Cmd.map MessagesMsg cmd
+        Home.init |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
 
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
@@ -98,10 +97,10 @@ module App =
         | HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model | TagsModel of TagsScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
     
-    let init = TabsScreen.init 
+    let init _ = TabsScreen.init 
                |> fun (model, cmd) -> { subModel = TabsModel model; history = [] }, Cmd.map TabsMsg cmd
     
-    let update model msg : Model * Cmd<Msg> =
+    let update msg model : Model * Cmd<Msg> =
         match msg, model.subModel with
         | NavigateBack, _ ->
             match model.history with
@@ -145,21 +144,12 @@ module App =
         | TagsModel subModel -> TagsScreen.view subModel
         | TabsModel sm -> TabsScreen.view sm (TabsMsg >> dispatch)
 
-type PostComponent(props) =
-    inherit Component<obj, State<App.Model>>(props)
-    do base.setInitState { model = fst App.init }
-
-    override this.componentDidMount() = 
-        setOnHardwareBackPressHandler
-            (fun _ -> Cmd.dispatch this App.update (Cmd.ofMsg App.NavigateBack); true)
-        promise {
-            // let font = import "Font" "expo"
-            // do! !!font?loadAsync(createObj [ "icomoon" ==> require("../assets/fonts/icomoon.ttf") ])
-
-            let model, cmd = App.init
-            this.setState { model = model }
-            Cmd.dispatch this App.update cmd
-        } |> Promise.start
-
-    override this.render() : ReactElement = 
-        App.view this.state.model (Cmd.ofMsg >> (Cmd.dispatch this App.update))
+Program.mkProgram App.init App.update App.view
+// |> Program.withSubscription subscribe
+// #if RELEASE
+// #else
+|> Program.withConsoleTrace
+|> Program.withHMR
+// #endif
+|> Program.withReactNative "joyreact"
+|> Program.run        

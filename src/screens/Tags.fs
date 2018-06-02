@@ -13,7 +13,7 @@ type Model = { dataSource: ListViewDataSource<Tag>; loaded: Boolean }
 type Msg = TagsLoaded of Result<Tag list, string>
 
 let init = { dataSource = emptyDataSource(); loaded = false }, 
-           Service.loadTags "_y2k" |> flip Cmd.ofPromise TagsLoaded
+           Service.loadTags "_y2k" |> flip Cmd.ofPromise_ TagsLoaded
 
 let update model msg =
     match msg with
