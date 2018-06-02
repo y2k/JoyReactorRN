@@ -43,12 +43,12 @@ let private itemView i =
          [ image [ ImageProperties.Style [ Width 48.; Height 48.; BorderRadius 24.; MarginRight 8. ]
                    Source [ Uri i.userImage ] ]  
            view [ ViewProperties.Style [ Flex 1. ] ]
-                [ text [ TextProperties.Style [ FontWeight FontWeight.Bold; Color "#404040"; FontSize 15. ] ] 
+                [ text [ TextProperties.Style [ FontWeight FontWeight.Bold; TextStyle.Color "#404040"; FontSize 15. ] ] 
                        i.userName
-                  text [ TextProperties.Style [ Color "#808080"; FontSize 15. ]
+                  text [ TextProperties.Style [ TextStyle.Color "#808080"; FontSize 15. ]
                          TextProperties.NumberOfLines 2. ] 
                        i.text
-                  text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; Color "#bdbdbd" ] ] 
+                  text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; TextStyle.Color "#bdbdbd" ] ] 
                        (longToTimeDelay i.date) ] ]
 
 let statusView status = 

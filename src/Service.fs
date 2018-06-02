@@ -52,7 +52,7 @@ module CommonUi =
                   FontSize 13.
                   TextAlign TextAlignment.Center
                   Padding 15.
-                  Color "white" ]
+                  TextStyle.Color "white" ]
 
     let testButton title f =
         let nextButtonOutter =
@@ -69,7 +69,7 @@ module CommonUi =
                   FontSize 13.
                   TextAlign TextAlignment.Center
                   Padding 15.
-                  Color "white" ]
+                  TextStyle.Color "white" ]
         touchableOpacity 
             [ nextButtonOutter
               OnPress f ]
@@ -260,7 +260,7 @@ module Requests =
         let form = Fable.Import.Browser.FormData.Create()
         form.append ("html", html)
         // (sprintf "http://212.47.229.214:4567/%s" parseApi),
-        (sprintf "http://192.168.0.100:8081/%s" parseApi),
+        (sprintf "http://192.168.0.100:8082/%s" parseApi),
         [ Method HttpMethod.POST
           requestHeaders [ ContentType "multipart/form-data" ]
           Body !^ form ]

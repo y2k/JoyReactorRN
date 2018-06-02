@@ -65,7 +65,7 @@ module private Styles =
               FontSize 13.
               TextAlign TextAlignment.Center
               Padding 15.
-              Color "white" ]
+              TextStyle.Color "white" ]
     let card =
         ViewProperties.Style 
             [ AlignItems ItemAlignment.Stretch
@@ -79,7 +79,7 @@ module private Styles =
             [ Width 36.; Height 36.; BorderRadius 18.; MarginRight 9. ]
     let userName =
         TextProperties.Style 
-            [ FontWeight FontWeight.Bold; FontSize 14.; Color "#616161" ]
+            [ FontWeight FontWeight.Bold; FontSize 14.; TextStyle.Color "#616161" ]
 
 let viewNextButton dispatch =
     touchableOpacity 
@@ -120,9 +120,9 @@ let viewItem post dispatch =
                                view [ ViewProperties.Style 
                                           [ AlignSelf Alignment.FlexEnd
                                             FlexDirection FlexDirection.Row ] ] 
-                                    [ text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] 
+                                    [ text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ] 
                                            "\ue8b5"
-                                      text [ TextProperties.Style [ MarginLeft 8.; Color "#bcbcbc" ] ] 
+                                      text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#bcbcbc" ] ] 
                                            "2 часа" ] ] ] ] ]
 
 let view model dispatch = 

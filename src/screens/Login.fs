@@ -11,11 +11,11 @@ type Msg = LoginMsg | LoginResultMsg of Result<Unit, string> | UsernameMsg of st
 
 module private Styles =
     let edit = 
-        TextInput.Style [ BackgroundColor "white"; Color "black"; Padding 4.; Height 45.; FontSize 16.; PaddingLeft 18.; BorderColor "#ececec"; BorderWidth 1.; BorderRadius 4. ]
+        TextInput.Style [ BackgroundColor "white"; TextStyle.Color "black"; Padding 4.; Height 45.; FontSize 16.; PaddingLeft 18.; BorderColor "#ececec"; BorderWidth 1.; BorderRadius 4. ]
     let button margin =
         TouchableWithoutFeedbackProperties.Style [ MarginLeft margin; MarginRight margin; BackgroundColor "#e49421"; BorderRadius 4.; Overflow Overflow.Hidden ]
     let buttonText =
-        TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; Color "white" ]
+        TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; TextStyle.Color "white" ]
 
 let init = { username = ""; password = ""; isBusy = false; error = None }, Cmd<Msg>.none
 
@@ -57,5 +57,5 @@ let view model dispatch =
                          model.password
                view [ ViewProperties.Style [ Height 12. ] ] []
                viewButton dispatch "Войти" 0.
-               text [ TextProperties.Style [ Color "red"; Padding 10.; FontSize 20. ] ] 
+               text [ TextProperties.Style [ TextStyle.Color "red"; Padding 10.; FontSize 20. ] ] 
                     (model.error |> Option.defaultValue "") ]

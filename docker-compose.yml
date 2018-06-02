@@ -9,4 +9,4 @@ services:
   parseserver:
     image: "y2khub/joyreactor_server"
     ports:
-      - "8081:4567"
+      - "8082:4567"

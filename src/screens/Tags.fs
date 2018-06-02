@@ -28,7 +28,7 @@ module Styles =
     let image = 
         ImageProperties.Style [ Width 48.; Height 48.; BorderRadius 24.; MarginRight 8. ]
     let label =
-        TextProperties.Style [ FontSize 18.; Color "#404040"; AlignSelf Alignment.Center ]
+        TextProperties.Style [ FontSize 18.; TextStyle.Color "#404040"; AlignSelf Alignment.Center ]
 
 let viewItem (x: Tag) = 
     touchableOpacity [ ActiveOpacity 0.4 ] [

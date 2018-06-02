@@ -7,6 +7,7 @@ open JoyReactor.Types
 open Fable.Core
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
+open Fable.Import.ReactNative
 module R = Fable.Helpers.ReactNative
 module S = JoyReactor.Service
 
@@ -50,12 +51,12 @@ let viewItem (comment : Comment) =
                      Source [ Uri comment.image.url ] ]
              view [ ViewProperties.Style [ Flex 1. ] ] 
                   [ text [ NumberOfLines 3.
-                           TextProperties.Style [ Color "#999" ] ] 
+                           TextProperties.Style [ TextStyle.Color "#999" ] ] 
                          comment.text
                     view [ Styles.panel ] 
-                         [ text [ TextProperties.Style [ FontFamily "icomoon"; Color "#ffb100" ] ] 
+                         [ text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ] 
                                 "\ue8dc"
-                           text [ TextProperties.Style [ MarginLeft 8.; Color "#616161" ] ] 
+                           text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#616161" ] ] 
                                 (string comment.rating) ] ] ]
 
 let view model _ =

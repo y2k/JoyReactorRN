@@ -19,9 +19,9 @@ let update model msg =
 
 module private Styles =
     let rating = 
-        TextProperties.Style [ AlignSelf Alignment.Center; Margin 20.; Color "#616161"; FontSize 20. ]
+        TextProperties.Style [ AlignSelf Alignment.Center; Margin 20.; TextStyle.Color "#616161"; FontSize 20. ]
     let userName = 
-        TextProperties.Style [ AlignSelf Alignment.Center; Margin 8.; Color "#616161"; FontSize 13. ]
+        TextProperties.Style [ AlignSelf Alignment.Center; Margin 8.; TextStyle.Color "#616161"; FontSize 13. ]
     let avatar =
         ImageProperties.Style [ Width 90.; Height 90.; MarginTop 50.; AlignSelf Alignment.Center; BorderRadius 45. ]
     let progressToNewStar x =
@@ -29,11 +29,11 @@ module private Styles =
     let button margin =
         TouchableWithoutFeedbackProperties.Style [ MarginLeft margin; MarginRight margin; BackgroundColor "#e49421"; BorderRadius 4.; Overflow Overflow.Hidden ]
     let buttonText =
-        TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; Color "white" ]
+        TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; TextStyle.Color "white" ]
     let starsPanel =
         ViewProperties.Style [ BackgroundColor "white"; Height 50.; FlexDirection FlexDirection.Row; AlignItems ItemAlignment.Center; JustifyContent JustifyContent.Center ]
     let star color =
-        TextProperties.Style [ FontSize 25.; Color color ]
+        TextProperties.Style [ FontSize 25.; TextStyle.Color color ]
 
 let private viewButton title margin =
     touchableOpacity [ Styles.button margin ] 

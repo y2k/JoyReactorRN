@@ -1,11 +1,11 @@
 module Scenes
 
-open Fable.Core.JsInterop
+// open Fable.Core.JsInterop
 open Fable.Import.React
 open Fable.PowerPack
 open Fable.Helpers.ReactNative
 open Elmish
-open JoyReactor.Utils
+// open JoyReactor.Utils
 
 module TabsScreen =
     open Fable.Helpers.ReactNative.Props
@@ -74,7 +74,7 @@ module TabsScreen =
                       FontSize 13.
                       TextAlign TextAlignment.Center
                       Padding 15.
-                      Color "white" ]
+                      TextStyle.Color "white" ]
             touchableOpacity 
                 [ nextButtonOutter
                   OnPress (fun _ -> SelectTab id |> dispatch) ]
@@ -153,8 +153,8 @@ type PostComponent(props) =
         setOnHardwareBackPressHandler
             (fun _ -> Cmd.dispatch this App.update (Cmd.ofMsg App.NavigateBack); true)
         promise {
-            let font = import "Font" "expo"
-            do! !!font?loadAsync(createObj [ "icomoon" ==> require("../assets/fonts/icomoon.ttf") ])
+            // let font = import "Font" "expo"
+            // do! !!font?loadAsync(createObj [ "icomoon" ==> require("../assets/fonts/icomoon.ttf") ])
 
             let model, cmd = App.init
             this.setState { model = model }
