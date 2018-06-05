@@ -17,6 +17,10 @@ module Promise =
     let bind2 f p =
         p |> Promise.bind (fun (a, b) -> f a b)
 
+module PromiseOperators =
+    open Fable.PowerPack
+    let (>=>) ma mf = Promise.bind mf ma
+
 module Array =
     let tryMaxBy f xs =
         try
@@ -290,6 +294,7 @@ module Storage =
         |> Promise.map ignore
 
 module Service =
+    open PromiseOperators
     open Fable.PowerPack.Fetch
     open Fable.PowerPack
     open Utils
@@ -306,7 +311,7 @@ module Service =
     let inline private loadAndParse<'a> parseApi url = 
         [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
         |> fetch url
-        |> Promise.bind (fun response -> response.text())
+        >=> fun response -> response.text()
         |> Promise.map (Requests.parse parseApi)
         |> Promise.bind2 fetchAs<'a>
 
@@ -327,9 +332,9 @@ module Service =
                     else loadPageRec nextPage newMessages
             }
         loadAllMessageFromStorage
-        |> Promise.bind (loadPageRec None)
+        >=> loadPageRec None
         |> Promise.map (trace "Message count = %A")
-        |> Promise.bind (Storage.save "messages")
+        >=> Storage.save "messages"
 
     let loadThreadsFromWeb =
         syncMessageWithWeb 
@@ -341,16 +346,16 @@ module Service =
 
     let login username password =
         fetch "http://joyreactor.cc/ads" []
-        |> Promise.bind (fun x -> x.text())
+        >=> fun x -> x.text()
         |> Promise.map (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
         |> Promise.bind2 fetch
         |> Promise.map ignore
 
     let testReloadMessages =
         Fable.Import.ReactNative.Globals.AsyncStorage.clear null
-        |> Promise.bind (fun _ -> login "..." "...")
+        >=> fun _ -> login "..." "..."
         |> Promise.catch ignore
-        |> Promise.bind (fun _ -> loadThreadsFromWeb)
+        >=> fun _ -> loadThreadsFromWeb
         |> Promise.map ignore
 
     let loadTags userName =
