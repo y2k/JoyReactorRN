@@ -1,5 +1,10 @@
 namespace JoyReactor
 
+module PromiseOperators =
+    open Fable.PowerPack
+    let inline (>=>) ma mf = Promise.bind mf ma
+    let inline (==>) ma f = Promise.map f ma
+
 module Cmd =
     open Elmish
     let ofPromise_ p f =
@@ -8,7 +13,6 @@ module Cmd =
 open System
 open System.Text.RegularExpressions
 open Fable.Core
-open System.Net.Http.Headers
 
 module Promise =
     open Fable.PowerPack
@@ -16,10 +20,7 @@ module Promise =
         p |> Promise.bind (fun _ -> p2)
     let bind2 f p =
         p |> Promise.bind (fun (a, b) -> f a b)
-
-module PromiseOperators =
-    open Fable.PowerPack
-    let (>=>) ma mf = Promise.bind mf ma
+    let inline ignore p = Promise.map ignore p
 
 module Array =
     let tryMaxBy f xs =
@@ -291,7 +292,7 @@ module Storage =
         value
         |> JSON.stringify
         |> curry AsyncStorage.setItem key
-        |> Promise.map ignore
+        |> Promise.ignore
 
 module Service =
     open PromiseOperators
@@ -302,17 +303,17 @@ module Service =
 
     let loadAllMessageFromStorage =
         Storage.load<Message[]> "messages"
-        |> Promise.map (Option.defaultValue [||])
+        ==> Option.defaultValue [||]
 
     let loadThreadsFromCache = 
         loadAllMessageFromStorage
-        |> Promise.map Domain.selectThreads
+        ==> Domain.selectThreads
 
     let inline private loadAndParse<'a> parseApi url = 
         [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
         |> fetch url
         >=> fun response -> response.text()
-        |> Promise.map (Requests.parse parseApi)
+        ==> Requests.parse parseApi
         |> Promise.bind2 fetchAs<'a>
 
     [<Pojo>]
@@ -320,7 +321,7 @@ module Service =
     let getMessagesAndNextPage page = 
         UrlBuilder.messages page
         |> loadAndParse<MessagesWithNext> "messages"
-        |> Promise.map (fun response -> response.messages, response.nextPage)
+        ==> fun response -> response.messages, response.nextPage
 
     let private syncMessageWithWeb =
         let rec loadPageRec pageNumber parentMessages =
@@ -333,7 +334,7 @@ module Service =
             }
         loadAllMessageFromStorage
         >=> loadPageRec None
-        |> Promise.map (trace "Message count = %A")
+        ==> trace "Message count = %A"
         >=> Storage.save "messages"
 
     let loadThreadsFromWeb =
@@ -342,21 +343,21 @@ module Service =
 
     let loadMessages username = 
         loadAllMessageFromStorage
-        |> Promise.map (Domain.selectMessageForUser username)
+        ==> Domain.selectMessageForUser username
 
     let login username password =
         fetch "http://joyreactor.cc/ads" []
         >=> fun x -> x.text()
-        |> Promise.map (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
+        ==> (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
         |> Promise.bind2 fetch
-        |> Promise.map ignore
+        |> Promise.ignore
 
     let testReloadMessages =
         Fable.Import.ReactNative.Globals.AsyncStorage.clear null
         >=> fun _ -> login "..." "..."
         |> Promise.catch ignore
         >=> fun _ -> loadThreadsFromWeb
-        |> Promise.map ignore
+        |> Promise.ignore
 
     let loadTags userName =
         UrlBuilder.user userName |> loadAndParse<Tag list> "tags"
@@ -370,4 +371,4 @@ module Service =
     let loadPosts source page = 
         UrlBuilder.posts source page 
         |> loadAndParse<PostResponse> "posts"
-        |> Promise.map (fun response -> response.posts, response.nextPage)
+        ==> fun response -> response.posts, response.nextPage
