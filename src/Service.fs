@@ -360,13 +360,13 @@ module Service =
         |> Promise.ignore
 
     let loadTags userName =
-        UrlBuilder.user userName |> loadAndParse<Tag list> "tags"
+        userName |> UrlBuilder.user |> loadAndParse<Tag list> "tags"
 
     let loadProfile userName =
-        UrlBuilder.user userName |> loadAndParse<Profile> "profile"
+        userName |> UrlBuilder.user |> loadAndParse<Profile> "profile"
 
     let loadPost id =
-        UrlBuilder.post id |> loadAndParse<Post> "post"
+        id |> UrlBuilder.post |> loadAndParse<Post> "post"
 
     let loadPosts source page = 
         UrlBuilder.posts source page 
