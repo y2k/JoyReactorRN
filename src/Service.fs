@@ -35,8 +35,8 @@ module Utils =
     let always a _ = a
     let flip f a b = f b a
     let longToTimeDelay _ = "2 часа"
-    let curry f a b = f (a,b)
-    let uncurry f (a,b) = f a b
+    let curry f a b = f (a, b)
+    let uncurry f (a, b) = f a b
     let log msg x =
         printfn "%O" msg
         x
