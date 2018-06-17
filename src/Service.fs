@@ -1,18 +1,17 @@
 namespace JoyReactor
 
+open System
+open Fable.Core
+
 module PromiseOperators =
     open Fable.PowerPack
-    let inline (>=>) ma mf = Promise.bind mf ma
-    let inline (==>) ma f = Promise.map f ma
+    let inline (>>=) ma mf = Promise.bind mf ma
+    let inline (>>-) ma f = Promise.map f ma
 
 module Cmd =
     open Elmish
     let ofPromise_ p f =
         Cmd.ofPromise (fun () -> p) () (Result.Ok >> f) (string >> Result.Error >> f)
-
-open System
-open System.Text.RegularExpressions
-open Fable.Core
 
 module Promise =
     open Fable.PowerPack
@@ -187,6 +186,7 @@ module Image =
 
 module Domain = 
     open Types
+    open System.Text.RegularExpressions
 
     let mergeNextPage state newPosts = 
         let newActual = 
@@ -279,14 +279,15 @@ module Requests =
 module Storage =
     open Fable.PowerPack
     open Utils
+    open PromiseOperators
     let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
     let JSON = Fable.Import.JS.JSON
 
     let load<'a> key =
         AsyncStorage.getItem(key)
-        |> Promise.map (fun json -> 
-            if isNull json then None 
-            else json |> (JSON.parse >> unbox<'a>) |> Some)
+        >>- (fun json -> 
+             if isNull json then None 
+             else json |> (JSON.parse >> unbox<'a>) |> Some)
 
     let save key value =
         value
@@ -303,17 +304,17 @@ module Service =
 
     let loadAllMessageFromStorage =
         Storage.load<Message[]> "messages"
-        ==> Option.defaultValue [||]
+        >>- Option.defaultValue [||]
 
     let loadThreadsFromCache = 
         loadAllMessageFromStorage
-        ==> Domain.selectThreads
+        >>- Domain.selectThreads
 
     let inline private loadAndParse<'a> parseApi url = 
         [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
         |> fetch url
-        >=> fun response -> response.text()
-        ==> Requests.parse parseApi
+        >>= fun response -> response.text()
+        >>- Requests.parse parseApi
         |> Promise.bind2 fetchAs<'a>
 
     [<Pojo>]
@@ -321,7 +322,7 @@ module Service =
     let getMessagesAndNextPage page = 
         UrlBuilder.messages page
         |> loadAndParse<MessagesWithNext> "messages"
-        ==> fun response -> response.messages, response.nextPage
+        >>- fun response -> response.messages, response.nextPage
 
     let private syncMessageWithWeb =
         let rec loadPageRec pageNumber parentMessages =
@@ -333,9 +334,9 @@ module Service =
                     else loadPageRec nextPage newMessages
             }
         loadAllMessageFromStorage
-        >=> loadPageRec None
-        ==> trace "Message count = %A"
-        >=> Storage.save "messages"
+        >>= loadPageRec None
+        >>- trace "Message count = %A"
+        >>= Storage.save "messages"
 
     let loadThreadsFromWeb =
         syncMessageWithWeb 
@@ -343,20 +344,20 @@ module Service =
 
     let loadMessages username = 
         loadAllMessageFromStorage
-        ==> Domain.selectMessageForUser username
+        >>- Domain.selectMessageForUser username
 
     let login username password =
         fetch "http://joyreactor.cc/ads" []
-        >=> fun x -> x.text()
-        ==> (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
+        >>= fun x -> x.text()
+        >>- (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
         |> Promise.bind2 fetch
         |> Promise.ignore
 
     let testReloadMessages =
         Fable.Import.ReactNative.Globals.AsyncStorage.clear null
-        >=> fun _ -> login "..." "..."
+        >>= fun _ -> login "..." "..."
         |> Promise.catch ignore
-        >=> fun _ -> loadThreadsFromWeb
+        >>= fun _ -> loadThreadsFromWeb
         |> Promise.ignore
 
     let loadTags userName =
@@ -371,4 +372,4 @@ module Service =
     let loadPosts source page = 
         UrlBuilder.posts source page 
         |> loadAndParse<PostResponse> "posts"
-        ==> fun response -> response.posts, response.nextPage
+        >>- fun response -> response.posts, response.nextPage
