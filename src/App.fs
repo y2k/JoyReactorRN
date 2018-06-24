@@ -61,18 +61,18 @@ module TabsScreen =
         let button title id =
             let nextButtonOutter =
                 TouchableWithoutFeedbackProperties.Style 
-                    [ Margin 4. 
+                    [ Margin 2. 
                       BackgroundColor "#e49421"
                       BorderRadius 4.
                       Flex 1.
                       Height 48.
+                      JustifyContent JustifyContent.Center
                       Overflow Overflow.Hidden ]
             let tabButtonInner =
                 TextProperties.Style 
                     [ FontWeight FontWeight.Bold
-                      FontSize 13.
+                      FontSize 14.
                       TextAlign TextAlignment.Center
-                      Padding 15.
                       TextStyle.Color "white" ]
             touchableOpacity 
                 [ nextButtonOutter
@@ -82,7 +82,7 @@ module TabsScreen =
         view [ ViewProperties.Style [ Flex 1. ] ] [
             view [ ViewProperties.Style [ Flex 1. ] ] 
                  [ renderContent model dispatch ]
-            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] 
+            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 2. ] ] 
                  [ button "Home" 0
                    button "Tags" 1
                    button "Messages" 2

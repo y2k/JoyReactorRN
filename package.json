@@ -3,9 +3,11 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node node_modules/react-native/local-cli/cli.js start",
-    "test": "jest",
-    "build": "fable-splitter src/joyreact.fsproj --outDir out"
+    "build": "fable-splitter -c splitter.config.js --define RELEASE",
+    "start": "fable-splitter -c splitter.config.js -w --define DEBUG",
+    "compile-for-test": "fable-splitter -c splitter.config.js --define TEST",
+    "cold-start": "fable-splitter -c splitter.config.js --define DEBUG",
+    "start-dev": "node node_modules/react-native/local-cli/cli.js start"
   },
   "dependencies": {
     "buffer": "^5.0.8",
@@ -16,10 +18,8 @@
   "devDependencies": {
     "babel-jest": "^23.0.1",
     "babel-preset-react-native": "^4.0.0",
-
     "babel-core": "^6.26.0",
     "fable-splitter": "^0.1.21",
-
     "jest": "^23.1.0",
     "react-test-renderer": "^16.3.1"
   },
