@@ -333,14 +333,20 @@ module Service =
                     if stop then Promise.lift newMessages
                     else loadPageRec nextPage newMessages
             }
-        loadAllMessageFromStorage
-        >>= loadPageRec None
-        >>- trace "Message count = %A"
-        >>= Storage.save "messages"
+        promise {
+            return!
+                loadAllMessageFromStorage
+                >>= loadPageRec None
+                >>- trace "Message count = %A"
+                >>= Storage.save "messages"
+        }
 
     let loadThreadsFromWeb =
-        syncMessageWithWeb 
-        |> Promise.next loadThreadsFromCache
+        promise {
+            return!
+                syncMessageWithWeb 
+                |> Promise.next loadThreadsFromCache
+        }
 
     let loadMessages username = 
         loadAllMessageFromStorage
@@ -354,11 +360,14 @@ module Service =
         |> Promise.ignore
 
     let testReloadMessages =
-        Fable.Import.ReactNative.Globals.AsyncStorage.clear null
-        >>= fun _ -> login "..." "..."
-        |> Promise.catch ignore
-        >>= fun _ -> loadThreadsFromWeb
-        |> Promise.ignore
+        promise {
+            return!
+                Fable.Import.ReactNative.Globals.AsyncStorage.clear null
+                >>= fun _ -> login "..." "..."
+                |> Promise.catch ignore
+                >>= fun _ -> loadThreadsFromWeb
+                |> Promise.ignore
+        }
 
     let loadTags userName =
         userName |> UrlBuilder.user |> loadAndParse<Tag list> "tags"
