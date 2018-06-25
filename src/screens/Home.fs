@@ -39,7 +39,7 @@ let postsToItems xs =
 let update model msg : Model * Cmd<Msg> = 
     match msg with
     | LoadPosts source ->
-        model, Cmd.ofPromise_ (S.loadPosts source model.nextPage) LoadResult
+        model, Cmd.ofEffect (S.loadPosts' source model.nextPage) LoadResult
     | LoadResult (Ok (posts, nextPage)) ->
         let merged = Domain.mergeNextPage model.cache posts
         { posts = updateDataSource (postsToItems merged) model.posts
@@ -49,7 +49,7 @@ let update model msg : Model * Cmd<Msg> =
     | LoadResult (Error e) ->
         log e model, Cmd.none
     | LoadNextPage ->
-        model, Cmd.ofPromise_ (S.loadPosts FeedSource model.nextPage) LoadResult
+        model, Cmd.ofEffect (S.loadPosts' FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none
 
 module private Styles =

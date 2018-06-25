@@ -10,7 +10,7 @@ type Msg = ProfileMsg of Result<Profile, string>
 type Model = { profile : Profile option }
 
 let init: Model * Cmd<Msg> = 
-    { profile = None }, Cmd.ofPromise_ (Service.loadProfile "_y2k") ProfileMsg
+    { profile = None }, Cmd.ofEffect (Service.loadProfile' "_y2k") ProfileMsg
 
 let update model msg =
     match msg with

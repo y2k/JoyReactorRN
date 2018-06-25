@@ -22,7 +22,7 @@ let update model msg: Model * Cmd<Msg> =
     match msg with
     | LoginMsg -> 
         { model with isBusy = true; error = None }, 
-        Cmd.ofPromise_ (S.login model.username model.password) LoginResultMsg
+        Cmd.ofEffect (S.login' model.username model.password) LoginResultMsg
     | LoginResultMsg (Ok _) -> { model with isBusy = false }, Cmd.none
     | LoginResultMsg (Error e) -> { model with isBusy = false; error = Some e }, Cmd.none
     | UsernameMsg x -> { model with username = x }, Cmd.none

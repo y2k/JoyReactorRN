@@ -24,7 +24,7 @@ let update model msg =
     | MessagesMsg (Ok x) -> { model with messages = x }, Cmd.none
     | MessagesMsg (Error e) -> log (sprintf "%O" e) model, Cmd.none
     | SendMessage -> { model with isBusy = true }, 
-                     Cmd.ofPromise_ Service.testReloadMessages SendMessageResult
+                     Cmd.ofEffect Service.testReloadMessages' SendMessageResult
     | SendMessageResult (Ok _) -> { model with isBusy = false }, Cmd.none
     | SendMessageResult (Error e) -> log (sprintf "%O" e) { model with isBusy = false }, Cmd.none
 

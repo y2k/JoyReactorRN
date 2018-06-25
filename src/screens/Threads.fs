@@ -27,7 +27,7 @@ let update model msg =
     match msg with
     | ThreadsFromCache (Ok x) ->
         { model with items = updateDataSource x model.items }, 
-        Cmd.ofPromise_ Service.loadThreadsFromWeb ThreadsFromWeb
+        Cmd.ofEffect Service.loadThreadsFromWeb' ThreadsFromWeb
     | ThreadsFromCache (Error e) -> log e model, Cmd.none
     | ThreadsFromWeb (Ok x) ->
         { model with
