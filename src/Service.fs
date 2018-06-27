@@ -182,8 +182,7 @@ module Image =
 
     let normilize url (w : float) (h : float) =
         sprintf
-            // "http://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
-            "http://192.168.0.100:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
+            "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
             (int w)
             (int h)
             (encodeURIComponent url)
@@ -280,8 +279,7 @@ module Requests =
     let parse parseApi (html: string) =
         let form = Fable.Import.Browser.FormData.Create()
         form.append ("html", html)
-        // (sprintf "http://212.47.229.214:4567/%s" parseApi),
-        (sprintf "http://192.168.0.100:8082/%s" parseApi),
+        (sprintf "https://jrs.y2k.work/%s" parseApi),
         [ Method HttpMethod.POST
           requestHeaders [ ContentType "multipart/form-data" ]
           Body !^ form ]
@@ -293,20 +291,15 @@ module Storage =
     let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
     let JSON = Fable.Import.JS.JSON
 
+    let inline tryParse<'a> json =
+         if isNull json then None 
+         else json |> (JSON.parse >> unbox<'a>) |> Some
     let load<'a> key =
         AsyncStorage.getItem(key)
-        >>- (fun json -> 
-             if isNull json then None 
-             else json |> (JSON.parse >> unbox<'a>) |> Some)
+        >>- tryParse<'a>
     let load'<'a> key =
-        async {
-            return!
-                AsyncStorage.getItem(key)
-                >>- (fun json -> 
-                     if isNull json then None 
-                     else json |> (JSON.parse >> unbox<'a>) |> Some)
-                |> Async.AwaitPromise
-        }
+        async { return! AsyncStorage.getItem(key) |> Async.AwaitPromise }
+        >>-! tryParse<'a>
 
     let save key value =
         value
@@ -389,7 +382,6 @@ module Service =
         >>=! loadPageRec None
         >>-! trace "Message count = %A"
         >>=! Storage.save' "messages"
-
     let private syncMessageWithWeb =
         let rec loadPageRec pageNumber parentMessages =
             promise {
@@ -420,6 +412,9 @@ module Service =
     let loadMessages username = 
         loadAllMessageFromStorage
         >>- Domain.selectMessageForUser username
+    let loadMessages' username = 
+        loadAllMessageFromStorage'
+        >>-! Domain.selectMessageForUser username
 
     let login username password =
         fetch "http://joyreactor.cc/ads" []
@@ -443,6 +438,8 @@ module Service =
 
     let loadTags userName =
         userName |> UrlBuilder.user |> loadAndParse<Tag list> "tags"
+    let loadTags' userName =
+        UrlBuilder.user userName |> loadAndParse'<Tag list> "tags"
 
     let loadProfile userName =
         UrlBuilder.user userName |> loadAndParse<Profile> "profile"
@@ -451,6 +448,8 @@ module Service =
 
     let loadPost id =
         id |> UrlBuilder.post |> loadAndParse<Post> "post"
+    let loadPost' id =
+        UrlBuilder.post id |> loadAndParse'<Post> "post"
 
     let loadPosts source page = 
         UrlBuilder.posts source page 
