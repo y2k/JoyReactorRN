@@ -5,11 +5,8 @@ open Fable.Core
 open Fable.Helpers.ReactNative
 
 module PromiseOperators =
-    open Fable.PowerPack
-    let inline (>>=) ma mf = Promise.bind mf ma
-    let inline (>>-) ma f = Promise.map f ma
-    let inline (>>=!) ma mf = async.Bind(ma, mf)
-    let inline (>>-!) ma f =
+    let inline (>>=) ma mf = async.Bind(ma, mf)
+    let inline (>>-) ma f =
         async {
             let! x = ma
             return f x
@@ -17,9 +14,6 @@ module PromiseOperators =
 
 module Cmd =
     open Elmish
-    [<Obsolete>]
-    let ofPromise_ p f =
-        Cmd.ofPromise (fun () -> p) () (Result.Ok >> f) (string >> Result.Error >> f)
     let ofEffect p f =
         Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (string >> Result.Error >> f)
 
@@ -55,7 +49,6 @@ module Utils =
 
 module CommonUi =
     open Fable.Helpers.ReactNative.Props
-    open Fable.Helpers.ReactNative
     open Fable.Import.ReactNative
 
     module private Styles =
@@ -262,6 +255,19 @@ module UrlBuilder =
         |> Option.defaultValue ""
         |> (+) "http://joyreactor.cc/"
 
+module Fetch =
+    module F = Fable.PowerPack.Fetch
+    let fetchString url props =
+        async {
+            let! r = F.fetch url props |> Async.AwaitPromise
+            return! r.text() |> Async.AwaitPromise
+        }
+    let inline fetchType<'a> url props =
+        async {
+            return! F.fetchAs<'a> url props |> Async.AwaitPromise
+        }
+
+
 module Requests =
     open JsInterop
     open Fable.PowerPack.Fetch
@@ -294,19 +300,12 @@ module Storage =
     let inline tryParse<'a> json =
          if isNull json then None 
          else json |> (JSON.parse >> unbox<'a>) |> Some
+    
     let load<'a> key =
-        AsyncStorage.getItem(key)
-        >>- tryParse<'a>
-    let load'<'a> key =
         async { return! AsyncStorage.getItem(key) |> Async.AwaitPromise }
-        >>-! tryParse<'a>
+        >>- tryParse<'a>
 
     let save key value =
-        value
-        |> JSON.stringify
-        |> curry AsyncStorage.setItem key
-        |> Promise.ignore
-    let save' key value =
         async {
             do! value
                 |> JSON.stringify
@@ -324,39 +323,23 @@ module Storage =
 module Service =
     open PromiseOperators
     open Fable.PowerPack.Fetch
-    open Fable.PowerPack
+    open Fetch
     open Utils
     open Types
 
     let loadAllMessageFromStorage =
         Storage.load<Message[]> "messages"
         >>- Option.defaultValue [||]
-    let loadAllMessageFromStorage' =
-        Storage.load'<Message[]> "messages"
-        >>-! Option.defaultValue [||]
 
     let loadThreadsFromCache = 
         loadAllMessageFromStorage
         >>- Domain.selectThreads
-    let loadThreadsFromCache' = 
-        loadAllMessageFromStorage'
-        >>-! Domain.selectThreads
 
     let inline private loadAndParse<'a> parseApi url = 
         [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
-        |> fetch url
-        >>= fun response -> response.text()
+        |> fetchString url
         >>- Requests.parse parseApi
-        |> Promise.bind2 fetchAs<'a>
-    let inline private loadAndParse'<'a> parseApi url = 
-        async { 
-            return! 
-                [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
-                |> fetch url |> Async.AwaitPromise 
-        }
-        >>=! fun response -> async { return! response.text() |> Async.AwaitPromise }
-        >>-! Requests.parse parseApi
-        >>=! fun (url, props) -> async { return! fetchAs<'a> url props |> Async.AwaitPromise }
+        >>= uncurry fetchType<'a>
 
     [<Pojo>]
     type MessagesWithNext = { messages: Message[]; nextPage: String option }
@@ -364,98 +347,52 @@ module Service =
         UrlBuilder.messages page
         |> loadAndParse<MessagesWithNext> "messages"
         >>- fun response -> response.messages, response.nextPage
-    let getMessagesAndNextPage' page = 
-        UrlBuilder.messages page
-        |> loadAndParse'<MessagesWithNext> "messages"
-        >>-! fun response -> response.messages, response.nextPage
 
-    let private syncMessageWithWeb' =
+    let private syncMessageWithWeb =
         let rec loadPageRec pageNumber parentMessages =
             async {
-                let! messages, nextPage = getMessagesAndNextPage' pageNumber
+                let! messages, nextPage = getMessagesAndNextPage pageNumber
                 let newMessages, stop = Domain.mergeMessages parentMessages messages nextPage
                 return!
                     if stop then async.Return newMessages
                     else loadPageRec nextPage newMessages
             }
-        loadAllMessageFromStorage'
-        >>=! loadPageRec None
-        >>-! trace "Message count = %A"
-        >>=! Storage.save' "messages"
-    let private syncMessageWithWeb =
-        let rec loadPageRec pageNumber parentMessages =
-            promise {
-                let! messages, nextPage = getMessagesAndNextPage pageNumber
-                let newMessages, stop = Domain.mergeMessages parentMessages messages nextPage
-                return!
-                    if stop then Promise.lift newMessages
-                    else loadPageRec nextPage newMessages
-            }
-        promise {
-            return!
-                loadAllMessageFromStorage
-                >>= loadPageRec None
-                >>- trace "Message count = %A"
-                >>= Storage.save "messages"
-        }
+        loadAllMessageFromStorage
+        >>= loadPageRec None
+        >>- trace "Message count = %A"
+        >>= Storage.save "messages"
 
     let loadThreadsFromWeb =
-        promise {
-            return!
-                syncMessageWithWeb 
-                |> Promise.next loadThreadsFromCache
-        }
-    let loadThreadsFromWeb' =
-        syncMessageWithWeb'
-        >>=! fun _ -> loadThreadsFromCache'
+        syncMessageWithWeb
+        >>= fun _ -> loadThreadsFromCache
 
     let loadMessages username = 
         loadAllMessageFromStorage
         >>- Domain.selectMessageForUser username
-    let loadMessages' username = 
-        loadAllMessageFromStorage'
-        >>-! Domain.selectMessageForUser username
 
     let login username password =
-        fetch "http://joyreactor.cc/ads" []
-        >>= fun x -> x.text()
+        fetchString "http://joyreactor.cc/ads" []
         >>- (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
-        |> Promise.bind2 fetch
-        |> Promise.ignore
-    let login' username password =
-        async { return! fetch "http://joyreactor.cc/ads" [] |> Async.AwaitPromise }
-        >>=! fun x -> async { return! x.text() |> Async.AwaitPromise }
-        >>-! (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
-        >>=! fun (url, props) -> async { return! fetch url props |> Async.AwaitPromise }
-        |> Async.Ignore
+        >>= uncurry fetchString
+        >>- ignore
 
-    let testReloadMessages' =
+    let testReloadMessages =
         Storage.clear
-        >>=! fun _ -> login' "..." "..."
+        >>= fun _ -> login "..." "..."
         |> Async.Catch 
-        >>=! fun _ -> loadThreadsFromWeb'
+        >>= fun _ -> loadThreadsFromWeb
         |> Async.Ignore
 
     let loadTags userName =
-        userName |> UrlBuilder.user |> loadAndParse<Tag list> "tags"
-    let loadTags' userName =
-        UrlBuilder.user userName |> loadAndParse'<Tag list> "tags"
+        UrlBuilder.user userName |> loadAndParse<Tag list> "tags"
 
     let loadProfile userName =
         UrlBuilder.user userName |> loadAndParse<Profile> "profile"
-    let loadProfile' userName =
-        UrlBuilder.user userName |> loadAndParse'<Profile> "profile"
 
     let loadPost id =
-        id |> UrlBuilder.post |> loadAndParse<Post> "post"
-    let loadPost' id =
-        UrlBuilder.post id |> loadAndParse'<Post> "post"
+        UrlBuilder.post id |> loadAndParse<Post> "post"
 
     let loadPosts source page = 
         UrlBuilder.posts source page 
         |> loadAndParse<PostResponse> "posts"
         >>- fun response -> response.posts, response.nextPage
-    let loadPosts' source page = 
-        UrlBuilder.posts source page 
-        |> loadAndParse'<PostResponse> "posts"
-        >>-! fun response -> response.posts, response.nextPage

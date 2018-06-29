@@ -27,7 +27,7 @@ let init id =
 let update model msg =
     match msg with
     | LoadPost id ->
-        model, Cmd.ofPromise_ (S.loadPost id) LoadPostResult
+        model, Cmd.ofEffect (S.loadPost id) LoadPostResult
     | LoadPostResult (Ok post) -> 
         { model with post = Some post }, Cmd.none
     | LoadPostResult (Error error) -> 
