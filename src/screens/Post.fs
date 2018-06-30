@@ -1,15 +1,12 @@
 module PostScreen
 
 open JoyReactor
-open Elmish
 open JoyReactor.Types
 
+open Elmish
 open Fable.Core
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
-open Fable.Import.ReactNative
-module R = Fable.Helpers.ReactNative
-module S = JoyReactor.Service
 
 [<Pojo>]
 type Model =
@@ -27,7 +24,7 @@ let init id =
 let update model msg =
     match msg with
     | LoadPost id ->
-        model, Cmd.ofEffect (S.loadPost id) LoadPostResult
+        model, Cmd.ofEffect (Service.loadPost id) LoadPostResult
     | LoadPostResult (Ok post) -> 
         { model with post = Some post }, Cmd.none
     | LoadPostResult (Error error) -> 

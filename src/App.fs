@@ -91,16 +91,29 @@ module TabsScreen =
 module App =
     type Msg = 
         | TabsMsg of TabsScreen.Msg
-        | HomeMsg of Home.Msg | PostMsg of PostScreen.Msg | OpenPost | NavigateBack | ProfileMsg of ProfileScreen.Msg | LoginMsg of LoginScreen.Msg | TagsMsg of TagsScreen.Msg
+        | HomeMsg of Home.Msg 
+        | PostMsg of PostScreen.Msg 
+        | OpenPost 
+        | NavigateBack 
+        | ProfileMsg of ProfileScreen.Msg 
+        | LoginMsg of LoginScreen.Msg 
+        | TagsMsg of TagsScreen.Msg
     type SubModel = 
         | TabsModel of TabsScreen.Model
-        | HomeModel of Home.Model | PostModel of PostScreen.Model | ProfileModel of ProfileScreen.Model | LoginModel of LoginScreen.Model | TagsModel of TagsScreen.Model
+        | HomeModel of Home.Model 
+        | PostModel of PostScreen.Model 
+        | ProfileModel of ProfileScreen.Model 
+        | LoginModel of LoginScreen.Model 
+        | TagsModel of TagsScreen.Model
     type Model = { subModel : SubModel; history : SubModel list }
     
     let init _ = TabsScreen.init 
                |> fun (model, cmd) -> { subModel = TabsModel model; history = [] }, Cmd.map TabsMsg cmd
     
     let update msg model : Model * Cmd<Msg> =
+        let wrap ctor msgCtor model (subModel, cmd)  =
+            { model with subModel = ctor subModel }, Cmd.map msgCtor cmd
+
         match msg, model.subModel with
         | NavigateBack, _ ->
             match model.history with
@@ -108,6 +121,13 @@ module App =
             | [] -> 
                 exitApp()
                 model, Cmd.none
+        | TabsMsg (TabsScreen.HomeMsg (Home.OpenPost p)), _ ->
+            PostScreen.init p.id
+            |> fun (m, cmd) -> 
+                { model with 
+                    subModel = PostModel m
+                    history = model.subModel :: model.history }, 
+                Cmd.map PostMsg cmd
         | HomeMsg (Home.OpenPost p), _ -> 
             PostScreen.init p.id
             |> fun (m, cmd) -> 
@@ -116,8 +136,7 @@ module App =
                     history = model.subModel :: model.history }, 
                 Cmd.map PostMsg cmd
         | TabsMsg subMsg, TabsModel subModel -> 
-            TabsScreen.update subModel subMsg
-            |> fun (m, cmd) -> { model with subModel = TabsModel m }, Cmd.map TabsMsg cmd
+            TabsScreen.update subModel subMsg |> wrap TabsModel TabsMsg model
         | HomeMsg subMsg, HomeModel subModel -> 
             Home.update subModel subMsg
             |> fun (m, cmd) -> { model with subModel = HomeModel m }, Cmd.map HomeMsg cmd
@@ -144,8 +163,17 @@ module App =
         | TagsModel subModel -> TagsScreen.view subModel
         | TabsModel sm -> TabsScreen.view sm (TabsMsg >> dispatch)
 
+let setupBackHandler dispatch =    
+    let backHandler () =
+        dispatch App.Msg.NavigateBack
+        true
+    setOnHardwareBackPressHandler backHandler
+
+let subscribe _ =
+    Cmd.batch [Cmd.ofSub setupBackHandler]
+
 Program.mkProgram App.init App.update App.view
-// |> Program.withSubscription subscribe
+|> Program.withSubscription subscribe
 // #if RELEASE
 // #else
 |> Program.withConsoleTrace
