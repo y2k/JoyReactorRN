@@ -53,8 +53,8 @@ module TabsScreen =
         match model with
         | HomeModel sm -> Home.view sm (HomeMsg >> dispatch)
         | TagsModel sm -> TagsScreen.view sm
-        | ThreadsModel sm -> ThreadsScreen.view sm
-        | ProfileModel sm -> ProfileScreen.view sm
+        | ThreadsModel sm -> ThreadsScreen.view sm (ThreadsMsg >> dispatch)
+        | ProfileModel sm -> ProfileScreen.view sm (ProfileMsg >> dispatch)
         | MessagesModel sm -> MessagesScreen.view sm (MessagesMsg >> dispatch)
     
     let view model dispatch =
@@ -93,6 +93,7 @@ module App =
         | TabsMsg of TabsScreen.Msg
         | HomeMsg of Home.Msg 
         | PostMsg of PostScreen.Msg 
+        | MessagesMsg of MessagesScreen.Msg 
         | OpenPost 
         | NavigateBack 
         | ProfileMsg of ProfileScreen.Msg 
@@ -102,6 +103,7 @@ module App =
         | TabsModel of TabsScreen.Model
         | HomeModel of Home.Model 
         | PostModel of PostScreen.Model 
+        | MessagesModel of MessagesScreen.Model
         | ProfileModel of ProfileScreen.Model 
         | LoginModel of LoginScreen.Model 
         | TagsModel of TagsScreen.Model
@@ -122,46 +124,28 @@ module App =
                 exitApp()
                 model, Cmd.none
         | TabsMsg (TabsScreen.HomeMsg (Home.OpenPost p)), _ ->
-            PostScreen.init p.id
-            |> fun (m, cmd) -> 
-                { model with 
-                    subModel = PostModel m
-                    history = model.subModel :: model.history }, 
-                Cmd.map PostMsg cmd
-        | HomeMsg (Home.OpenPost p), _ -> 
-            PostScreen.init p.id
-            |> fun (m, cmd) -> 
-                { model with 
-                    subModel = PostModel m
-                    history = model.subModel :: model.history }, 
-                Cmd.map PostMsg cmd
+            PostScreen.init p.id 
+            |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
+        | TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.ThreadSelected id)), _ ->
+            MessagesScreen.init id 
+            |> wrap MessagesModel MessagesMsg { model with history = model.subModel :: model.history }
+        | PostMsg subMsg, PostModel subModel -> 
+            PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
+        | MessagesMsg subMsg, MessagesModel subModel -> 
+            MessagesScreen.update subModel subMsg |> wrap MessagesModel MessagesMsg model
         | TabsMsg subMsg, TabsModel subModel -> 
             TabsScreen.update subModel subMsg |> wrap TabsModel TabsMsg model
-        | HomeMsg subMsg, HomeModel subModel -> 
-            Home.update subModel subMsg
-            |> fun (m, cmd) -> { model with subModel = HomeModel m }, Cmd.map HomeMsg cmd
-        | PostMsg subMsg, PostModel subModel -> 
-            PostScreen.update subModel subMsg
-            |> fun (m, cmd) -> { model with subModel = PostModel m }, Cmd.map PostMsg cmd
-        | ProfileMsg subMsg, ProfileModel subModel ->
-            ProfileScreen.update subModel subMsg
-            |> fun (m, cmd) -> { model with subModel = ProfileModel m }, Cmd.map ProfileMsg cmd
-        | TagsMsg subMsg, TagsModel subModel ->
-            TagsScreen.update subModel subMsg
-            |> fun (m, cmd) -> { model with subModel = TagsModel m }, Cmd.map TagsMsg cmd
-        | LoginMsg subMsg, LoginModel subModel ->
-            LoginScreen.update subModel subMsg
-            |> fun (m, cmd) -> { model with subModel = LoginModel m }, Cmd.map LoginMsg cmd
         | _ -> model, Cmd.none
 
     let view model dispatch =
         match model.subModel with
         | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
-        | ProfileModel subModel -> ProfileScreen.view subModel
+        | ProfileModel subModel -> ProfileScreen.view subModel (ProfileMsg >> dispatch)
         | LoginModel subModel -> LoginScreen.view subModel (LoginMsg >> dispatch)
         | TagsModel subModel -> TagsScreen.view subModel
-        | TabsModel sm -> TabsScreen.view sm (TabsMsg >> dispatch)
+        | TabsModel subModel -> TabsScreen.view subModel (TabsMsg >> dispatch)
+        | MessagesModel subModel -> MessagesScreen.view subModel (MessagesMsg >> dispatch)
 
 let setupBackHandler dispatch =    
     let backHandler () =

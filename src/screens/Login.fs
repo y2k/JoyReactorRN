@@ -17,6 +17,7 @@ module private Styles =
     let buttonText =
         TextProperties.Style [ FontWeight FontWeight.Bold; FontSize 13.; TextAlign TextAlignment.Center; Padding 15.; TextStyle.Color "white" ]
 
+let init = { username = ""; password = ""; isBusy = false; error = None }
 
 let update model msg: Model * Cmd<Msg> =
     match msg with

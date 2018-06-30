@@ -9,8 +9,8 @@
     <Compile Include="screens/Post.fs" />
     <Compile Include="screens/Home.fs" />
     <Compile Include="screens/Login.fs" />
-    <Compile Include="screens/Profile.fs" />
     <Compile Include="screens/Tags.fs" />
+    <Compile Include="screens/Profile.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

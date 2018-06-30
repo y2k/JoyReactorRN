@@ -1,21 +1,27 @@
 module ProfileScreen
+
+open System
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
-open JoyReactor
 open Elmish
-open JoyReactor.Types
-open JoyReactor.Utils
 
-type Msg = ProfileMsg of Result<Profile, string>
-type Model = { profile : Profile option }
+open JoyReactor
+open JoyReactor.Types
+
+type Msg = ProfileMsg of Result<Profile, Exception> | LoginMsg of LoginScreen.Msg
+type ModelStage = ProfileModel of Profile | LoadingModel | LoginModel
+type Model = { stage : ModelStage; subModel : LoginScreen.Model }
 
 let init: Model * Cmd<Msg> = 
-    { profile = None }, Cmd.ofEffect (Service.loadProfile "_y2k") ProfileMsg
+    { stage = LoadingModel; subModel = LoginScreen.init }, Cmd.ofEffect2 Service.loadMyProfile ProfileMsg
 
 let update model msg =
     match msg with
-    | ProfileMsg (Ok p) -> { model with profile = Some p }, Cmd.none
-    | ProfileMsg (Error e) -> log e model, Cmd.none
+    | ProfileMsg (Ok p) -> { model with stage = ProfileModel p }, Cmd.none
+    | ProfileMsg _ -> { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
+    | LoginMsg subMsg ->
+        let loginModel, cmd = LoginScreen.update model.subModel subMsg
+        { model with subModel = loginModel }, Cmd.map LoginMsg cmd
 
 module private Styles =
     let rating = 
@@ -58,14 +64,17 @@ let private viewProfile (profile : Profile) =
            view [ ViewProperties.Style [ Height 10. ] ] []
            viewButton "Выйти" 20. ]
 
-let view model =
+let view model dispatch =
     let content =
-         match model.profile with
-         | Some p -> viewProfile p
-         | None ->
-             activityIndicator 
-                 [ ViewProperties.Style [ Flex 1. ]
-                   ActivityIndicator.Size Size.Large
-                   ActivityIndicator.Color "#ffb100" ]
+        match model.stage with
+        | LoadingModel -> 
+            activityIndicator 
+                [ ViewProperties.Style [ Flex 1. ]
+                  ActivityIndicator.Size Size.Large
+                  ActivityIndicator.Color "#ffb100" ]
+        | LoginModel -> 
+            LoginScreen.view model.subModel (LoginMsg >> dispatch)
+        | ProfileModel p -> 
+            viewProfile p
     view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] 
          [ content ]

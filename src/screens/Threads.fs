@@ -5,6 +5,7 @@ open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open Fable.Import.ReactNative
 open Elmish
+
 open JoyReactor
 open JoyReactor.Utils
 open JoyReactor.Types
@@ -38,18 +39,22 @@ let update model msg =
     | ThreadSelected _ -> failwith "Not Implemented"
     | ReloadThreads -> failwith "Not Implemented"
 
-let private itemView i =
-    view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ]
-         [ image [ ImageProperties.Style [ Width 48.; Height 48.; BorderRadius 24.; MarginRight 8. ]
-                   Source [ Uri i.userImage ] ]  
-           view [ ViewProperties.Style [ Flex 1. ] ]
-                [ text [ TextProperties.Style [ FontWeight FontWeight.Bold; TextStyle.Color "#404040"; FontSize 15. ] ] 
-                       i.userName
-                  text [ TextProperties.Style [ TextStyle.Color "#808080"; FontSize 15. ]
-                         TextProperties.NumberOfLines 2. ] 
-                       i.text
-                  text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; TextStyle.Color "#bdbdbd" ] ] 
-                       (longToTimeDelay i.date) ] ]
+let private itemView dispatch i =
+    touchableHighlight 
+        [ TouchableHighlightProperties.Style [ Margin 4. ] 
+          TouchableHighlightProperties.ActiveOpacity 0.7
+          OnPress (always (ThreadSelected i.userName) >> dispatch) ]
+        [ view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ]
+             [ image [ ImageProperties.Style [ Width 48.; Height 48.; BorderRadius 24.; MarginRight 8. ]
+                       Source [ Uri i.userImage ] ]  
+               view [ ViewProperties.Style [ Flex 1. ] ]
+                    [ text [ TextProperties.Style [ FontWeight FontWeight.Bold; TextStyle.Color "#404040"; FontSize 15. ] ] 
+                           i.userName
+                      text [ TextProperties.Style [ TextStyle.Color "#808080"; FontSize 15. ]
+                             TextProperties.NumberOfLines 2. ] 
+                           i.text
+                      text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; TextStyle.Color "#bdbdbd" ] ] 
+                           (longToTimeDelay i.date) ] ] ]
 
 let statusView status = 
     match status with
@@ -61,7 +66,7 @@ let statusView status =
               ActivityIndicator.Size Size.Large
               ActivityIndicator.Color "#ffb100" ]    
 
-let view model =
+let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ myListView model.items itemView
+         [ myListView model.items (itemView dispatch)
            statusView model.status ]

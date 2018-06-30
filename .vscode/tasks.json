@@ -2,6 +2,13 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "RN reload",
+            "command": "$ANDROID_HOME/platform-tools/adb shell input text \"RR\"",
+            "type": "shell",
+            "presentation": { "reveal": "never" },
+            "problemMatcher": []
+        },
+        {
             "label": "build",
             "command": "dotnet build",
             "type": "shell",

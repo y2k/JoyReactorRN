@@ -16,6 +16,8 @@ module Cmd =
     open Elmish
     let ofEffect p f =
         Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (string >> Result.Error >> f)
+    let ofEffect2 p f =
+        Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
 
 module Promise =
     open Fable.PowerPack
@@ -41,7 +43,7 @@ module Utils =
     let curry f a b = f (a, b)
     let uncurry f (a, b) = f a b
     let log msg x =
-        printfn "%O" msg
+        printfn "LOG :: %O" msg
         x
     let trace msg x =
         printfn msg x
@@ -267,7 +269,6 @@ module Fetch =
             return! F.fetchAs<'a> url props |> Async.AwaitPromise
         }
 
-
 module Requests =
     open JsInterop
     open Fable.PowerPack.Fetch
@@ -388,6 +389,15 @@ module Service =
 
     let loadProfile userName =
         UrlBuilder.user userName |> loadAndParse<Profile> "profile"
+
+    open System.Text.RegularExpressions
+    let loadMyProfile =
+        fetchString "http://joyreactor.cc/donate" []
+        >>- fun html -> 
+                let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"", RegexOptions.Singleline)
+                if m.Success then Some m.Groups.[1].Value
+                else None
+        >>= fun userName -> loadProfile userName.Value
 
     let loadPost id =
         UrlBuilder.post id |> loadAndParse<Post> "post"
