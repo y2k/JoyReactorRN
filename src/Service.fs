@@ -51,7 +51,6 @@ module Utils =
 
 module CommonUi =
     open Fable.Helpers.ReactNative.Props
-    open Fable.Import.ReactNative
 
     module private Styles =
         let tabButtonOuter selected = 
@@ -90,14 +89,12 @@ module CommonUi =
               OnPress f ]
             [ text [ tabButtonInner ] title ]
 
-    let myListView<'a> (items: ListViewDataSource<'a>) f =
-        listView
+    let inline myFlatList (items : 'a []) f fid props =
+        flatList
             items
-            [ ViewProperties.Style [ Flex 1. ]
-              ListViewProperties.RenderRow
-                  (Func<_,_,_,_,_>(fun (i: 'a) _ _ _ -> f i))
-              ListViewProperties.RenderSeparator
-                  (Func<_,_,_,_>(fun _ _ _ -> view [ ViewProperties.Style [ Height 1.; BackgroundColor "#f8f8f8" ] ] [])) ]
+            ([ FlatListProperties.KeyExtractor (Func<_,_,_>(fun (i : 'a) _ -> fid i))
+               FlatListProperties.RenderItem (Func<_,_>(fun (i : FlatListRenderItemInfo<'a>) -> f i.item)) ]
+             @ props)
 
     let indicatorView =
         activityIndicator 
@@ -117,6 +114,16 @@ module CommonUi =
                button "Tags" 1
                button "Messages" 2
                button "Profile" 3 ]
+
+    let statusView status = 
+        match status with
+        | Some (Ok _) -> view [] []
+        | Some (Error _) -> text [] "ERROR"
+        | None ->
+            activityIndicator 
+                [ ViewProperties.Style [ BackgroundColor "#212121"; Padding 4. ]
+                  ActivityIndicator.Size Size.Large
+                  ActivityIndicator.Color "#ffb100" ]    
 
 module String =
     let toUpper (x: string) = x.ToUpper()
@@ -384,20 +391,24 @@ module Service =
         >>= fun _ -> loadThreadsFromWeb
         |> Async.Ignore
 
+    open System.Text.RegularExpressions
+    let getMyName =
+        fetchString "http://joyreactor.cc/donate" []
+        >>- fun html -> 
+                let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
+                if m.Success then Some m.Groups.[1].Value
+                else None
+        >>- Option.get
+
     let loadTags userName =
         UrlBuilder.user userName |> loadAndParse<Tag list> "tags"
+    let loadMyTags =
+        getMyName >>= loadTags
 
     let loadProfile userName =
         UrlBuilder.user userName |> loadAndParse<Profile> "profile"
-
-    open System.Text.RegularExpressions
     let loadMyProfile =
-        fetchString "http://joyreactor.cc/donate" []
-        >>- fun html -> 
-                let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"", RegexOptions.Singleline)
-                if m.Success then Some m.Groups.[1].Value
-                else None
-        >>= fun userName -> loadProfile userName.Value
+        getMyName >>= loadProfile
 
     let loadPost id =
         UrlBuilder.post id |> loadAndParse<Post> "post"

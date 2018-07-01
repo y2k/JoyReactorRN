@@ -4,6 +4,7 @@ open System
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open Elmish
+
 open JoyReactor
 open JoyReactor.Types
 open JoyReactor.CommonUi
@@ -40,16 +41,11 @@ type MyFlatListProperties<'a> =
     | Inverted of bool
     interface IFlatListProperties<'a>
 
-let private listView<'a> (items: 'a[]) f fid =
-    flatList 
-        items
-        [ FlatListProperties.RenderItem(Func<_,_>(fun x -> f <| unbox<'a> x.item))
-          FlatListProperties.KeyExtractor(Func<_,_,_>(fun x _ -> fid <| unbox<'a> x))
-          MyFlatListProperties.Inverted true ]
-
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ listView model.messages itemView (fun x -> sprintf "%O" x.date)
+         [ myFlatList 
+               model.messages itemView (fun x -> sprintf "%O" x.date)
+               [ MyFlatListProperties.Inverted true ]
            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
                 [ textInput [] "Message text"
                   (if model.isBusy then view [] [] 

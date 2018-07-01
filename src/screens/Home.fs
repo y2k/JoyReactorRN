@@ -5,9 +5,11 @@ open Fable.Import.ReactNative
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
 open Elmish
+
 open JoyReactor
 open JoyReactor.Utils
 open JoyReactor.Types
+open JoyReactor.CommonUi
 
 module S = Service
 
@@ -15,18 +17,19 @@ type PostState = Actual of Post | Divider | Old of Post
 
 type Msg = 
     | LoadPosts of Source
-    | LoadResult of Result<Post list * int option, string>
+    | LoadResult of Result<Post list * int option, Exception>
     | LoadNextPage
     | OpenPost of Post
 
 type Model = 
-    { posts : ListViewDataSource<PostState>
+    { items    : PostState []
       rawPosts : Post list
-      cache: PostsWithLevels
-      nextPage : Int32 option }
+      cache    : PostsWithLevels
+      nextPage : Int32 option
+      status   : Option<Result<Unit, Exception>> }
 
 let init =
-    { posts = emptyDataSource(); rawPosts = []; nextPage = None; cache = { actual = []; old = [] } }, 
+    { items = [||]; rawPosts = []; nextPage = None; cache = { actual = []; old = [] }; status = None }, 
     Cmd.ofMsg (LoadPosts FeedSource)
 
 let postsToItems xs =
@@ -39,17 +42,19 @@ let postsToItems xs =
 let update model msg : Model * Cmd<Msg> = 
     match msg with
     | LoadPosts source ->
-        model, Cmd.ofEffect (S.loadPosts source model.nextPage) LoadResult
+        model, Cmd.ofEffect2 (S.loadPosts source model.nextPage) LoadResult
     | LoadResult (Ok (posts, nextPage)) ->
         let merged = Domain.mergeNextPage model.cache posts
-        { posts = updateDataSource (postsToItems merged) model.posts
-          rawPosts = posts
-          cache = merged
-          nextPage = nextPage }, Cmd.none
+        { model with
+              items = postsToItems merged
+              rawPosts = posts
+              cache = merged
+              nextPage = nextPage
+              status = Some <| Ok () }, Cmd.none
     | LoadResult (Error e) ->
-        log e model, Cmd.none
+        log e { model with status = Some <| Error e }, Cmd.none
     | LoadNextPage ->
-        model, Cmd.ofEffect (S.loadPosts FeedSource model.nextPage) LoadResult
+        { model with status = None }, Cmd.ofEffect2 (S.loadPosts FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none
 
 module private Styles =
@@ -126,12 +131,16 @@ let viewItem post dispatch =
                                            "2 часа" ] ] ] ] ]
 
 let view model dispatch = 
-    listView 
-        model.posts 
-        [ ListViewProperties.RenderRow
-              (Func<_,_,_,_,_>(fun (i: PostState) _ _ _ ->
-                  match i with
-                  | Actual post -> viewItem post dispatch
-                  | Old post -> viewItem post dispatch
-                  | Divider -> viewNextButton dispatch
-                  )) ]
+    view [ ViewProperties.Style [ Flex 1. ] ] 
+         [ myFlatList
+               model.items
+               (function
+                | Actual post -> viewItem post dispatch
+                | Old post -> viewItem post dispatch
+                | Divider -> viewNextButton dispatch)
+               (function
+                | Actual post -> string post.id
+                | Old post -> string post.id
+                | Divider -> "divider")
+               []
+           statusView model.status ]

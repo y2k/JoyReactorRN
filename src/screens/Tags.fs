@@ -1,27 +1,26 @@
 module TagsScreen
 
 open System
-open Fable.Import.ReactNative
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
 open Elmish
-open JoyReactor.Utils
+
 open JoyReactor
 open JoyReactor.Types
+open JoyReactor.Utils
+open JoyReactor.CommonUi
 
-type Model = { dataSource: ListViewDataSource<Tag>; loaded: Boolean }
+type Model = { tags: Tag []; loaded: Boolean }
 type Msg = TagsLoaded of Result<Tag list, string>
 
-let init = { dataSource = emptyDataSource(); loaded = false }, 
-           Service.loadTags "_y2k" |> flip Cmd.ofEffect TagsLoaded
+let init = 
+    { tags = [||]; loaded = false }, 
+    Service.loadMyTags |> flip Cmd.ofEffect TagsLoaded
 
 let update model msg =
     match msg with
     | TagsLoaded (Ok tags) -> 
-        tags
-        |> List.toArray 
-        |> flip updateDataSource model.dataSource
-        |> fun x -> { model with dataSource = x; loaded = true }, Cmd.none
+        { model with tags = List.toArray tags; loaded = true }, Cmd.none
     | TagsLoaded (Error e) -> failwith e
 
 module Styles =
@@ -37,15 +36,6 @@ let viewItem (x: Tag) =
             text [ Styles.label ] x.name ] ]
 
 let view model =
-    let content =
-        match model.loaded with
-        | true ->
-            listView model.dataSource [
-                ListViewProperties.RenderRow(Func<_,_,_,_,_>(fun (i: Tag) _ _ _ -> viewItem i)) ]
-        | false ->
-            activityIndicator [ 
-                ViewProperties.Style [ Flex 1. ]
-                ActivityIndicator.Size Size.Large
-                ActivityIndicator.Color "#ffb100" ]
-    view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] 
-         [ content ]
+    view [ ViewProperties.Style [ Flex 1. ] ] 
+         [ myFlatList model.tags viewItem (fun x -> x.name) []
+           statusView <| (if model.loaded then Some <| Ok () else None) ]

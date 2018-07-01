@@ -3,7 +3,6 @@ module ThreadsScreen
 open System
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
-open Fable.Import.ReactNative
 open Elmish
 
 open JoyReactor
@@ -12,7 +11,7 @@ open JoyReactor.Types
 open JoyReactor.CommonUi
 
 type Model = 
-    { items: ListViewDataSource<Message>
+    { items: Message []
       status: Result<Unit, String> option }
 type Msg = 
     | ThreadsFromCache of Result<Message [], String>
@@ -21,18 +20,18 @@ type Msg =
     | ReloadThreads
 
 let init: Model * Cmd<Msg> = 
-    { items = emptyDataSource(); status = None }, 
+    { items = [||]; status = None }, 
     Cmd.ofEffect Service.loadThreadsFromCache ThreadsFromCache
 
 let update model msg =
     match msg with
     | ThreadsFromCache (Ok x) ->
-        { model with items = updateDataSource x model.items }, 
+        { model with items = x }, 
         Cmd.ofEffect Service.loadThreadsFromWeb ThreadsFromWeb
     | ThreadsFromCache (Error e) -> log e model, Cmd.none
     | ThreadsFromWeb (Ok x) ->
         { model with
-            items = updateDataSource x model.items
+            items = x
             status = Some <| Ok () }, Cmd.none
     | ThreadsFromWeb (Error e) -> 
         { model with status = log e (Some <| Error e) }, Cmd.none
@@ -56,17 +55,7 @@ let private itemView dispatch i =
                       text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; TextStyle.Color "#bdbdbd" ] ] 
                            (longToTimeDelay i.date) ] ] ]
 
-let statusView status = 
-    match status with
-    | Some (Ok _) -> view [] []
-    | Some (Error _) -> text [] "ERROR"
-    | None ->
-        activityIndicator 
-            [ ViewProperties.Style [ BackgroundColor "#212121"; Padding 4. ]
-              ActivityIndicator.Size Size.Large
-              ActivityIndicator.Color "#ffb100" ]    
-
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ myListView model.items (itemView dispatch)
+         [ myFlatList model.items (itemView dispatch) (fun x -> x.userName) []
            statusView model.status ]
