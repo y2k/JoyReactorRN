@@ -11,17 +11,23 @@ open JoyReactor.Utils
 open JoyReactor.CommonUi
 
 type Model = { tags: Tag []; loaded: Boolean }
-type Msg = TagsLoaded of Result<Tag list, string>
+type Msg = TagsSynced of Result<Unit, Exception> | TagsLoaded of Tag list
 
 let init = 
-    { tags = [||]; loaded = false }, 
-    Service.loadMyTags |> flip Cmd.ofEffect TagsLoaded
+    let cmd =
+        ReactiveStore.listenTagUpdates
+        |> Cmd.ofSub
+        |> Cmd.map TagsLoaded
+    let cmd2 = ReactiveStore.syncTags |> flip Cmd.ofEffect TagsSynced
+    { tags = [||]; loaded = false }, Cmd.batch [cmd; cmd2]
 
-let update model msg =
-    match msg with
-    | TagsLoaded (Ok tags) -> 
-        { model with tags = List.toArray tags; loaded = true }, Cmd.none
-    | TagsLoaded (Error e) -> failwith e
+let update model = function
+    | TagsLoaded tags -> 
+        { model with tags = List.toArray tags }, Cmd.none
+    | TagsSynced (Ok _) -> 
+        { model with loaded = true }, Cmd.none
+    | TagsSynced (Error e) -> 
+        raise e
 
 module Styles =
     let image = 

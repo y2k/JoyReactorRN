@@ -13,7 +13,7 @@ type ModelStage = ProfileModel of Profile | LoadingModel | LoginModel
 type Model = { stage : ModelStage; subModel : LoginScreen.Model }
 
 let init: Model * Cmd<Msg> = 
-    { stage = LoadingModel; subModel = LoginScreen.init }, Cmd.ofEffect2 Service.loadMyProfile ProfileMsg
+    { stage = LoadingModel; subModel = LoginScreen.init }, Cmd.ofEffect Service.loadMyProfile ProfileMsg
 
 let update model msg =
     match msg with

@@ -11,8 +11,6 @@ open JoyReactor.Utils
 open JoyReactor.Types
 open JoyReactor.CommonUi
 
-module S = Service
-
 type PostState = Actual of Post | Divider | Old of Post
 
 type Msg = 
@@ -42,7 +40,7 @@ let postsToItems xs =
 let update model msg : Model * Cmd<Msg> = 
     match msg with
     | LoadPosts source ->
-        model, Cmd.ofEffect2 (S.loadPosts source model.nextPage) LoadResult
+        model, Cmd.ofEffect (Service.loadPosts source model.nextPage) LoadResult
     | LoadResult (Ok (posts, nextPage)) ->
         let merged = Domain.mergeNextPage model.cache posts
         { model with
@@ -54,7 +52,7 @@ let update model msg : Model * Cmd<Msg> =
     | LoadResult (Error e) ->
         log e { model with status = Some <| Error e }, Cmd.none
     | LoadNextPage ->
-        { model with status = None }, Cmd.ofEffect2 (S.loadPosts FeedSource model.nextPage) LoadResult
+        { model with status = None }, Cmd.ofEffect (Service.loadPosts FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none
 
 module private Styles =

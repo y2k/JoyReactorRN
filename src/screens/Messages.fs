@@ -12,9 +12,9 @@ open JoyReactor.Utils
 
 type Model = { messages: Message[]; isBusy: Boolean }
 type Msg = 
-    | MessagesMsg of Result<Message[], String>
+    | MessagesMsg of Result<Message[], Exception>
     | SendMessage
-    | SendMessageResult of Result<Unit, String>
+    | SendMessageResult of Result<Unit, Exception>
 
 let init userName =
     { messages = [||]; isBusy = false }, 
@@ -47,6 +47,6 @@ let view model dispatch =
                model.messages itemView (fun x -> sprintf "%O" x.date)
                [ MyFlatListProperties.Inverted true ]
            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
-                [ textInput [] "Message text"
+                [ textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
                   (if model.isBusy then view [] [] 
                    else testButton "SEND" (fun _ -> dispatch SendMessage)) ] ]

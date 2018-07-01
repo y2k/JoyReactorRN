@@ -12,10 +12,10 @@ open JoyReactor.CommonUi
 
 type Model = 
     { items: Message []
-      status: Result<Unit, String> option }
+      status: Result<Unit, Exception> option }
 type Msg = 
-    | ThreadsFromCache of Result<Message [], String>
-    | ThreadsFromWeb of Result<Message [], String>
+    | ThreadsFromCache of Result<Message [], Exception>
+    | ThreadsFromWeb of Result<Message [], Exception>
     | ThreadSelected of String
     | ReloadThreads
 

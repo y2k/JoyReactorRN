@@ -1,12 +1,13 @@
 module PostScreen
 
-open JoyReactor
-open JoyReactor.Types
-
-open Elmish
+open System
 open Fable.Core
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
+open Elmish
+
+open JoyReactor
+open JoyReactor.Types
 
 [<Pojo>]
 type Model =
@@ -16,7 +17,7 @@ type Model =
 [<Pojo>]
 type Msg =
 | LoadPost of int
-| LoadPostResult of Result<Post, string>
+| LoadPostResult of Result<Post, Exception>
 
 let init id =
     { post = None; error = None }, Cmd.ofMsg (LoadPost id)
@@ -28,7 +29,7 @@ let update model msg =
     | LoadPostResult (Ok post) -> 
         { model with post = Some post }, Cmd.none
     | LoadPostResult (Error error) -> 
-        { model with error = Some error }, Cmd.none
+        { model with error = Some <| string error }, Cmd.none
 
 module private Styles =
     let home = ViewProperties.Style [ PaddingBottom 15.

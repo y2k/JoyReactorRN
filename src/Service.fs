@@ -15,17 +15,7 @@ module PromiseOperators =
 module Cmd =
     open Elmish
     let ofEffect p f =
-        Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (string >> Result.Error >> f)
-    let ofEffect2 p f =
         Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
-
-module Promise =
-    open Fable.PowerPack
-    let next p2 p = 
-        p |> Promise.bind (fun _ -> p2)
-    let bind2 f p =
-        p |> Promise.bind (fun (a, b) -> f a b)
-    let inline ignore p = Promise.map ignore p
 
 module Array =
     let tryMaxBy f xs =
@@ -74,7 +64,6 @@ module CommonUi =
                 [ Margin 4. 
                   BackgroundColor "#e49421"
                   BorderRadius 4.
-                  Flex 1.
                   Height 48.
                   Overflow Overflow.Hidden ]
         let tabButtonInner =
@@ -299,34 +288,37 @@ module Requests =
           Body !^ form ]
 
 module Storage =
-    open Fable.PowerPack
-    open Utils
     open PromiseOperators
-    let AsyncStorage = Fable.Import.ReactNative.Globals.AsyncStorage
-    let JSON = Fable.Import.JS.JSON
+    module JS = Fable.Import.JS
 
-    let inline tryParse<'a> json =
+    module private AsyncStorage =
+        let private _as = Fable.Import.ReactNative.Globals.AsyncStorage
+        let setItem key value =
+            async {
+                let! _ = _as.setItem(key, value) |> Async.AwaitPromise
+                return ()
+            }
+        let getItem key =
+            async { return! _as.getItem key |> Async.AwaitPromise }
+        let clear =
+            async { 
+                let! _ = _as.clear () |> Async.AwaitPromise
+                return () 
+            }
+
+    let inline private tryParse<'a> json =
          if isNull json then None 
-         else json |> (JSON.parse >> unbox<'a>) |> Some
+         else json |> (JS.JSON.parse >> unbox<'a> >> Some)
     
     let load<'a> key =
-        async { return! AsyncStorage.getItem(key) |> Async.AwaitPromise }
+        AsyncStorage.getItem key
         >>- tryParse<'a>
 
     let save key value =
-        async {
-            do! value
-                |> JSON.stringify
-                |> curry AsyncStorage.setItem key
-                |> Promise.ignore
-                |> Async.AwaitPromise
-        }
-    let clear =
-        async {
-            do! AsyncStorage.clear null
-                |> Promise.ignore
-                |> Async.AwaitPromise
-        }    
+        JS.JSON.stringify value
+        |> AsyncStorage.setItem key
+
+    let clear = AsyncStorage.clear
 
 module Service =
     open PromiseOperators
@@ -417,3 +409,39 @@ module Service =
         UrlBuilder.posts source page 
         |> loadAndParse<PostResponse> "posts"
         >>- fun response -> response.posts, response.nextPage
+
+module ReactiveStore =
+    open Types
+    open Elmish
+    open PromiseOperators
+
+    let listenPostUpdates listener =
+        async {        
+            let! posts = 
+                Storage.load<Post list> "posts"
+                >>- Option.defaultValue []
+            listener posts
+        } |> Async.StartImmediate
+
+    let syncPosts =
+        async {
+
+            let! posts =            
+                Service.loadPosts () None
+
+            ()
+        }
+
+    let mutable private tagListener: Dispatch<Tag list> = ignore
+    let mutable private tagStore : Tag list = []
+
+    let listenTagUpdates listener =
+        tagListener <- listener
+        listener tagStore
+
+    let syncTags =
+        async {
+            let! tags = Service.loadMyTags
+            tagStore <- tags
+            tagListener tagStore
+        }

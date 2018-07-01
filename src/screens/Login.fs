@@ -1,13 +1,14 @@
 module LoginScreen
 
+open System
 open Fable.Helpers.ReactNative.Props
 open Fable.Helpers.ReactNative
 open Elmish
+
 open JoyReactor
-module S = JoyReactor.Service
 
 type Model = { username: string; password: string; isBusy: bool; error: string option }
-type Msg = LoginMsg | LoginResultMsg of Result<Unit, string> | UsernameMsg of string | PasswordMsg of string
+type Msg = LoginMsg | LoginResultMsg of Result<Unit, Exception> | UsernameMsg of string | PasswordMsg of string
 
 module private Styles =
     let edit = 
@@ -23,9 +24,9 @@ let update model msg: Model * Cmd<Msg> =
     match msg with
     | LoginMsg -> 
         { model with isBusy = true; error = None }, 
-        Cmd.ofEffect (S.login model.username model.password) LoginResultMsg
+        Cmd.ofEffect (Service.login model.username model.password) LoginResultMsg
     | LoginResultMsg (Ok _) -> { model with isBusy = false }, Cmd.none
-    | LoginResultMsg (Error e) -> { model with isBusy = false; error = Some e }, Cmd.none
+    | LoginResultMsg (Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
     | UsernameMsg x -> { model with username = x }, Cmd.none
     | PasswordMsg x -> { model with password = x }, Cmd.none
 
