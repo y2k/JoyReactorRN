@@ -19,6 +19,7 @@ type Msg =
     | CachedPosts of PostsWithLevels
     | LoadNextPage
     | OpenPost of Post
+    | Refresh
 
 type Model = 
     { items    : PostState []
@@ -35,14 +36,17 @@ let init =
     Cmd.batch [cmd; cmd2]
 
 let postsToItems xs =
-    []
-    |> List.append (xs.old |> List.map Old)
-    |> List.append [ Divider ]
-    |> List.append (xs.actual |> List.map Actual)
-    |> List.toArray
+    if Array.isEmpty xs.old && Array.isEmpty xs.actual then [||]
+    else 
+        Array.concat 
+            [ xs.old |> Array.map Old
+              [| Divider |]
+              xs.actual |> Array.map Actual ]
 
 let update model msg : Model * Cmd<Msg> = 
     match msg with
+    | Refresh ->
+        { model with status = None }, Cmd.ofEffect ReactiveStore.reloadPosts LoadResult
     | CachedPosts merged ->
         { model with items = postsToItems merged }, Cmd.none
     | LoadPosts source ->
@@ -129,16 +133,15 @@ let viewItem post dispatch =
                                            "2 часа" ] ] ] ] ]
 
 let view model dispatch = 
-    view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ myFlatList
-               model.items
-               (function
-                | Actual post -> viewItem post dispatch
-                | Old post -> viewItem post dispatch
-                | Divider -> viewNextButton dispatch)
-               (function
-                | Actual post -> string post.id
-                | Old post -> string post.id
-                | Divider -> "divider")
-               []
-           statusView model.status ]
+    myFlatList
+        model.items
+        (function
+         | Actual post -> viewItem post dispatch
+         | Old post -> viewItem post dispatch
+         | Divider -> viewNextButton dispatch)
+        (function
+         | Actual post -> string post.id
+         | Old post -> string post.id
+         | Divider -> "divider")
+        [ FlatListProperties.OnRefresh (Func<_,_>(fun () -> dispatch Refresh))
+          FlatListProperties.Refreshing (model.status = None) ]

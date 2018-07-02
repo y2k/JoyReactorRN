@@ -11,7 +11,7 @@ open JoyReactor.Utils
 open JoyReactor.CommonUi
 
 type Model = { tags: Tag []; loaded: Boolean }
-type Msg = TagsSynced of Result<Unit, Exception> | TagsLoaded of Tag list
+type Msg = TagsSynced of Result<Unit, Exception> | TagsLoaded of Tag []
 
 let init = 
     let cmd =
@@ -23,7 +23,7 @@ let init =
 
 let update model = function
     | TagsLoaded tags -> 
-        { model with tags = List.toArray tags }, Cmd.none
+        { model with tags = tags }, Cmd.none
     | TagsSynced (Ok _) -> 
         { model with loaded = true }, Cmd.none
     | TagsSynced (Error e) -> 

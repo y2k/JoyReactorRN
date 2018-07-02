@@ -150,8 +150,8 @@ module Types =
           nextPage : int option }
 
     type PostsWithLevels = 
-        { actual: Post list
-          old: Post list }
+        { actual : Post []
+          old    : Post [] }
 
     type Profile = 
         { userName: string
@@ -191,11 +191,11 @@ module Domain =
     let mergeNextPage state newPosts = 
         let newActual = 
             newPosts
-            |> List.append state.actual
-            |> List.distinctBy (fun x -> x.id)
+            |> Array.append state.actual
+            |> Array.distinctBy (fun x -> x.id)
         let newOld = 
             state.old
-            |> List.filter (fun x -> List.forall (fun x2 -> x2.id <> x.id) newPosts)
+            |> Array.filter (fun x -> Array.forall (fun x2 -> x2.id <> x.id) newPosts)
         { actual = newActual; old = newOld }
 
     let getCsrfToken html = 
@@ -415,51 +415,59 @@ module ReactiveStore =
     open Elmish
     open PromiseOperators
 
-    let mutable private postListener : Dispatch<PostsWithLevels> = ignore
+    let mutable private postsListener : Dispatch<PostsWithLevels> = ignore
 
     let listenPostUpdates listener =
         async {        
-            postListener <- listener            
+            postsListener <- listener            
 
             let! posts = 
                 Storage.load<PostsWithLevels> "posts"
-                >>- Option.defaultValue { old = []; actual = [] }
-            postListener posts
+                >>- Option.defaultValue { old = [||]; actual = [||] }
+            postsListener posts
         } |> Async.StartImmediate
 
-    let syncPosts source page : Async<Option<Int32>> =
+    let syncPosts source page : Async<Int32 option> =
         async {
             let! posts = 
                 Storage.load<PostsWithLevels> "posts"
-                >>- Option.defaultValue { old = []; actual = [] }
+                >>- Option.defaultValue { old = [||]; actual = [||] }
 
             let! (newPosts, nextPage) =
                 Service.loadPosts source page
 
-            let merged = Domain.mergeNextPage posts newPosts
+            let merged = newPosts |> List.toArray |> Domain.mergeNextPage posts
             do! Storage.save "posts" merged
 
-            postListener merged
+            postsListener merged
 
             return nextPage
         }
 
-    let mutable private tagListener: Dispatch<Tag list> = ignore
+    let reloadPosts =
+        async {
+            do! Storage.save "posts" { old = [||]; actual = [||] }
+            postsListener { old = [||]; actual = [||] }
+
+            return! syncPosts () None
+        }
+
+    let mutable private tagListener: Dispatch<Tag []> = ignore
 
     let listenTagUpdates listener =
         async {
             tagListener <- listener
 
             let! tags =
-                Storage.load<Tag list> "tags"
-                >>- Option.defaultValue []
+                Storage.load<Tag []> "tags"
+                >>- Option.defaultValue [||]
 
             tagListener tags
         } |> Async.StartImmediate
 
     let syncTags =
         async {
-            let! tags = Service.loadMyTags
+            let! tags = Service.loadMyTags >>- List.toArray
 
             do! Storage.save "tags" tags
 
