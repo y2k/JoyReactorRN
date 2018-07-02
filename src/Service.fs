@@ -415,33 +415,53 @@ module ReactiveStore =
     open Elmish
     open PromiseOperators
 
+    let mutable private postListener : Dispatch<PostsWithLevels> = ignore
+
     let listenPostUpdates listener =
         async {        
+            postListener <- listener            
+
             let! posts = 
-                Storage.load<Post list> "posts"
-                >>- Option.defaultValue []
-            listener posts
+                Storage.load<PostsWithLevels> "posts"
+                >>- Option.defaultValue { old = []; actual = [] }
+            postListener posts
         } |> Async.StartImmediate
 
-    let syncPosts =
+    let syncPosts source page : Async<Option<Int32>> =
         async {
+            let! posts = 
+                Storage.load<PostsWithLevels> "posts"
+                >>- Option.defaultValue { old = []; actual = [] }
 
-            let! posts =            
-                Service.loadPosts () None
+            let! (newPosts, nextPage) =
+                Service.loadPosts source page
 
-            ()
+            let merged = Domain.mergeNextPage posts newPosts
+            do! Storage.save "posts" merged
+
+            postListener merged
+
+            return nextPage
         }
 
     let mutable private tagListener: Dispatch<Tag list> = ignore
-    let mutable private tagStore : Tag list = []
 
     let listenTagUpdates listener =
-        tagListener <- listener
-        listener tagStore
+        async {
+            tagListener <- listener
+
+            let! tags =
+                Storage.load<Tag list> "tags"
+                >>- Option.defaultValue []
+
+            tagListener tags
+        } |> Async.StartImmediate
 
     let syncTags =
         async {
             let! tags = Service.loadMyTags
-            tagStore <- tags
-            tagListener tagStore
+
+            do! Storage.save "tags" tags
+
+            tagListener tags
         }

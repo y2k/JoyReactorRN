@@ -15,20 +15,24 @@ type PostState = Actual of Post | Divider | Old of Post
 
 type Msg = 
     | LoadPosts of Source
-    | LoadResult of Result<Post list * int option, Exception>
+    | LoadResult of Result<Option<Int32>, Exception>
+    | CachedPosts of PostsWithLevels
     | LoadNextPage
     | OpenPost of Post
 
 type Model = 
     { items    : PostState []
-      rawPosts : Post list
-      cache    : PostsWithLevels
       nextPage : Int32 option
       status   : Option<Result<Unit, Exception>> }
 
 let init =
-    { items = [||]; rawPosts = []; nextPage = None; cache = { actual = []; old = [] }; status = None }, 
-    Cmd.ofMsg (LoadPosts FeedSource)
+    let cmd = 
+        ReactiveStore.listenPostUpdates
+        |> Cmd.ofSub |> Cmd.map CachedPosts
+    let cmd2 = Cmd.ofMsg (LoadPosts FeedSource)
+
+    { items = [||]; nextPage = None; status = None }, 
+    Cmd.batch [cmd; cmd2]
 
 let postsToItems xs =
     []
@@ -39,20 +43,16 @@ let postsToItems xs =
 
 let update model msg : Model * Cmd<Msg> = 
     match msg with
+    | CachedPosts merged ->
+        { model with items = postsToItems merged }, Cmd.none
     | LoadPosts source ->
-        model, Cmd.ofEffect (Service.loadPosts source model.nextPage) LoadResult
-    | LoadResult (Ok (posts, nextPage)) ->
-        let merged = Domain.mergeNextPage model.cache posts
-        { model with
-              items = postsToItems merged
-              rawPosts = posts
-              cache = merged
-              nextPage = nextPage
-              status = Some <| Ok () }, Cmd.none
+        model, Cmd.ofEffect (ReactiveStore.syncPosts source model.nextPage) LoadResult
+    | LoadResult (Ok nextPage) ->
+        { model with nextPage = nextPage; status = Some <| Ok () }, Cmd.none
     | LoadResult (Error e) ->
         log e { model with status = Some <| Error e }, Cmd.none
     | LoadNextPage ->
-        { model with status = None }, Cmd.ofEffect (Service.loadPosts FeedSource model.nextPage) LoadResult
+        { model with status = None }, Cmd.ofEffect (ReactiveStore.syncPosts FeedSource model.nextPage) LoadResult
     | _ -> model, Cmd.none
 
 module private Styles =
