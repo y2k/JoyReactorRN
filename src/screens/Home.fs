@@ -39,9 +39,9 @@ let postsToItems xs =
     if Array.isEmpty xs.old && Array.isEmpty xs.actual then [||]
     else 
         Array.concat 
-            [ xs.old |> Array.map Old
+            [ xs.actual |> Array.map Actual
               [| Divider |]
-              xs.actual |> Array.map Actual ]
+              xs.old |> Array.map Old ]
 
 let update model msg : Model * Cmd<Msg> = 
     match msg with

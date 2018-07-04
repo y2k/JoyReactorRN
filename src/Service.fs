@@ -189,14 +189,18 @@ module Domain =
     open System.Text.RegularExpressions
 
     let mergeNextPage state newPosts = 
-        let newActual = 
-            newPosts
-            |> Array.append state.actual
-            |> Array.distinctBy (fun x -> x.id)
-        let newOld = 
-            state.old
-            |> Array.filter (fun x -> Array.forall (fun x2 -> x2.id <> x.id) newPosts)
-        { actual = newActual; old = newOld }
+        match state with
+        | { actual = [||]; old = [||] } -> 
+            { actual = newPosts; old = [||] }
+        | _ ->
+            let newActual = 
+                newPosts
+                |> Array.append state.actual
+                |> Array.distinctBy (fun x -> x.id)
+            let newOld = 
+                state.old
+                |> Array.filter (fun x -> Array.forall (fun x2 -> x2.id <> x.id) newPosts)
+            { actual = newActual; old = newOld }
 
     let getCsrfToken html = 
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
@@ -305,6 +309,11 @@ module Storage =
                 let! _ = _as.clear () |> Async.AwaitPromise
                 return () 
             }
+        let remove key =
+            async { 
+                let! _ = _as.removeItem key |> Async.AwaitPromise
+                return () 
+            }
 
     let inline private tryParse<'a> json =
          if isNull json then None 
@@ -319,6 +328,7 @@ module Storage =
         |> AsyncStorage.setItem key
 
     let clear = AsyncStorage.clear
+    let remove = AsyncStorage.remove
 
 module Service =
     open PromiseOperators
@@ -445,12 +455,8 @@ module ReactiveStore =
         }
 
     let reloadPosts =
-        async {
-            do! Storage.save "posts" { old = [||]; actual = [||] }
-            postsListener { old = [||]; actual = [||] }
-
-            return! syncPosts () None
-        }
+        Storage.remove "posts"
+        >>= fun _ -> syncPosts () None
 
     let mutable private tagListener: Dispatch<Tag []> = ignore
 
