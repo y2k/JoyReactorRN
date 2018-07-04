@@ -8,11 +8,10 @@ open Elmish
 
 open JoyReactor
 open JoyReactor.Types
-open JoyReactor
 
 [<Pojo>]
 type Model =
-    { post : Post option 
+    { post  : Post option 
       error : string option }
 
 [<Pojo>]

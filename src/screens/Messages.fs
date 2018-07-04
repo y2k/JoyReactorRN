@@ -37,15 +37,11 @@ let private itemView x =
            text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd ] ] 
                 <| sprintf "%O" x.date ]
 
-type MyFlatListProperties<'a> =
-    | Inverted of bool
-    interface IFlatListProperties<'a>
-
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] 
          [ myFlatList 
                model.messages itemView (fun x -> sprintf "%O" x.date)
-               [ MyFlatListProperties.Inverted true ]
+               [ FlatListProperties.Inverted true ]
            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
                 [ textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
                   (if model.isBusy then view [] [] 
