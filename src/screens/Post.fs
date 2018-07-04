@@ -8,6 +8,7 @@ open Elmish
 
 open JoyReactor
 open JoyReactor.Types
+open JoyReactor
 
 [<Pojo>]
 type Model =
@@ -17,10 +18,12 @@ type Model =
 [<Pojo>]
 type Msg =
 | LoadPost of int
+| PostLoaded of Post
 | LoadPostResult of Result<Post, Exception>
 
 let init id =
-    { post = None; error = None }, Cmd.ofMsg (LoadPost id)
+    { post = None; error = None }, 
+    ReactiveStore.loadPost id |> Cmd.ofSub |> Cmd.map PostLoaded
 
 let update model msg =
     match msg with
@@ -30,6 +33,8 @@ let update model msg =
         { model with post = Some post }, Cmd.none
     | LoadPostResult (Error error) -> 
         { model with error = Some <| string error }, Cmd.none
+    | PostLoaded post -> 
+        { model with post = Some post }, Cmd.none
 
 module private Styles =
     let home = ViewProperties.Style [ PaddingBottom 15.
@@ -65,7 +70,7 @@ let view model _ =
               scrollView [] ([   image [ ImageProperties.Style [ Height 200. ] 
                                          Source [ Uri post.image.Value.url ] ]
                                  text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
-                             ] @ List.map viewItem post.comments)
+                             ] @ (Array.toList <| Array.map viewItem post.comments))
         | _ -> 
               activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                                   ActivityIndicator.Size Size.Large

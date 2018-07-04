@@ -136,14 +136,14 @@ module Types =
           rating : float }
 
     type Post = 
-        { id : int
-          userName : string
-          userImage: Attachment
-          rating : float
-          created : System.DateTime
-          image : Attachment option
-          title : string
-          comments : Comment list }
+        { id        : Int32
+          userName  : String
+          userImage : Attachment
+          rating    : Double
+          created   : DateTime
+          image     : Attachment option
+          title     : String
+          comments  : Comment [] }
 
     type PostResponse = 
         { posts : Post list
@@ -437,7 +437,7 @@ module ReactiveStore =
             postsListener posts
         } |> Async.StartImmediate
 
-    let syncPosts source page : Async<Int32 option> =
+    let syncPosts source page =
         async {
             let! posts = 
                 Storage.load<PostsWithLevels> "posts"
@@ -475,7 +475,18 @@ module ReactiveStore =
         async {
             let! tags = Service.loadMyTags >>- List.toArray
 
-            do! Storage.save "tags" tags
-
             tagListener tags
+
+            do! Storage.save "tags" tags
         }
+
+    let loadPost id callback =
+        async {
+            do! Storage.load<Post> <| sprintf "post-%i" id
+                >>- Option.iter callback
+
+            let! post = Service.loadPost id
+            callback post
+
+            do! Storage.save (sprintf "post-%i" id) post
+        } |> Async.StartImmediate
