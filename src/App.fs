@@ -7,6 +7,7 @@ open Elmish.ReactNative
 open Elmish.HMR
 
 module TabsScreen =
+    open JoyReactor.Types
     open Fable.Helpers.ReactNative.Props
 
     type Msg = 
@@ -24,11 +25,11 @@ module TabsScreen =
         | MessagesModel of MessagesScreen.Model
 
     let init = 
-        Home.init |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
+        Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
 
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
-        | SelectTab 0, _ -> Home.init |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
+        | SelectTab 0, _ -> Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
         | SelectTab 1, _ -> TagsScreen.init |> fun (model, cmd) -> TagsModel model, Cmd.map TagsMsg cmd
         | SelectTab 2, _ -> ThreadsScreen.init |> fun (model, cmd) -> ThreadsModel model, Cmd.map ThreadsMsg cmd
         | SelectTab 3, _ -> ProfileScreen.init |> fun (model, cmd) -> ProfileModel model, Cmd.map ProfileMsg cmd

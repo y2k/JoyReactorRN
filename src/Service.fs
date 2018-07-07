@@ -150,8 +150,11 @@ module Types =
           nextPage : int option }
 
     type PostsWithLevels = 
-        { actual : Post []
-          old    : Post [] }
+        { actual    : Post []
+          old       : Post []
+          preloaded : Post []
+          nextPage  : int option }
+    with static member empty : PostsWithLevels = { actual = [||]; old = [||]; preloaded = [||]; nextPage = None }
 
     type Profile = 
         { userName: string
@@ -187,20 +190,6 @@ module Image =
 module Domain = 
     open Types
     open System.Text.RegularExpressions
-
-    let mergeNextPage state newPosts = 
-        match state with
-        | { actual = [||]; old = [||] } -> 
-            { actual = newPosts; old = [||] }
-        | _ ->
-            let newActual = 
-                newPosts
-                |> Array.append state.actual
-                |> Array.distinctBy (fun x -> x.id)
-            let newOld = 
-                state.old
-                |> Array.filter (fun x -> Array.forall (fun x2 -> x2.id <> x.id) newPosts)
-            { actual = newActual; old = newOld }
 
     let getCsrfToken html = 
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
@@ -421,42 +410,9 @@ module Service =
         >>- fun response -> response.posts, response.nextPage
 
 module ReactiveStore =
-    open Types
     open Elmish
+    open Types
     open PromiseOperators
-
-    let mutable private postsListener : Dispatch<PostsWithLevels> = ignore
-
-    let listenPostUpdates listener =
-        async {        
-            postsListener <- listener            
-
-            let! posts = 
-                Storage.load<PostsWithLevels> "posts"
-                >>- Option.defaultValue { old = [||]; actual = [||] }
-            postsListener posts
-        } |> Async.StartImmediate
-
-    let syncPosts source page =
-        async {
-            let! posts = 
-                Storage.load<PostsWithLevels> "posts"
-                >>- Option.defaultValue { old = [||]; actual = [||] }
-
-            let! (newPosts, nextPage) =
-                Service.loadPosts source page
-
-            let merged = newPosts |> List.toArray |> Domain.mergeNextPage posts
-            do! Storage.save "posts" merged
-
-            postsListener merged
-
-            return nextPage
-        }
-
-    let reloadPosts =
-        Storage.remove "posts"
-        >>= fun _ -> syncPosts () None
 
     let mutable private tagListener: Dispatch<Tag []> = ignore
 
@@ -490,3 +446,55 @@ module ReactiveStore =
 
             do! Storage.save (sprintf "post-%i" id) post
         } |> Async.StartImmediate
+
+    // ===================================
+    // Posts
+    // ===================================
+
+    let syncFirstPage _ = 
+        async {
+            let! dbPosts = Storage.load<Post[]> "posts" >>- Option.defaultValue [||]
+            let! (webPosts, nextPage) = Service.loadPosts () None
+
+            return { actual = dbPosts; old = [||]; preloaded = webPosts |> List.toArray ; nextPage = nextPage }
+        }
+    let applyUpdate _ state = 
+        async {
+            let ids = state.preloaded |> Array.map (fun x -> x.id)
+            let newState = { state with 
+                                   actual = state.preloaded
+                                   old = Array.concat [ state.actual; state.old ] |> Array.filter (fun x -> not <| Array.contains x.id ids)
+                                   preloaded = [||] }
+
+            Storage.save "posts" (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
+            return newState
+        }
+    let syncNextPage _ state = 
+        async {
+            let! (webPosts, nextPage) = Service.loadPosts () state.nextPage
+
+            let actualIds = state.actual |> Array.map (fun x -> x.id)
+            let actualPosts =
+                Array.concat [state.actual; webPosts |> List.filter (fun x -> not <| Array.contains x.id actualIds)
+                                                     |> List.toArray ]
+            let ids = actualPosts |> Array.map (fun x -> x.id)
+            let newState =
+                { actual = actualPosts
+                  old = state.old |> Array.filter (fun x -> not <| Array.contains x.id ids)
+                  nextPage = nextPage
+                  preloaded = [||] }
+
+            Storage.save "posts" (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
+            return newState
+        }
+    let reset _ = 
+        async {
+            do! Storage.remove "posts"
+            return! syncFirstPage ()
+        }
+
+    let getCached _ =
+        async {
+            let! posts = Storage.load<Post[]> "posts"
+            return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
+        }

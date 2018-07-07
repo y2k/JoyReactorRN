@@ -14,56 +14,54 @@ open JoyReactor.CommonUi
 type PostState = Actual of Post | Divider | Old of Post
 
 type Msg = 
-    | LoadPosts of Source
-    | LoadResult of Result<Option<Int32>, Exception>
-    | CachedPosts of PostsWithLevels
+    | PostsLoaded of Result<PostsWithLevels, Exception>
     | LoadNextPage
     | OpenPost of Post
     | Refresh
+    | ApplyUpdate
 
 type Model = 
-    { items    : PostState []
-      nextPage : Int32 option
-      status   : Option<Result<Unit, Exception>> }
+    { syncState : PostsWithLevels
+      items     : PostState []
+      status    : Option<Result<Unit, Exception>>
+      source    : Source }
 
-let init =
-    let cmd = 
-        ReactiveStore.listenPostUpdates
-        |> Cmd.ofSub |> Cmd.map CachedPosts
-    let cmd2 = Cmd.ofMsg (LoadPosts FeedSource)
+let init source =
+    let cmd1 = Cmd.ofEffect (ReactiveStore.getCached source) PostsLoaded
+    let cmd2 = Cmd.ofEffect (ReactiveStore.syncFirstPage source) PostsLoaded
 
-    { items = [||]; nextPage = None; status = None }, 
-    Cmd.batch [cmd; cmd2]
+    { syncState = PostsWithLevels.empty ; items = [||]; status = None; source = source }, 
+    Cmd.batch [cmd1; cmd2]
 
-let postsToItems xs =
-    if Array.isEmpty xs.old && Array.isEmpty xs.actual then [||]
-    else 
-        Array.concat 
-            [ xs.actual |> Array.map Actual
-              [| Divider |]
-              xs.old |> Array.map Old ]
+let postsToItems posts =
+    if Array.isEmpty posts.old && Array.isEmpty posts.actual 
+    then [||]
+    else Array.concat 
+            [ posts.actual |> Array.map Actual
+              (if (not <| Array.isEmpty posts.preloaded) || Array.isEmpty posts.actual then [||] else [| Divider |])
+              posts.old |> Array.map Old ]
 
 let update model msg : Model * Cmd<Msg> = 
     match msg with
-    | Refresh ->
-        { model with status = None }, Cmd.ofEffect ReactiveStore.reloadPosts LoadResult
-    | CachedPosts merged ->
-        { model with items = postsToItems merged }, Cmd.none
-    | LoadPosts source ->
-        model, Cmd.ofEffect (ReactiveStore.syncPosts source model.nextPage) LoadResult
-    | LoadResult (Ok nextPage) ->
-        { model with nextPage = nextPage; status = Some <| Ok () }, Cmd.none
-    | LoadResult (Error e) ->
+    | PostsLoaded (Ok x) ->
+        { model with items = postsToItems x
+                     syncState = x
+                     status = if Array.isEmpty x.actual then None else Some <| Ok () }, Cmd.none
+    | PostsLoaded (Error e) ->
         log e { model with status = Some <| Error e }, Cmd.none
-    | LoadNextPage ->
-        { model with status = None }, Cmd.ofEffect (ReactiveStore.syncPosts FeedSource model.nextPage) LoadResult
+    | ApplyUpdate -> 
+        model, Cmd.ofEffect (ReactiveStore.applyUpdate model.source model.syncState) PostsLoaded
+    | Refresh ->
+        { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
+    | LoadNextPage -> 
+        { model with status = None }, Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
     | _ -> model, Cmd.none
 
 module private Styles =
-    let nextButtonOutter =
+    let nextButtonOutter enabled =
         TouchableWithoutFeedbackProperties.Style 
             [ Margin 4. 
-              BackgroundColor "#e49421"
+              BackgroundColor (if enabled then "#e49421" else "#e4942120")
               BorderRadius 4.
               Overflow Overflow.Hidden ]
     let nextButtonInner =
@@ -88,17 +86,12 @@ module private Styles =
         TextProperties.Style 
             [ FontWeight FontWeight.Bold; FontSize 14.; TextStyle.Color "#616161" ]
 
-let viewNextButton dispatch =
-    touchableOpacity 
-        [ Styles.nextButtonOutter
-          OnPress (fun _ -> dispatch LoadNextPage) ] // TODO:
+let viewNextButton dispatch isSyncing =
+    let onPress = if isSyncing then ignore else (fun _ -> dispatch LoadNextPage)
+    touchableOpacity
+        [ Styles.nextButtonOutter <| not isSyncing
+          OnPress onPress ]
         [ text [ Styles.nextButtonInner ] "Load next page" ]
-
-let todo attachment limitWidth = 
-    let aspect = max 1.2 attachment.aspect
-    let w = limitWidth
-    let h = w / aspect
-    Image.normilize attachment.url w h, h
 
 let viewPostImage post =
     post.image 
@@ -132,16 +125,27 @@ let viewItem post dispatch =
                                       text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#bcbcbc" ] ] 
                                            "2 часа" ] ] ] ] ]
 
+let viewApplyUpdateButton (model : Model) dispatch =
+    if Array.isEmpty model.syncState.preloaded
+    then view [] []
+    else view [ ViewProperties.RemoveClippedSubviews true; ViewProperties.Style [ FlexStyle.Margin 5. ] ]
+              [ button [ ButtonProperties.Title "Has new posts"
+                         ButtonProperties.Color "#e49421"
+                         ButtonProperties.OnPress (fun _ -> dispatch ApplyUpdate) ] [] ]
+
 let view model dispatch = 
-    myFlatList
-        model.items
-        (function
-         | Actual post -> viewItem post dispatch
-         | Old post -> viewItem post dispatch
-         | Divider -> viewNextButton dispatch)
-        (function
-         | Actual post -> string post.id
-         | Old post -> string post.id
-         | Divider -> "divider")
-        [ FlatListProperties.OnRefresh (Func<_,_>(fun () -> dispatch Refresh))
-          FlatListProperties.Refreshing (model.status = None) ]
+    let isSyncing = Option.isNone model.status
+    view [ ViewProperties.Style [ FlexStyle.Flex 1. ] ]
+         [ myFlatList
+               model.items
+               (function
+                | Actual post -> viewItem post dispatch
+                | Old post -> viewItem post dispatch
+                | Divider -> viewNextButton dispatch isSyncing)
+               (function
+                | Actual post -> string post.id
+                | Old post -> string post.id
+                | Divider -> "divider")
+               [ FlatListProperties.OnRefresh (Func<_,_>(fun () -> dispatch Refresh))
+                 FlatListProperties.Refreshing (model.status = None) ]
+           viewApplyUpdateButton model dispatch ]
