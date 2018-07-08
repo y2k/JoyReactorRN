@@ -19,6 +19,7 @@ type Msg =
 | LoadPost of int
 | PostLoaded of Post
 | LoadPostResult of Result<Post, Exception>
+| OpenInWeb
 
 let init id =
     { post = None; error = None }, 
@@ -34,6 +35,11 @@ let update model msg =
         { model with error = Some <| string error }, Cmd.none
     | PostLoaded post -> 
         { model with post = Some post }, Cmd.none
+    | OpenInWeb -> 
+        model,
+        model.post
+        |> Option.map (fun x -> x.id |> sprintf "http://m.joyreactor.cc/post/%i" |> Platform.openUrl |> Cmd.ofEffect0)
+        |> Option.defaultValue Cmd.none
 
 module private Styles =
     let home = ViewProperties.Style [ PaddingBottom 15.
@@ -61,13 +67,15 @@ let viewItem (comment : Comment) =
                            text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#616161" ] ] 
                                 (string comment.rating) ] ] ]
 
-let view model _ =
+let view model dispatch =
     let contentView =
         match model with
         | { error = Some e } -> text [] ("ERROR: " + e)
         | { post = Some post } ->
-              scrollView [] ([   image [ ImageProperties.Style [ Height 200. ] 
+              scrollView [] ([   image [ ImageProperties.Style [ Height 300. ] 
                                          Source [ Uri post.image.Value.url ] ]
+                                 button [ ButtonProperties.Title "Открыть в браузере"
+                                          ButtonProperties.OnPress (fun _ -> dispatch OpenInWeb) ] []
                                  text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
                              ] @ (Array.toList <| Array.map viewItem post.comments))
         | _ -> 

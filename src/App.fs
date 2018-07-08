@@ -7,8 +7,9 @@ open Elmish.ReactNative
 open Elmish.HMR
 
 module TabsScreen =
-    open JoyReactor.Types
     open Fable.Helpers.ReactNative.Props
+    open JoyReactor
+    open JoyReactor.Types
 
     type Msg = 
         | SelectTab of int
@@ -63,7 +64,7 @@ module TabsScreen =
             let nextButtonOutter =
                 TouchableWithoutFeedbackProperties.Style 
                     [ Margin 2. 
-                      BackgroundColor "#e49421"
+                      BackgroundColor CommonUi.primaryColor
                       BorderRadius 4.
                       Flex 1.
                       Height 48.
@@ -165,4 +166,4 @@ Program.mkProgram App.init App.update App.view
 |> Program.withHMR
 // #endif
 |> Program.withReactNative "joyreact"
-|> Program.run        
+|> Program.run

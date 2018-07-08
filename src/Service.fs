@@ -16,6 +16,8 @@ module Cmd =
     open Elmish
     let ofEffect p f =
         Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofEffect0 p = 
+        Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 
 module Array =
     let tryMaxBy f xs =
@@ -32,8 +34,11 @@ module Utils =
     let longToTimeDelay _ = "2 часа"
     let curry f a b = f (a, b)
     let uncurry f (a, b) = f a b
+    let mutable private startTime = DateTime.Now.Ticks / 10_000L
     let log msg x =
-        printfn "LOG :: %O" msg
+        let delay = DateTime.Now.Ticks / 10_000L - startTime
+        printfn "LOGX (%O) :: %O" delay msg
+        startTime <- DateTime.Now.Ticks / 10_000L
         x
     let trace msg x =
         printfn msg x
@@ -41,6 +46,7 @@ module Utils =
 
 module CommonUi =
     open Fable.Helpers.ReactNative.Props
+    let primaryColor = "#e49421"
 
     module private Styles =
         let tabButtonOuter selected = 
@@ -186,6 +192,14 @@ module Image =
         let w = limitWidth
         let h = w / aspect
         normilize attachment.url w h, h
+
+module Platform =
+    open Fable.Import.ReactNative
+    let openUrl url = 
+        async {
+            let! _ = Globals.Linking.openURL url |> Async.AwaitPromise
+            return ()
+        }
 
 module Domain = 
     open Types
@@ -451,12 +465,25 @@ module ReactiveStore =
     // Posts
     // ===================================
 
+    let getCached _ =
+        async {
+            let! posts = Storage.load<Post[]> "posts"
+            return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
+        }
     let syncFirstPage _ = 
         async {
             let! dbPosts = Storage.load<Post[]> "posts" >>- Option.defaultValue [||]
             let! (webPosts, nextPage) = Service.loadPosts () None
 
-            return { actual = dbPosts; old = [||]; preloaded = webPosts |> List.toArray ; nextPage = nextPage }
+            let newState = match dbPosts with
+                           | [||] -> { PostsWithLevels.empty with actual = webPosts |> List.toArray
+                                                                  nextPage = nextPage }
+                           | _    -> { PostsWithLevels.empty with actual = dbPosts
+                                                                  preloaded = webPosts |> List.toArray
+                                                                  nextPage = nextPage }
+
+            Storage.save "posts" (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
+            return newState
         }
     let applyUpdate _ state = 
         async {
@@ -491,10 +518,4 @@ module ReactiveStore =
         async {
             do! Storage.remove "posts"
             return! syncFirstPage ()
-        }
-
-    let getCached _ =
-        async {
-            let! posts = Storage.load<Post[]> "posts"
-            return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
         }

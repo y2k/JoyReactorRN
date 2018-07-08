@@ -61,7 +61,7 @@ module private Styles =
     let nextButtonOutter enabled =
         TouchableWithoutFeedbackProperties.Style 
             [ Margin 4. 
-              BackgroundColor (if enabled then "#e49421" else "#e4942120")
+              BackgroundColor (if enabled then "#e49421" else "#e4942100")
               BorderRadius 4.
               Overflow Overflow.Hidden ]
     let nextButtonInner =
@@ -128,9 +128,12 @@ let viewItem post dispatch =
 let viewApplyUpdateButton (model : Model) dispatch =
     if Array.isEmpty model.syncState.preloaded
     then view [] []
-    else view [ ViewProperties.RemoveClippedSubviews true; ViewProperties.Style [ FlexStyle.Margin 5. ] ]
-              [ button [ ButtonProperties.Title "Has new posts"
-                         ButtonProperties.Color "#e49421"
+    else view [ ViewProperties.Style [ FlexStyle.Width (Globals.Dimensions.get("screen").width - 4.)
+                                       FlexStyle.Margin 2.
+                                       FlexStyle.Position Position.Absolute
+                                       FlexStyle.Bottom 0. ] ]
+              [ button [ ButtonProperties.Title "Есть новые посты"
+                         ButtonProperties.Color CommonUi.primaryColor
                          ButtonProperties.OnPress (fun _ -> dispatch ApplyUpdate) ] [] ]
 
 let view model dispatch = 
