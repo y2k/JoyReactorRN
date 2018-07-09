@@ -11,7 +11,7 @@ open JoyReactor.Utils
 open JoyReactor.CommonUi
 
 type Model = { tags: Tag []; loaded: Boolean }
-type Msg = TagsSynced of Result<Unit, Exception> | TagsLoaded of Tag []
+type Msg = TagsSynced of Result<Unit, Exception> | TagsLoaded of Tag [] | OpenPosts of Source
 
 let init = 
     let cmd =
@@ -22,12 +22,10 @@ let init =
     { tags = [||]; loaded = false }, Cmd.batch [cmd; cmd2]
 
 let update model = function
-    | TagsLoaded tags -> 
-        { model with tags = tags }, Cmd.none
-    | TagsSynced (Ok _) -> 
-        { model with loaded = true }, Cmd.none
-    | TagsSynced (Error e) -> 
-        raise e
+    | TagsLoaded tags      -> { model with tags = tags }, Cmd.none
+    | TagsSynced (Ok _)    -> { model with loaded = true }, Cmd.none
+    | TagsSynced (Error e) -> raise e
+    | _                    -> model, Cmd.none
 
 module Styles =
     let image = 
@@ -35,13 +33,15 @@ module Styles =
     let label =
         TextProperties.Style [ FontSize 18.; TextStyle.Color "#404040"; AlignSelf Alignment.Center ]
 
-let viewItem (x: Tag) = 
-    touchableOpacity [ ActiveOpacity 0.4 ] [
-        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] [
-            image [ Styles.image; Source [ Uri x.image ] ]
-            text [ Styles.label ] x.name ] ]
+let viewItem dispatch (x : Tag) = 
+    touchableOpacity 
+        [ ActiveOpacity 0.4
+          OnPress (fun _ -> TagSource x.name |> OpenPosts |> dispatch) ] 
+        [ view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] 
+               [ image [ Styles.image; Source [ Uri x.image ] ]
+                 text [ Styles.label ] x.name ] ]
 
-let view model =
+let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ myFlatList model.tags viewItem (fun x -> x.name) []
+         [ myFlatList model.tags (viewItem dispatch) (fun x -> x.name) []
            statusView <| (if model.loaded then Some <| Ok () else None) ]

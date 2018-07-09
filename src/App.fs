@@ -54,7 +54,7 @@ module TabsScreen =
     let private renderContent (model: Model) dispatch =
         match model with
         | HomeModel sm -> Home.view sm (HomeMsg >> dispatch)
-        | TagsModel sm -> TagsScreen.view sm
+        | TagsModel sm -> TagsScreen.view sm (TagsMsg >> dispatch)
         | ThreadsModel sm -> ThreadsScreen.view sm (ThreadsMsg >> dispatch)
         | ProfileModel sm -> ProfileScreen.view sm (ProfileMsg >> dispatch)
         | MessagesModel sm -> MessagesScreen.view sm (MessagesMsg >> dispatch)
@@ -112,7 +112,7 @@ module App =
     type Model = { subModel : SubModel; history : SubModel list }
     
     let init _ = TabsScreen.init 
-               |> fun (model, cmd) -> { subModel = TabsModel model; history = [] }, Cmd.map TabsMsg cmd
+                 |> fun (model, cmd) -> { subModel = TabsModel model; history = [] }, Cmd.map TabsMsg cmd
     
     let update msg model : Model * Cmd<Msg> =
         let wrap ctor msgCtor model (subModel, cmd)  =
@@ -125,11 +125,20 @@ module App =
             | [] -> 
                 exitApp()
                 model, Cmd.none
+
         | TabsMsg (TabsScreen.HomeMsg (Home.OpenPost p)), _ ->
             PostScreen.init p.id 
             |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
+        | HomeMsg (Home.OpenPost p), _ ->
+            PostScreen.init p.id 
+            |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
+        
+        | TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenPosts p)), _ ->
+            Home.init p 
+            |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
+
         | TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.ThreadSelected id)), _ ->
-            MessagesScreen.init id 
+            MessagesScreen.init id
             |> wrap MessagesModel MessagesMsg { model with history = model.subModel :: model.history }
         | PostMsg subMsg, PostModel subModel -> 
             PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
@@ -137,6 +146,8 @@ module App =
             MessagesScreen.update subModel subMsg |> wrap MessagesModel MessagesMsg model
         | TabsMsg subMsg, TabsModel subModel -> 
             TabsScreen.update subModel subMsg |> wrap TabsModel TabsMsg model
+        | HomeMsg subMsg, HomeModel subModel -> 
+            Home.update subModel subMsg |> wrap HomeModel HomeMsg model
         | _ -> model, Cmd.none
 
     let view model dispatch =
@@ -145,7 +156,7 @@ module App =
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
         | ProfileModel subModel -> ProfileScreen.view subModel (ProfileMsg >> dispatch)
         | LoginModel subModel -> LoginScreen.view subModel (LoginMsg >> dispatch)
-        | TagsModel subModel -> TagsScreen.view subModel
+        | TagsModel subModel -> TagsScreen.view subModel (TagsMsg >> dispatch)
         | TabsModel subModel -> TabsScreen.view subModel (TabsMsg >> dispatch)
         | MessagesModel subModel -> MessagesScreen.view subModel (MessagesMsg >> dispatch)
 

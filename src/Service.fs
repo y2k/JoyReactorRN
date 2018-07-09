@@ -205,6 +205,10 @@ module Domain =
     open Types
     open System.Text.RegularExpressions
 
+    let sourceToString = function
+        | FeedSource     -> "posts"
+        | TagSource name -> "posts-" + name
+
     let getCsrfToken html = 
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
         if m.Success then Some <| m.Groups.[1].Value else None
@@ -242,6 +246,7 @@ module Domain =
 
 module UrlBuilder =
     open Fable.Import.JS
+    open Types
 
     let messages page =
         page 
@@ -254,11 +259,18 @@ module UrlBuilder =
 
     let post id = sprintf "http://joyreactor.cc/post/%i" id
 
-    let posts _ (page: Int32 option) =
-        page 
-        |> Option.map string 
-        |> Option.defaultValue ""
-        |> (+) "http://joyreactor.cc/"
+    let posts source (page : int option) =
+        match source with
+        | FeedSource ->
+            page
+            |> Option.map string 
+            |> Option.defaultValue ""
+            |> (+) "http://joyreactor.cc/"
+        | TagSource name ->
+            page
+            |> Option.map (sprintf "/%i")
+            |> Option.defaultValue ""
+            |> (+) (sprintf "http://joyreactor.cc/tag/%s" name)
 
 module Fetch =
     module F = Fable.PowerPack.Fetch
@@ -465,15 +477,16 @@ module ReactiveStore =
     // Posts
     // ===================================
 
-    let getCached _ =
+    let getCached source =
         async {
-            let! posts = Storage.load<Post[]> "posts"
+            let! posts = source |> Domain.sourceToString |> Storage.load<Post[]>
             return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
         }
-    let syncFirstPage _ = 
+    let syncFirstPage source = 
         async {
-            let! dbPosts = Storage.load<Post[]> "posts" >>- Option.defaultValue [||]
-            let! (webPosts, nextPage) = Service.loadPosts () None
+            let storageId = source |> Domain.sourceToString
+            let! dbPosts = Storage.load<Post[]> storageId >>- Option.defaultValue [||]
+            let! (webPosts, nextPage) = Service.loadPosts source None
 
             let newState = match dbPosts with
                            | [||] -> { PostsWithLevels.empty with actual = webPosts |> List.toArray
@@ -482,10 +495,10 @@ module ReactiveStore =
                                                                   preloaded = webPosts |> List.toArray
                                                                   nextPage = nextPage }
 
-            Storage.save "posts" (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
+            Storage.save storageId (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
             return newState
         }
-    let applyUpdate _ state = 
+    let applyUpdate source state = 
         async {
             let ids = state.preloaded |> Array.map (fun x -> x.id)
             let newState = { state with 
@@ -493,17 +506,18 @@ module ReactiveStore =
                                    old = Array.concat [ state.actual; state.old ] |> Array.filter (fun x -> not <| Array.contains x.id ids)
                                    preloaded = [||] }
 
-            Storage.save "posts" (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
+            let storageId = source |> Domain.sourceToString
+            Storage.save storageId (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
             return newState
         }
-    let syncNextPage _ state = 
+    let syncNextPage source state = 
         async {
-            let! (webPosts, nextPage) = Service.loadPosts () state.nextPage
+            let! (webPosts, nextPage) = Service.loadPosts source state.nextPage
 
             let actualIds = state.actual |> Array.map (fun x -> x.id)
             let actualPosts =
-                Array.concat [state.actual; webPosts |> List.filter (fun x -> not <| Array.contains x.id actualIds)
-                                                     |> List.toArray ]
+                Array.concat [ state.actual; webPosts |> List.filter (fun x -> not <| Array.contains x.id actualIds)
+                                                      |> List.toArray ]
             let ids = actualPosts |> Array.map (fun x -> x.id)
             let newState =
                 { actual = actualPosts
@@ -511,11 +525,12 @@ module ReactiveStore =
                   nextPage = nextPage
                   preloaded = [||] }
 
-            Storage.save "posts" (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
+            let storageId = source |> Domain.sourceToString
+            Storage.save storageId (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
             return newState
         }
-    let reset _ = 
+    let reset source = 
         async {
-            do! Storage.remove "posts"
-            return! syncFirstPage ()
+            do! Storage.remove <| Domain.sourceToString source
+            return! syncFirstPage source
         }

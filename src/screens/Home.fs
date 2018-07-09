@@ -23,7 +23,7 @@ type Msg =
 type Model = 
     { syncState : PostsWithLevels
       items     : PostState []
-      status    : Option<Result<Unit, Exception>>
+      status    : Result<unit, exn> option
       source    : Source }
 
 let init source =
@@ -33,7 +33,7 @@ let init source =
     { syncState = PostsWithLevels.empty ; items = [||]; status = None; source = source }, 
     Cmd.batch [cmd1; cmd2]
 
-let postsToItems posts =
+let postsToPostStates posts =
     if Array.isEmpty posts.old && Array.isEmpty posts.actual 
     then [||]
     else Array.concat 
@@ -44,7 +44,7 @@ let postsToItems posts =
 let update model msg : Model * Cmd<Msg> = 
     match msg with
     | PostsLoaded (Ok x) ->
-        { model with items = postsToItems x
+        { model with items = postsToPostStates x
                      syncState = x
                      status = if Array.isEmpty x.actual then None else Some <| Ok () }, Cmd.none
     | PostsLoaded (Error e) ->
