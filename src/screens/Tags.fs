@@ -11,21 +11,25 @@ open JoyReactor.Utils
 open JoyReactor.CommonUi
 
 type Model = { tags: Tag []; loaded: Boolean }
-type Msg = TagsSynced of Result<Unit, Exception> | TagsLoaded of Tag [] | OpenPosts of Source
+type Msg = 
+    | FromCache of Result<Tag [], Exception> 
+    | FromWeb of Result<Tag [], Exception> 
+    | TagsLoaded of Tag [] 
+    | OpenPosts of Source 
+    | Refresh
 
 let init = 
-    let cmd =
-        ReactiveStore.listenTagUpdates
-        |> Cmd.ofSub
-        |> Cmd.map TagsLoaded
-    let cmd2 = ReactiveStore.syncTags |> flip Cmd.ofEffect TagsSynced
-    { tags = [||]; loaded = false }, Cmd.batch [cmd; cmd2]
+    let cmd = Cmd.batch [ ReactiveStore.getTagsFromCache |> flip Cmd.ofEffect FromCache
+                          ReactiveStore.getTagsFromWeb |> flip Cmd.ofEffect FromWeb ]
+    { tags = [||]; loaded = false }, cmd
 
 let update model = function
-    | TagsLoaded tags      -> { model with tags = tags }, Cmd.none
-    | TagsSynced (Ok _)    -> { model with loaded = true }, Cmd.none
-    | TagsSynced (Error e) -> raise e
-    | _                    -> model, Cmd.none
+    | Refresh             -> { model with loaded = false }, ReactiveStore.getTagsFromWeb |> flip Cmd.ofEffect FromWeb
+    | FromCache (Ok tags) -> { model with tags = tags }, Cmd.none
+    | FromWeb (Ok tags)   -> { model with tags = tags; loaded = true }, Cmd.none
+    | FromCache (Error e) -> raise e
+    | FromWeb (Error e)   -> raise e
+    | _                   -> model, Cmd.none
 
 module Styles =
     let image = 
@@ -42,6 +46,6 @@ let viewItem dispatch (x : Tag) =
                  text [ Styles.label ] x.name ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ myFlatList model.tags (viewItem dispatch) (fun x -> x.name) []
-           statusView <| (if model.loaded then Some <| Ok () else None) ]
+    myFlatList model.tags (viewItem dispatch) (fun x -> x.name) 
+               [ FlatListProperties.OnRefresh (Func<_,_>(fun _ -> dispatch Refresh))
+                 FlatListProperties.Refreshing <| not model.loaded ]

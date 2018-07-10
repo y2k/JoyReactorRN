@@ -436,30 +436,18 @@ module Service =
         >>- fun response -> response.posts, response.nextPage
 
 module ReactiveStore =
-    open Elmish
     open Types
     open PromiseOperators
 
-    let mutable private tagListener: Dispatch<Tag []> = ignore
-
-    let listenTagUpdates listener =
-        async {
-            tagListener <- listener
-
-            let! tags =
-                Storage.load<Tag []> "tags"
-                >>- Option.defaultValue [||]
-
-            tagListener tags
-        } |> Async.StartImmediate
-
-    let syncTags =
+    let getTagsFromCache =
+        Storage.load<Tag []> "tags" >>- Option.defaultValue [||]
+    let getTagsFromWeb =
         async {
             let! tags = Service.loadMyTags >>- List.toArray
 
-            tagListener tags
+            Storage.save "tags" tags |> Async.StartImmediate
 
-            do! Storage.save "tags" tags
+            return tags
         }
 
     let loadPost id callback =
