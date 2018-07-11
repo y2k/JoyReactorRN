@@ -27,7 +27,7 @@ type Model =
       source    : Source }
 
 let init source =
-    let cmd1 = Cmd.ofEffect (ReactiveStore.getCached source) PostsLoaded
+    let cmd1 = Cmd.ofEffect (ReactiveStore.getCachedPosts source) PostsLoaded
     let cmd2 = Cmd.ofEffect (ReactiveStore.syncFirstPage source) PostsLoaded
 
     { syncState = PostsWithLevels.empty ; items = [||]; status = None; source = source }, 

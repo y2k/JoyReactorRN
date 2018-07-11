@@ -4,7 +4,7 @@ open System
 open Fable.Core
 open Fable.Helpers.ReactNative
 
-module PromiseOperators =
+module Operators =
     let inline (>>=) ma mf = async.Bind(ma, mf)
     let inline (>>-) ma f =
         async {
@@ -205,39 +205,35 @@ module Domain =
     open Types
     open System.Text.RegularExpressions
 
+    let extractName html =
+        let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
+        if m.Success then Some m.Groups.[1].Value
+        else None
     let sourceToString = function
         | FeedSource     -> "posts"
         | TagSource name -> "posts-" + name
-
     let getCsrfToken html = 
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
         if m.Success then Some <| m.Groups.[1].Value else None
-
     let selectThreads messages = 
         messages
         |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
-
     let selectMessageForUser userName messages =
         messages
         |> Array.filter (fun x -> x.userName = userName)
         |> Array.sortByDescending (fun x -> x.date)
-
     let filterNewMessages (messages: Message[]) offset = 
         messages |> Array.filter (fun x -> x.date > offset)
-
     let checkMessagesIsOld (messages: Message[]) offset = 
         messages |> Array.exists (fun x -> x.date <= offset)
-
     let getLastOffsetOrDefault xs =
         xs |> Array.tryMaxBy (fun x -> x.date) 
            |> Option.map (fun x -> x.date) 
            |> Option.defaultValue 0.
-
     let private isStop messages lastOffset nextPage newMessages =
         let flagIsStop = checkMessagesIsOld messages lastOffset
         flagIsStop || Option.isNone nextPage || Array.length newMessages >= 200 
-    
     let mergeMessages parentMessages messages nextPage =
         let lastOffset = getLastOffsetOrDefault parentMessages
         let newMessages = Array.append parentMessages (filterNewMessages messages lastOffset)
@@ -307,7 +303,7 @@ module Requests =
           Body !^ form ]
 
 module Storage =
-    open PromiseOperators
+    open Operators
     module JS = Fable.Import.JS
 
     module private AsyncStorage =
@@ -346,7 +342,7 @@ module Storage =
     let remove = AsyncStorage.remove
 
 module Service =
-    open PromiseOperators
+    open Operators
     open Fable.PowerPack.Fetch
     open Fetch
     open Utils
@@ -384,7 +380,6 @@ module Service =
             }
         loadAllMessageFromStorage
         >>= loadPageRec None
-        >>- trace "Message count = %A"
         >>= Storage.save "messages"
 
     let loadThreadsFromWeb =
@@ -397,35 +392,22 @@ module Service =
 
     let login username password =
         fetchString "http://joyreactor.cc/ads" []
-        >>- (Domain.getCsrfToken >> Option.get >> (Requests.login username password))
+        >>- (Domain.getCsrfToken >> Option.get >> Requests.login username password)
         >>= uncurry fetchString
         >>- ignore
 
-    let testReloadMessages =
-        Storage.clear
-        >>= fun _ -> login "..." "..."
-        |> Async.Catch 
-        >>= fun _ -> loadThreadsFromWeb
-        |> Async.Ignore
-
-    open System.Text.RegularExpressions
     let getMyName =
         fetchString "http://joyreactor.cc/donate" []
-        >>- fun html -> 
-                let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
-                if m.Success then Some m.Groups.[1].Value
-                else None
-        >>- Option.get
+        >>- (Domain.extractName >> Option.get)
 
-    let loadTags userName =
-        UrlBuilder.user userName |> loadAndParse<Tag list> "tags"
-    let loadMyTags =
-        getMyName >>= loadTags
-
-    let loadProfile userName =
-        UrlBuilder.user userName |> loadAndParse<Profile> "profile"
-    let loadMyProfile =
-        getMyName >>= loadProfile
+    let loadMyTags = 
+        getMyName
+        >>- UrlBuilder.user
+        >>= loadAndParse<Tag list> "tags"
+    let loadMyProfile = 
+        getMyName
+        >>- UrlBuilder.user
+        >>= loadAndParse<Profile> "profile"
 
     let loadPost id =
         UrlBuilder.post id |> loadAndParse<Post> "post"
@@ -437,16 +419,14 @@ module Service =
 
 module ReactiveStore =
     open Types
-    open PromiseOperators
+    open Operators
 
     let getTagsFromCache =
         Storage.load<Tag []> "tags" >>- Option.defaultValue [||]
     let getTagsFromWeb =
         async {
             let! tags = Service.loadMyTags >>- List.toArray
-
             Storage.save "tags" tags |> Async.StartImmediate
-
             return tags
         }
 
@@ -465,7 +445,7 @@ module ReactiveStore =
     // Posts
     // ===================================
 
-    let getCached source =
+    let getCachedPosts source =
         async {
             let! posts = source |> Domain.sourceToString |> Storage.load<Post[]>
             return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
