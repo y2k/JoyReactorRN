@@ -52,9 +52,12 @@ let update model msg : Model * Cmd<Msg> =
     | ApplyUpdate -> 
         model, Cmd.ofEffect (ReactiveStore.applyUpdate model.source model.syncState) PostsLoaded
     | Refresh ->
-        { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
+        if Array.isEmpty model.syncState.preloaded 
+            then { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
+            else model, Cmd.ofMsg ApplyUpdate
     | LoadNextPage -> 
-        { model with status = None }, Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
+        { model with status = None }, 
+        Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
     | _ -> model, Cmd.none
 
 module private Styles =

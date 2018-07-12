@@ -17,9 +17,9 @@ type Msg =
     | ThreadsFromCache of Result<Message [], Exception>
     | ThreadsFromWeb of Result<Message [], Exception>
     | ThreadSelected of String
-    | ReloadThreads
+    | Refresh
 
-let init: Model * Cmd<Msg> = 
+let init : Model * Cmd<Msg> = 
     { items = [||]; status = None }, 
     Cmd.ofEffect Service.loadThreadsFromCache ThreadsFromCache
 
@@ -35,8 +35,9 @@ let update model msg =
             status = Some <| Ok () }, Cmd.none
     | ThreadsFromWeb (Error e) -> 
         { model with status = log e (Some <| Error e) }, Cmd.none
-    | ThreadSelected _ -> failwith "Not Implemented"
-    | ReloadThreads -> failwith "Not Implemented"
+    | Refresh -> 
+        { model with  status = None }, Cmd.ofEffect Service.loadThreadsFromWeb ThreadsFromWeb
+    | _ -> model, Cmd.none
 
 let private itemView dispatch i =
     touchableHighlight 
@@ -56,6 +57,7 @@ let private itemView dispatch i =
                            (longToTimeDelay i.date) ] ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] 
-         [ myFlatList model.items (itemView dispatch) (fun x -> x.userName) []
-           statusView model.status ]
+    myFlatList 
+        model.items (itemView dispatch) (fun x -> x.userName) 
+        [ FlatListProperties.OnRefresh (Func<_,_>(fun _ -> dispatch Refresh))
+          FlatListProperties.Refreshing <| Option.isNone model.status ]
