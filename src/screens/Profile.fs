@@ -6,19 +6,24 @@ open Fable.Helpers.ReactNative
 open Elmish
 
 open JoyReactor
+open JoyReactor.Operators
 open JoyReactor.Types
 
-type Msg = ProfileMsg of Result<Profile, Exception> | LoginMsg of LoginScreen.Msg
+type Msg = ProfileMsg of Result<Profile, Exception> | LoginMsg of LoginScreen.Msg | Logout
 type ModelStage = ProfileModel of Profile | LoadingModel | LoginModel
 type Model = { stage : ModelStage; subModel : LoginScreen.Model }
 
-let init: Model * Cmd<Msg> = 
+let init : Model * Cmd<Msg> = 
     { stage = LoadingModel; subModel = LoginScreen.init }, Cmd.ofEffect Service.loadMyProfile ProfileMsg
 
-let update model msg =
-    match msg with
-    | ProfileMsg (Ok p) -> { model with stage = ProfileModel p }, Cmd.none
-    | ProfileMsg _ -> { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
+let update model = function
+    | Logout -> 
+        { model with stage = LoadingModel }, 
+        Cmd.ofEffect (Service.logout >>= (fun _ -> Service.loadMyProfile)) ProfileMsg
+    | ProfileMsg (Ok p) -> 
+        { model with stage = ProfileModel p }, Cmd.none
+    | ProfileMsg _ -> 
+        { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
     | LoginMsg subMsg ->
         let loginModel, cmd = LoginScreen.update model.subModel subMsg
         { model with subModel = loginModel }, Cmd.map LoginMsg cmd
@@ -41,11 +46,11 @@ module private Styles =
     let star color =
         TextProperties.Style [ FontSize 25.; TextStyle.Color color ]
 
-let private viewButton title margin =
-    touchableOpacity [ Styles.button margin ] 
+let private viewButton title margin onPress =
+    touchableOpacity [ Styles.button margin; OnPress onPress ] 
                      [ text [ Styles.buttonText ] <| String.toUpper title ]
 
-let private viewProfile (profile : Profile) =
+let private viewProfile (profile : Profile) dispatch =
     view [] 
          [ image [ Styles.avatar; Source [ Uri profile.userImage.url ] ]
            text [ Styles.userName ] profile.userName
@@ -62,7 +67,7 @@ let private viewProfile (profile : Profile) =
                        [ view [ Styles.progressToNewStar profile.progressToNewStar ] [] ] ]
            view [ ViewProperties.Style [ Height 1.; BackgroundColor "#e4e4e4" ] ] []
            view [ ViewProperties.Style [ Height 10. ] ] []
-           viewButton "Выйти" 20. ]
+           viewButton "Выйти" 20. (fun _ -> dispatch Logout) ]
 
 let view model dispatch =
     let content =
@@ -75,6 +80,6 @@ let view model dispatch =
         | LoginModel -> 
             LoginScreen.view model.subModel (LoginMsg >> dispatch)
         | ProfileModel p -> 
-            viewProfile p
+            viewProfile p dispatch
     view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] 
          [ content ]

@@ -417,6 +417,10 @@ module Service =
         |> loadAndParse<PostResponse> "posts"
         >>- fun response -> response.posts, response.nextPage
 
+    let logout =
+        fetchString "http://joyreactor.cc/logout" []
+        >>- ignore
+
 module ReactiveStore =
     open Types
     open Operators
