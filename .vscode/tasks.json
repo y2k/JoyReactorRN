@@ -2,6 +2,13 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "RN menu",
+            "command": "$ANDROID_HOME/platform-tools/adb shell input keyevent 82",
+            "type": "shell",
+            "presentation": { "reveal": "never" },
+            "problemMatcher": []
+        },
+        {
             "label": "RN reload",
             "command": "$ANDROID_HOME/platform-tools/adb shell input text \"RR\"",
             "type": "shell",
