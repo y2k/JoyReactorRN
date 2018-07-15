@@ -136,10 +136,15 @@ module Types =
         { url : string
           aspect : float }
 
+    type AttachmentResource = 
+        { image : Attachment }
+
     type Comment = 
-        { text : string
-          image : Attachment
-          rating : float }
+        { text        : string
+          image       : Attachment
+          rating      : float
+          userName    : string
+          attachments : AttachmentResource [] }
 
     type Post = 
         { id        : Int32

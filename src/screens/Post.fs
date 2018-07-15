@@ -53,14 +53,25 @@ module private Styles =
                                        MarginTop 8.
                                        AlignSelf Alignment.FlexEnd ]
 
+let viewAttachments (comment : Comment) =
+    view [ Styles.panel ]
+         (comment.attachments
+          |> Array.toList
+          |> List.map (
+              fun a ->
+                  image [ ImageProperties.Style [ Width 80.; Height 80. ]
+                          Source [ Uri <| Image.normilize a.image.url 80. 80. ] ] ) )
+
 let viewItem (comment : Comment) = 
       view [ Styles.home ] 
            [ image [ Styles.image
                      Source [ Uri comment.image.url ] ]
              view [ ViewProperties.Style [ Flex 1. ] ] 
-                  [ text [ NumberOfLines 3.
-                           TextProperties.Style [ TextStyle.Color "#999" ] ] 
+                  [ text [ TextProperties.Style [ TextStyle.Color "black"; FontWeight FontWeight.Bold ] ]
+                         comment.userName
+                    text [ NumberOfLines 3.; TextProperties.Style [ TextStyle.Color "#999" ] ] 
                          comment.text
+                    viewAttachments comment
                     view [ Styles.panel ] 
                          [ text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ] 
                                 "\ue8dc"
