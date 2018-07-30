@@ -30,13 +30,8 @@ RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
     unzip *tools*linux*.zip && \
     rm *tools*linux*.zip
 ENV ANDROID_HOME /opt/android-sdk
-#RUN yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
 RUN yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
-#RUN $ANDROID_HOME/tools/bin/sdkmanager --update
 RUN $ANDROID_HOME/tools/bin/sdkmanager  "platforms;android-27" "build-tools;23.0.1" "extras;google;m2repository" "extras;android;m2repository"
-#RUN $ANDROID_HOME/tools/bin/sdkmanager --update
-#RUN yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
-#RUN $ANDROID_HOME/tools/bin/sdkmanager --update sdk
 
 ARG APP_RELEASE_STORE_PASSWORD
 ARG HOCKEYAPP_TOKEN
