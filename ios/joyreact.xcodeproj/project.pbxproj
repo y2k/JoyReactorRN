@@ -17,7 +17,6 @@
 		139105C61AF99C1200B5F7CC /* libRCTSettings.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 139105C11AF99BAD00B5F7CC /* libRCTSettings.a */; };
 		139FDEF61B0652A700C62182 /* libRCTWebSocket.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 139FDEF41B06529B00C62182 /* libRCTWebSocket.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
-		13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB11A68108700A75B9A /* LaunchScreen.xib */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		140ED2AC1D01E1AD002B40FF /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 146834041AC3E56700842450 /* libReact.a */; };
@@ -36,6 +35,14 @@
 		2DCD954D1E0B4F2C00145EB5 /* joyreactTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* joyreactTests.m */; };
 		2DF0FFEE2056DD460020B375 /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DAD3EA31DF850E9000B6D8A /* libReact.a */; };
 		5E9157361DD0AC6A00FF2AA8 /* libRCTAnimation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E9157331DD0AC6500FF2AA8 /* libRCTAnimation.a */; };
+		785102A821163AD80040E700 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7851028121163AD80040E700 /* LaunchScreen.storyboard */; };
+		785102AF21163B440040E700 /* LaunchScreenLogo@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 785102A921163B430040E700 /* LaunchScreenLogo@3x.png */; };
+		785102B021163B440040E700 /* LaunchScreenGirl.png in Resources */ = {isa = PBXBuildFile; fileRef = 785102AA21163B430040E700 /* LaunchScreenGirl.png */; };
+		785102B121163B440040E700 /* LaunchScreenLogo.png in Resources */ = {isa = PBXBuildFile; fileRef = 785102AB21163B430040E700 /* LaunchScreenLogo.png */; };
+		785102B221163B440040E700 /* LaunchScreenLogo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 785102AC21163B440040E700 /* LaunchScreenLogo@2x.png */; };
+		785102B321163B440040E700 /* LaunchScreenGirl@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 785102AD21163B440040E700 /* LaunchScreenGirl@3x.png */; };
+		785102B421163B440040E700 /* LaunchScreenGirl@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 785102AE21163B440040E700 /* LaunchScreenGirl@2x.png */; };
+		785102B62116402A0040E700 /* icomoon.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 785102B52116402A0040E700 /* icomoon.ttf */; };
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
 		ADBDB9381DFEBF1600ED6528 /* libRCTBlob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ADBDB9271DFEBF0700ED6528 /* libRCTBlob.a */; };
 /* End PBXBuildFile section */
@@ -331,7 +338,6 @@
 		13B07F961A680F5B00A75B9A /* joyreact.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = joyreact.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = joyreact/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = joyreact/AppDelegate.m; sourceTree = "<group>"; };
-		13B07FB21A68108700A75B9A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = joyreact/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = joyreact/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = joyreact/main.m; sourceTree = "<group>"; };
@@ -340,6 +346,14 @@
 		2D02E4901E0B4A5D006451C7 /* joyreact-tvOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "joyreact-tvOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D16E6891FA4F8E400B85C8A /* libReact.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libReact.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E91572D1DD0AC6500FF2AA8 /* RCTAnimation.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTAnimation.xcodeproj; path = "../node_modules/react-native/Libraries/NativeAnimation/RCTAnimation.xcodeproj"; sourceTree = "<group>"; };
+		7851028221163AD80040E700 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = joyreact/Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		785102A921163B430040E700 /* LaunchScreenLogo@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "LaunchScreenLogo@3x.png"; path = "joyreact/LaunchScreenLogo@3x.png"; sourceTree = "<group>"; };
+		785102AA21163B430040E700 /* LaunchScreenGirl.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = LaunchScreenGirl.png; path = joyreact/LaunchScreenGirl.png; sourceTree = "<group>"; };
+		785102AB21163B430040E700 /* LaunchScreenLogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = LaunchScreenLogo.png; path = joyreact/LaunchScreenLogo.png; sourceTree = "<group>"; };
+		785102AC21163B440040E700 /* LaunchScreenLogo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "LaunchScreenLogo@2x.png"; path = "joyreact/LaunchScreenLogo@2x.png"; sourceTree = "<group>"; };
+		785102AD21163B440040E700 /* LaunchScreenGirl@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "LaunchScreenGirl@3x.png"; path = "joyreact/LaunchScreenGirl@3x.png"; sourceTree = "<group>"; };
+		785102AE21163B440040E700 /* LaunchScreenGirl@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "LaunchScreenGirl@2x.png"; path = "joyreact/LaunchScreenGirl@2x.png"; sourceTree = "<group>"; };
+		785102B52116402A0040E700 /* icomoon.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = icomoon.ttf; path = joyreact/icomoon.ttf; sourceTree = "<group>"; };
 		78C398B01ACF4ADC00677621 /* RCTLinking.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTLinking.xcodeproj; path = "../node_modules/react-native/Libraries/LinkingIOS/RCTLinking.xcodeproj"; sourceTree = "<group>"; };
 		832341B01AAA6A8300B99B32 /* RCTText.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTText.xcodeproj; path = "../node_modules/react-native/Libraries/Text/RCTText.xcodeproj"; sourceTree = "<group>"; };
 		ADBDB91F1DFEBF0600ED6528 /* RCTBlob.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTBlob.xcodeproj; path = "../node_modules/react-native/Libraries/Blob/RCTBlob.xcodeproj"; sourceTree = "<group>"; };
@@ -482,12 +496,19 @@
 		13B07FAE1A68108700A75B9A /* joyreact */ = {
 			isa = PBXGroup;
 			children = (
+				785102B52116402A0040E700 /* icomoon.ttf */,
+				785102AA21163B430040E700 /* LaunchScreenGirl.png */,
+				785102AE21163B440040E700 /* LaunchScreenGirl@2x.png */,
+				785102AD21163B440040E700 /* LaunchScreenGirl@3x.png */,
+				785102AB21163B430040E700 /* LaunchScreenLogo.png */,
+				785102AC21163B440040E700 /* LaunchScreenLogo@2x.png */,
+				785102A921163B430040E700 /* LaunchScreenLogo@3x.png */,
 				008F07F21AC5B25A0029DE68 /* main.jsbundle */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
-				13B07FB11A68108700A75B9A /* LaunchScreen.xib */,
+				7851028121163AD80040E700 /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
 			);
 			name = joyreact;
@@ -691,6 +712,9 @@
 					00E356ED1AD99517003FC87E = {
 						CreatedOnToolsVersion = 6.2;
 						TestTargetID = 13B07F861A680F5B00A75B9A;
+					};
+					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = HQ8TN5MPFF;
 					};
 					2D02E47A1E0B4A5D006451C7 = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -1048,8 +1072,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				785102B221163B440040E700 /* LaunchScreenLogo@2x.png in Resources */,
+				785102A821163AD80040E700 /* LaunchScreen.storyboard in Resources */,
+				785102B121163B440040E700 /* LaunchScreenLogo.png in Resources */,
+				785102B62116402A0040E700 /* icomoon.ttf in Resources */,
+				785102AF21163B440040E700 /* LaunchScreenLogo@3x.png in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
+				785102B421163B440040E700 /* LaunchScreenGirl@2x.png in Resources */,
+				785102B321163B440040E700 /* LaunchScreenGirl@3x.png in Resources */,
+				785102B021163B440040E700 /* LaunchScreenGirl.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1152,13 +1183,12 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		13B07FB11A68108700A75B9A /* LaunchScreen.xib */ = {
+		7851028121163AD80040E700 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				13B07FB21A68108700A75B9A /* Base */,
+				7851028221163AD80040E700 /* Base */,
 			);
-			name = LaunchScreen.xib;
-			path = joyreact;
+			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -1207,6 +1237,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = NO;
+				DEVELOPMENT_TEAM = HQ8TN5MPFF;
 				INFOPLIST_FILE = joyreact/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (
@@ -1224,6 +1255,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = HQ8TN5MPFF;
 				INFOPLIST_FILE = joyreact/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (

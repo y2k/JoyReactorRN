@@ -131,12 +131,13 @@ let viewItem post dispatch =
 let viewApplyUpdateButton (model : Model) dispatch =
     if Array.isEmpty model.syncState.preloaded
     then view [] []
-    else view [ ViewProperties.Style [ FlexStyle.Width (Globals.Dimensions.get("screen").width - 4.)
+    else view [ ViewProperties.Style [ ViewStyle.BackgroundColor CommonUi.primaryColor
+                                       FlexStyle.Width (Globals.Dimensions.get("screen").width - 4.)
                                        FlexStyle.Margin 2.
                                        FlexStyle.Position Position.Absolute
-                                       FlexStyle.Bottom 0. ] ]
+                                       FlexStyle.Bottom 0. ]  ]
               [ button [ ButtonProperties.Title "Есть новые посты"
-                         ButtonProperties.Color CommonUi.primaryColor
+                         ButtonProperties.Color "white"
                          ButtonProperties.OnPress (fun _ -> dispatch ApplyUpdate) ] [] ]
 
 let view model dispatch = 
