@@ -81,7 +81,7 @@ let viewItem (comment : Comment) =
 let view model dispatch =
     let contentView =
         match model with
-        | { error = Some e } -> text [] ("ERROR: " + e)
+        | { error = Some e } -> text [] ("Ошибка: " + e)
         | { post = Some post } ->
               scrollView [] ([   image [ ImageProperties.Style [ Height 300. ] 
                                          Source [ Uri post.image.Value.url ] ]

@@ -23,10 +23,20 @@ let init =
                           ReactiveStore.getTagsFromWeb |> flip Cmd.ofEffect FromWeb ]
     { tags = [||]; loaded = false }, cmd
 
+let addFavorite tags =
+    Array.concat
+        [ [| { name = "Избранное"; image = "http://img1.joyreactor.cc/pics/avatar/tag/1279" } |]
+          tags ]
+
+let tagToSourse tag =
+    match tag.name with
+    | "Избранное" -> FavoriteSource
+    | _ -> TagSource tag.name
+
 let update model = function
     | Refresh             -> { model with loaded = false }, ReactiveStore.getTagsFromWeb |> flip Cmd.ofEffect FromWeb
-    | FromCache (Ok tags) -> { model with tags = tags }, Cmd.none
-    | FromWeb (Ok tags)   -> { model with tags = tags; loaded = true }, Cmd.none
+    | FromCache (Ok tags) -> { model with tags = addFavorite tags }, Cmd.none
+    | FromWeb (Ok tags)   -> { model with tags = addFavorite tags; loaded = true }, Cmd.none
     | FromCache (Error e) -> raise e
     | FromWeb (Error e)   -> raise e
     | _                   -> model, Cmd.none
@@ -40,7 +50,7 @@ module Styles =
 let viewItem dispatch (x : Tag) = 
     touchableOpacity 
         [ ActiveOpacity 0.4
-          OnPress (fun _ -> TagSource x.name |> OpenPosts |> dispatch) ] 
+          OnPress (fun _ -> tagToSourse x |> OpenPosts |> dispatch) ] 
         [ view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] 
                [ image [ Styles.image; Source [ Uri x.image ] ]
                  text [ Styles.label ] x.name ] ]

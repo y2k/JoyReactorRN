@@ -127,6 +127,7 @@ module Types =
     type Source =
     | FeedSource
     | TagSource of string
+    | FavoriteSource
 
     type Tag = 
         { name: string
