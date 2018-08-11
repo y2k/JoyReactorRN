@@ -6,11 +6,7 @@ open Fable.Helpers.ReactNative
 
 module Operators =
     let inline (>>=) ma mf = async.Bind(ma, mf)
-    let inline (>>-) ma f =
-        async {
-            let! x = ma
-            return f x
-        }
+    let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
 
 module Cmd =
     open Elmish
@@ -29,11 +25,11 @@ module Array =
 module Utils =
     [<Emit("require($0)")>]
     let require (_: string) = jsNative
-    let always a _ = a
-    let flip f a b = f b a
+    let inline always a _ = a
+    let inline flip f a b = f b a
     let longToTimeDelay _ = "2 часа"
-    let curry f a b = f (a, b)
-    let uncurry f (a, b) = f a b
+    let inline curry f a b = f (a, b)
+    let inline uncurry f (a, b) = f a b
     let mutable private startTime = DateTime.Now.Ticks / 10_000L
     let log msg x =
         let delay = DateTime.Now.Ticks / 10_000L - startTime
@@ -218,6 +214,7 @@ module Domain =
     let sourceToString = function
         | FeedSource     -> "posts"
         | TagSource name -> "posts-" + name
+        | FavoriteSource -> "my-favorites"
     let getCsrfToken html = 
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
         if m.Success then Some <| m.Groups.[1].Value else None
@@ -261,7 +258,7 @@ module UrlBuilder =
 
     let post id = sprintf "http://joyreactor.cc/post/%i" id
 
-    let posts source (page : int option) =
+    let posts source userName (page : int option) =
         match source with
         | FeedSource ->
             page
@@ -273,6 +270,11 @@ module UrlBuilder =
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
             |> (+) (sprintf "http://joyreactor.cc/tag/%s" name)
+        | FavoriteSource ->
+            page
+            |> Option.map (sprintf "/%i")
+            |> Option.defaultValue ""
+            |> (+) (sprintf "http://joyreactor.cc/user/%s/favorite" userName)
 
 module Fetch =
     module F = Fable.PowerPack.Fetch
@@ -419,8 +421,9 @@ module Service =
         UrlBuilder.post id |> loadAndParse<Post> "post"
 
     let loadPosts source page = 
-        UrlBuilder.posts source page 
-        |> loadAndParse<PostResponse> "posts"
+        getMyName
+        >>- flip (UrlBuilder.posts source) page 
+        >>= loadAndParse<PostResponse> "posts"
         >>- fun response -> response.posts, response.nextPage
 
     let logout =
