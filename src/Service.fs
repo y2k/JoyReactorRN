@@ -307,7 +307,6 @@ module Requests =
         form.append ("html", html)
         (sprintf "https://jrs.y2k.work/%s" parseApi),
         [ Method HttpMethod.POST
-          requestHeaders [ ContentType "multipart/form-data" ]
           Body !^ form ]
 
 module Storage =
