@@ -14,3 +14,8 @@ nuget Fable.Elmish.HMR
 nuget Fable.React
 
 nuget Fable.React.Native 1.7.200
+
+nuget Microsoft.NET.Test.Sdk
+nuget xunit
+nuget xunit.runner.visualstudio
+clitool dotnet-xunit
