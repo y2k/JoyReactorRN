@@ -45,6 +45,7 @@ let view model dispatch =
     | false ->
         view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] 
              [ textInput [ Styles.edit
+                           TextInput.AutoCapitalize AutoCapitalize.None
                            TextInput.PlaceholderTextColor "gray"
                            TextInput.Placeholder "Логин" 
                            TextInput.OnChangeText (UsernameMsg >> dispatch) ] 
