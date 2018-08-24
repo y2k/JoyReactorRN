@@ -57,7 +57,9 @@ let private itemView dispatch i =
                            (longToTimeDelay i.date) ] ] ]
 
 let view model dispatch =
-    myFlatList 
-        model.items (itemView dispatch) (fun x -> x.userName) 
-        [ FlatListProperties.OnRefresh (Func<_,_>(fun _ -> dispatch Refresh))
-          FlatListProperties.Refreshing <| Option.isNone model.status ]
+    view [ ViewProperties.Style [ Flex 1. ] ] [
+        myFlatList 
+            model.items (itemView dispatch) (fun x -> x.userName) 
+            [ FlatListProperties.OnRefresh (Func<_,_>(fun _ -> dispatch Refresh))
+              FlatListProperties.Refreshing false ]
+        loadingView <| Option.isNone model.status ]

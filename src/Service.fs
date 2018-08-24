@@ -3,6 +3,9 @@ namespace JoyReactor
 open System
 open Fable.Core
 open Fable.Helpers.ReactNative
+open Fable.Import.ReactNative
+open Fable.Import.ReactNative
+open Fable.Import.ReactNative
 
 module Operators =
     let inline (>>=) ma mf = async.Bind(ma, mf)
@@ -114,7 +117,22 @@ module CommonUi =
             activityIndicator 
                 [ ViewProperties.Style [ BackgroundColor "#212121"; Padding 4. ]
                   ActivityIndicator.Size Size.Large
-                  ActivityIndicator.Color "#ffb100" ]    
+                  ActivityIndicator.Color "#ffb100" ] 
+    let loadingView inProgress =
+        if inProgress 
+            then text [ TextProperties.Style [ BackgroundColor primaryColor; Padding 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ] "Loading" 
+            else view [] []
+    let reloadButton show title dispatch =
+        if show
+            then view [] []
+            else view [ ViewProperties.Style [ ViewStyle.BackgroundColor primaryColor
+                                               FlexStyle.Width (Globals.Dimensions.get("screen").width - 4.)
+                                               FlexStyle.Margin 2.
+                                               FlexStyle.Position Position.Absolute
+                                               FlexStyle.Bottom 0. ]  ]
+                      [ button [ ButtonProperties.Title title
+                                 ButtonProperties.Color "white"
+                                 ButtonProperties.OnPress dispatch ] [] ]
 
 module String =
     let toUpper (x: string) = x.ToUpper()

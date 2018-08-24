@@ -56,6 +56,8 @@ let viewItem dispatch (x : Tag) =
                  text [ Styles.label ] x.name ] ]
 
 let view model dispatch =
-    myFlatList model.tags (viewItem dispatch) (fun x -> x.name) 
-               [ FlatListProperties.OnRefresh (Func<_,_>(fun _ -> dispatch Refresh))
-                 FlatListProperties.Refreshing <| not model.loaded ]
+    view [ ViewProperties.Style [ Flex 1. ] ] [
+        myFlatList model.tags (viewItem dispatch) (fun x -> x.name) 
+                   [ FlatListProperties.OnRefresh (Func<_,_>(fun _ -> dispatch Refresh)) 
+                     FlatListProperties.Refreshing false ]
+        loadingView <| not model.loaded ]

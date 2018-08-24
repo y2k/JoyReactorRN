@@ -128,21 +128,9 @@ let viewItem post dispatch =
                                       text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#bcbcbc" ] ] 
                                            "2 часа" ] ] ] ] ]
 
-let viewApplyUpdateButton (model : Model) dispatch =
-    if Array.isEmpty model.syncState.preloaded
-    then view [] []
-    else view [ ViewProperties.Style [ ViewStyle.BackgroundColor CommonUi.primaryColor
-                                       FlexStyle.Width (Globals.Dimensions.get("screen").width - 4.)
-                                       FlexStyle.Margin 2.
-                                       FlexStyle.Position Position.Absolute
-                                       FlexStyle.Bottom 0. ]  ]
-              [ button [ ButtonProperties.Title "Есть новые посты"
-                         ButtonProperties.Color "white"
-                         ButtonProperties.OnPress (fun _ -> dispatch ApplyUpdate) ] [] ]
-
 let view model dispatch = 
     let isSyncing = Option.isNone model.status
-    view [ ViewProperties.Style [ FlexStyle.Flex 1. ] ]
+    view [ ViewProperties.Style [ Flex 1. ] ]
          [ myFlatList
                model.items
                (function
@@ -154,5 +142,6 @@ let view model dispatch =
                 | Old post -> string post.id
                 | Divider -> "divider")
                [ FlatListProperties.OnRefresh (Func<_,_>(fun () -> dispatch Refresh))
-                 FlatListProperties.Refreshing (model.status = None) ]
-           viewApplyUpdateButton model dispatch ]
+                 FlatListProperties.Refreshing false ]
+           reloadButton (Array.isEmpty model.syncState.preloaded) "Есть новые посты" (always ApplyUpdate >> dispatch)
+           loadingView isSyncing ]
