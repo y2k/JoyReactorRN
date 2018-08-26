@@ -85,11 +85,12 @@ let loadingView inProgress =
 let reloadButton show title dispatch =
     if show
         then view [] []
-        else view [ ViewProperties.Style [ ViewStyle.BackgroundColor primaryColor
-                                           FlexStyle.Width (Globals.Dimensions.get("screen").width - 4.)
-                                           FlexStyle.Margin 2.
-                                           FlexStyle.Position Position.Absolute
-                                           FlexStyle.Bottom 0. ]  ]
-                  [ button [ ButtonProperties.Title title
-                             ButtonProperties.Color "white"
-                             ButtonProperties.OnPress dispatch ] [] ]
+        else
+            touchableOpacity 
+                [ TouchableWithoutFeedbackProperties.Style 
+                    [ BackgroundColor primaryColor
+                      Overflow Overflow.Hidden ]
+                  OnPress dispatch ]
+                [ text 
+                    [ TextProperties.Style [ Padding 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ]
+                    title ]
