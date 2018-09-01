@@ -5,6 +5,7 @@ open Elmish
 open Elmish.React
 open Elmish.ReactNative
 open Elmish.HMR
+open JoyReactor.CommonUi
 
 module TabsScreen =
     open Fable.Helpers.ReactNative.Props
@@ -58,37 +59,16 @@ module TabsScreen =
         | ThreadsModel sm -> ThreadsScreen.view sm (ThreadsMsg >> dispatch)
         | ProfileModel sm -> ProfileScreen.view sm (ProfileMsg >> dispatch)
         | MessagesModel sm -> MessagesScreen.view sm (MessagesMsg >> dispatch)
-    
-    let view model dispatch =
-        let button title id =
-            let nextButtonOutter =
-                TouchableWithoutFeedbackProperties.Style 
-                    [ Margin 2. 
-                      BackgroundColor CommonUi.primaryColor
-                      BorderRadius 4.
-                      Flex 1.
-                      Height 48.
-                      JustifyContent JustifyContent.Center
-                      Overflow Overflow.Hidden ]
-            let tabButtonInner =
-                TextProperties.Style 
-                    [ FontWeight FontWeight.Bold
-                      FontSize 14.
-                      TextAlign TextAlignment.Center
-                      TextStyle.Color "white" ]
-            touchableOpacity 
-                [ nextButtonOutter
-                  OnPress (fun _ -> SelectTab id |> dispatch) ]
-                [ text [ tabButtonInner ] title ]
 
+    let view model dispatch =
         view [ ViewProperties.Style [ Flex 1. ] ] [
             view [ ViewProperties.Style [ Flex 1. ] ] 
                  [ renderContent model dispatch ]
             view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 2. ] ] 
-                 [ button "Home" 0
-                   button "Tags" 1
-                   button "Messages" 2
-                   button "Profile" 3 ] ]
+                 [ roundButton "Home" (dispatch <! SelectTab 0) [ Flex 1. ]
+                   roundButton "Tags" (dispatch <! SelectTab 1) [ Flex 1. ]
+                   roundButton "Messages" (dispatch <! SelectTab 2) [ Flex 1. ]
+                   roundButton "Profile"  (dispatch <! SelectTab 3) [ Flex 1. ] ] ]
 
 module App =
     type Msg = 
@@ -140,8 +120,13 @@ module App =
         | TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.ThreadSelected id)), _ ->
             MessagesScreen.init id
             |> wrap MessagesModel MessagesMsg { model with history = model.subModel :: model.history }
+
+        | PostMsg (PostScreen.OpenTag source), _ -> 
+            Home.init source
+            |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | PostMsg subMsg, PostModel subModel -> 
             PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
+
         | MessagesMsg subMsg, MessagesModel subModel -> 
             MessagesScreen.update subModel subMsg |> wrap MessagesModel MessagesMsg model
         | TabsMsg subMsg, TabsModel subModel -> 

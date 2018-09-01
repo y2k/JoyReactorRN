@@ -8,6 +8,7 @@ open Elmish
 
 open JoyReactor
 open JoyReactor.Types
+open JoyReactor.CommonUi
 
 [<Pojo>]
 type Model =
@@ -20,6 +21,7 @@ type Msg =
 | PostLoaded of Post
 | LoadPostResult of Result<Post, Exception>
 | OpenInWeb
+| OpenTag of Source
 
 let init id =
     { post = None; error = None }, 
@@ -40,6 +42,7 @@ let update model msg =
         model.post
         |> Option.map (fun x -> x.id |> sprintf "http://m.joyreactor.cc/post/%i" |> Platform.openUrl |> Cmd.ofEffect0)
         |> Option.defaultValue Cmd.none
+    | _ -> model, Cmd.none
 
 module private Styles =
     let home = ViewProperties.Style [ PaddingBottom 15.
@@ -78,17 +81,29 @@ let viewItem (comment : Comment) =
                            text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#616161" ] ] 
                                 (string comment.rating) ] ] ]
 
+let viewTags post dispatch =
+    post.tags
+    |> Array.toList
+    |> List.map (fun x -> roundButton x (dispatch <! OpenTag (TagSource x)) [ PaddingHorizontal 8. ])
+    |> view [ ViewProperties.Style [ FlexWrap FlexWrap.Wrap
+                                     FlexDirection FlexDirection.Row ] ]
+
+let viewContent post dispatch =
+    scrollView [] [ 
+        yield image [ ImageProperties.Style [ Height 300. ] 
+                      Source [ Uri post.image.Value.url ] ]
+        yield button [ ButtonProperties.Title "Открыть в браузере"
+                       ButtonProperties.OnPress (fun _ -> dispatch OpenInWeb) ] []
+        yield text [ TextProperties.Style [ Padding 13. ] ] "Теги:"
+        yield viewTags post dispatch
+        yield text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
+        yield! Array.map viewItem post.comments ]
+
 let view model dispatch =
     let contentView =
         match model with
         | { error = Some e } -> text [] ("Ошибка: " + e)
-        | { post = Some post } ->
-              scrollView [] ([   image [ ImageProperties.Style [ Height 300. ] 
-                                         Source [ Uri post.image.Value.url ] ]
-                                 button [ ButtonProperties.Title "Открыть в браузере"
-                                          ButtonProperties.OnPress (fun _ -> dispatch OpenInWeb) ] []
-                                 text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
-                             ] @ (Array.toList <| Array.map viewItem post.comments))
+        | { post = Some post } -> viewContent post dispatch
         | _ -> 
               activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                                   ActivityIndicator.Size Size.Large

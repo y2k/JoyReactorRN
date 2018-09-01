@@ -2,7 +2,6 @@ module JoyReactor.CommonUi
 
 open System
 open Fable.Helpers.ReactNative
-open Fable.Import.ReactNative
 open Fable.Helpers.ReactNative.Props
 
 let primaryColor = "#e49421"
@@ -94,3 +93,23 @@ let reloadButton show title dispatch =
                 [ text 
                     [ TextProperties.Style [ Padding 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ]
                     title ]
+let roundButton title dispatch props =
+    let nextButtonOutter =
+        TouchableWithoutFeedbackProperties.Style 
+           ([ Margin 2. 
+              BackgroundColor primaryColor
+              BorderRadius 4.
+              Height 48.
+              JustifyContent JustifyContent.Center
+              Overflow Overflow.Hidden ] @ props)
+    let tabButtonInner =
+        [ TextProperties.NumberOfLines 1.
+          TextProperties.Style 
+              [ FontWeight FontWeight.Bold
+                FontSize 14.
+                TextAlign TextAlignment.Center
+                TextStyle.Color "white" ] ]          
+    touchableOpacity 
+        [ nextButtonOutter
+          OnPress dispatch ]
+        [ text tabButtonInner title ]

@@ -5,9 +5,11 @@ open Fable.Core
 open Fable.Helpers.ReactNative
 open Fable.Import.ReactNative
 
+[<AutoOpen>]
 module Operators =
     let inline (>>=) ma mf = async.Bind(ma, mf)
     let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
+    let inline (<!) f a () = f a
 
 module Cmd =
     open Elmish
@@ -69,13 +71,14 @@ module Types =
           attachments : AttachmentResource [] }
 
     type Post = 
-        { id        : Int32
-          userName  : String
+        { id        : int
+          userName  : string
           userImage : Attachment
-          rating    : Double
+          rating    : double
           created   : DateTime
           image     : Attachment option
-          title     : String
+          title     : string
+          tags      : string []
           comments  : Comment [] }
 
     type PostResponse = 
