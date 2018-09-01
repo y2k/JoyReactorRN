@@ -25,6 +25,7 @@ module Array =
         with
         | _ -> None
 
+[<AutoOpen>]
 module Utils =
     [<Emit("require($0)")>]
     let require (_: string) = jsNative
@@ -71,15 +72,16 @@ module Types =
           attachments : AttachmentResource [] }
 
     type Post = 
-        { id        : int
-          userName  : string
-          userImage : Attachment
-          rating    : double
-          created   : DateTime
-          image     : Attachment option
-          title     : string
-          tags      : string []
-          comments  : Comment [] }
+        { id          : int
+          userName    : string
+          userImage   : Attachment
+          rating      : double
+          created     : DateTime
+          image       : Attachment option
+          attachments : AttachmentResource []
+          title       : string
+          tags        : string []
+          comments    : Comment [] }
 
     type PostResponse = 
         { posts : Post list

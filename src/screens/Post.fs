@@ -9,6 +9,7 @@ open Elmish
 open JoyReactor
 open JoyReactor.Types
 open JoyReactor.CommonUi
+open Fable.Import.ReactNative
 
 [<Pojo>]
 type Model =
@@ -81,10 +82,21 @@ let viewItem (comment : Comment) =
                            text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#616161" ] ] 
                                 (string comment.rating) ] ] ]
 
+let viewPostAttachments (post : Post) _ =
+    view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
+         ( post.attachments
+           |> Array.toList
+           |> List.map (
+               fun a ->
+                   image [ ImageProperties.Style [ Width 80.; Height 80.; Margin 2. ]
+                           Source [ Uri <| Image.normilize a.image.url 80. 80. ] ] ) )
+
 let viewTags post dispatch =
     post.tags
+    |> Array.truncate 6
     |> Array.toList
     |> List.map (fun x -> roundButton x (dispatch <! OpenTag (TagSource x)) [ PaddingHorizontal 8. ])
+    |> flip List.append [ roundButton "Все теги" ignore [ PaddingHorizontal 8. ] ]
     |> view [ ViewProperties.Style [ FlexWrap FlexWrap.Wrap
                                      FlexDirection FlexDirection.Row ] ]
 
@@ -94,6 +106,8 @@ let viewContent post dispatch =
                       Source [ Uri post.image.Value.url ] ]
         yield button [ ButtonProperties.Title "Открыть в браузере"
                        ButtonProperties.OnPress (fun _ -> dispatch OpenInWeb) ] []
+        yield text [ TextProperties.Style [ Padding 13. ] ] "Приложения:"
+        yield viewPostAttachments post dispatch
         yield text [ TextProperties.Style [ Padding 13. ] ] "Теги:"
         yield viewTags post dispatch
         yield text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
