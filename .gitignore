@@ -58,3 +58,5 @@ src/obj
 test/obj
 out
 paket-files
+
+.ionide/
