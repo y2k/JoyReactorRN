@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Service.fs" />
+    <Compile Include="Free.fs" />
     <Compile Include="CommonUi.fs" />
     <Compile Include="screens/Messages.fs" />
     <Compile Include="screens/Threads.fs" />
