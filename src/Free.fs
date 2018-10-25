@@ -11,7 +11,7 @@ let private mapI f =
     function 
     | ReadLine(x, next) -> ReadLine(x, next >> f)
     | WriteLine(x, next) -> WriteLine(x, next >> f)
-    | Fetch(_) -> failwith "Not Implemented"
+    | Fetch(url, props, next) -> Fetch(url, props, next >> f)
 
 type FaceProgram<'a> =
     | Free of FaceInstruction<FaceProgram<'a>>
@@ -34,6 +34,7 @@ type FaceBuilder() =
 let face = FaceBuilder()
 let readLine() = Free(ReadLine((), Pure))
 let writeLine text = Free(WriteLine(text, Pure))
+let fetch url props = Free(Fetch(url, props, Pure))
 
 let rec interpret =
     function 
@@ -49,3 +50,28 @@ let rec interpret =
         |> next
         |> interpret
     | Free(_) -> failwith "Not Implemented"
+
+module Service =
+
+    let getMyName =
+        face {
+            let! page = fetch "http://joyreactor.cc/donate" []
+            return Domain.extractName page
+        }
+
+    let loadMyTags =
+        face {
+            let! name = getMyName
+            name
+            |> Option.map UrlBuilder.user
+            ()
+        }
+
+    let login username password =
+        face { 
+            let! page = fetch "http://joyreactor.cc/ads" []
+            let csrf = Domain.getCsrfToken page
+            let r = Requests.login username password (csrf.Value)
+            let! _ = r ||> fetch
+            ()
+        }
