@@ -8,7 +8,9 @@ open Elmish
 open JoyReactor
 open JoyReactor.Types
 open JoyReactor.CommonUi
-open JoyReactor.Utils
+
+module Cmd = JoyReactor.Free.Cmd
+module Service = JoyReactor.Free.Service
 
 type Model = { messages: Message[]; isBusy: Boolean }
 type Msg = 

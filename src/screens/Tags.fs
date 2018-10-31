@@ -7,7 +7,6 @@ open Elmish
 
 open JoyReactor
 open JoyReactor.Types
-open JoyReactor.Utils
 open JoyReactor.CommonUi
 
 module Cmd = JoyReactor.Free.Cmd

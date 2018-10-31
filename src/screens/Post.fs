@@ -9,10 +9,10 @@ open Elmish
 open JoyReactor
 open JoyReactor.Types
 open JoyReactor.CommonUi
-open Fable.Import.ReactNative
 
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
+module ReactiveStore = JoyReactor.Free.Service
 
 [<Pojo>]
 type Model =
@@ -22,14 +22,14 @@ type Model =
 [<Pojo>]
 type Msg =
 | LoadPost of int
-| PostLoaded of Post
+| PostLoaded of Result<Post, Exception>
 | LoadPostResult of Result<Post, Exception>
 | OpenInWeb
 | OpenTag of Source
 
 let init id =
     { post = None; error = None }, 
-    ReactiveStore.loadPost id |> Cmd.ofSub |> Cmd.map PostLoaded
+    Cmd.ofEffect (ReactiveStore.loadPost id) PostLoaded
 
 let update model msg =
     match msg with
@@ -39,7 +39,7 @@ let update model msg =
         { model with post = Some post }, Cmd.none
     | LoadPostResult (Error error) -> 
         { model with error = Some <| string error }, Cmd.none
-    | PostLoaded post -> 
+    | PostLoaded (Ok post) -> 
         { model with post = Some post }, Cmd.none
     | OpenInWeb -> 
         model,

@@ -6,7 +6,6 @@ open Fable.Helpers.ReactNative.Props
 open Elmish
 
 open JoyReactor
-open JoyReactor.Utils
 open JoyReactor.Types
 open JoyReactor.CommonUi
 

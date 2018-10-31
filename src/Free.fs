@@ -193,3 +193,9 @@ module Service =
             do! syncMessageWithWeb
             return! loadThreadsFromCache
         }
+
+    let loadMessages username = 
+        effect {
+            let! messages = loadAllMessageFromStorage
+            return Domain.selectMessageForUser username messages
+        }

@@ -6,7 +6,6 @@ open Fable.Helpers.ReactNative
 open Elmish
 
 open JoyReactor
-open JoyReactor.Operators
 open JoyReactor.Types
 
 module Cmd = JoyReactor.Free.Cmd

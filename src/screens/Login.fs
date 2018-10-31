@@ -7,6 +7,9 @@ open Elmish
 
 open JoyReactor
 
+module Cmd = JoyReactor.Free.Cmd
+module Service = JoyReactor.Free.Service
+
 type Model = { username: string; password: string; isBusy: bool; error: string option }
 type Msg = LoginMsg | LoginResultMsg of Result<Unit, Exception> | UsernameMsg of string | PasswordMsg of string
 
