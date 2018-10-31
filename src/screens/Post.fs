@@ -11,6 +11,9 @@ open JoyReactor.Types
 open JoyReactor.CommonUi
 open Fable.Import.ReactNative
 
+module Cmd = JoyReactor.Free.Cmd
+module Service = JoyReactor.Free.Service
+
 [<Pojo>]
 type Model =
     { post  : Post option 

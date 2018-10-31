@@ -10,6 +10,9 @@ open JoyReactor.Utils
 open JoyReactor.Types
 open JoyReactor.CommonUi
 
+module Cmd = JoyReactor.Free.Cmd
+module Service = JoyReactor.Free.Service
+
 type Model = 
     { items: Message []
       status: Result<Unit, Exception> option }

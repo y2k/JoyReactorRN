@@ -9,6 +9,10 @@ open JoyReactor
 open JoyReactor.Operators
 open JoyReactor.Types
 
+module Cmd = JoyReactor.Free.Cmd
+module Service = JoyReactor.Free.Service
+let bind = JoyReactor.Free.bind
+
 type Msg = ProfileMsg of Result<Profile, Exception> | LoginMsg of LoginScreen.Msg | Logout
 type ModelStage = ProfileModel of Profile | LoadingModel | LoginModel
 type Model = { stage : ModelStage; subModel : LoginScreen.Model }
@@ -19,7 +23,7 @@ let init : Model * Cmd<Msg> =
 let update model = function
     | Logout -> 
         { model with stage = LoadingModel }, 
-        Cmd.ofEffect (Service.logout >>= (fun _ -> Service.loadMyProfile)) ProfileMsg
+        Cmd.ofEffect (Service.logout |> bind (fun _ -> Service.loadMyProfile)) ProfileMsg
     | ProfileMsg (Ok p) -> 
         { model with stage = ProfileModel p }, Cmd.none
     | ProfileMsg _ -> 

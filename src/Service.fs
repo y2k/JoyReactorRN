@@ -341,6 +341,7 @@ module Service =
         getMyName
         >>- UrlBuilder.user
         >>= loadAndParse<Tag list> "tags"
+
     let loadMyProfile = 
         getMyName
         >>- UrlBuilder.user

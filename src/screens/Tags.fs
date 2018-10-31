@@ -10,6 +10,9 @@ open JoyReactor.Types
 open JoyReactor.Utils
 open JoyReactor.CommonUi
 
+module Cmd = JoyReactor.Free.Cmd
+module Service = JoyReactor.Free.Service
+
 type Model = { tags: Tag []; loaded: Boolean }
 type Msg = 
     | FromCache of Result<Tag [], Exception> 
@@ -19,8 +22,8 @@ type Msg =
     | Refresh
 
 let init = 
-    let cmd = Cmd.batch [ ReactiveStore.getTagsFromCache |> flip Cmd.ofEffect FromCache
-                          ReactiveStore.getTagsFromWeb |> flip Cmd.ofEffect FromWeb ]
+    let cmd = Cmd.batch [ Service.getTagsFromCache |> flip Cmd.ofEffect FromCache
+                          Service.getTagsFromWeb |> flip Cmd.ofEffect FromWeb ]
     { tags = [||]; loaded = false }, cmd
 
 let addFavorite tags =
@@ -34,7 +37,7 @@ let tagToSourse tag =
     | _ -> TagSource tag.name
 
 let update model = function
-    | Refresh             -> { model with loaded = false }, ReactiveStore.getTagsFromWeb |> flip Cmd.ofEffect FromWeb
+    | Refresh             -> { model with loaded = false }, Service.getTagsFromWeb |> flip Cmd.ofEffect FromWeb
     | FromCache (Ok tags) -> { model with tags = addFavorite tags }, Cmd.none
     | FromWeb (Ok tags)   -> { model with tags = addFavorite tags; loaded = true }, Cmd.none
     | FromCache (Error e) -> raise e
