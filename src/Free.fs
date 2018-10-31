@@ -3,22 +3,21 @@ module JoyReactor.Free
 open System
 open Fable.PowerPack.Fetch.Fetch_types
 
-type FaceInstruction<'a> =
+type EffectInstruction<'a> =
     | Fetch of (string * RequestProperties list * (string -> 'a))
     | FetchJson of (Type * string * RequestProperties list * (obj -> 'a))
     | FromStorage of (string * (obj option -> 'a))
 
-let private mapI f =
-    function 
-    | Fetch(url, props, next) -> Fetch(url, props, next >> f)
-    | FetchJson(t, url, props, next) -> FetchJson(t, url, props, next >> f)
-    | FromStorage(key, next) -> FromStorage(key, next >> f)
-
-type FreeProgram<'a> =
-    | Free of FaceInstruction<FreeProgram<'a>>
+type EffectProgram<'a> =
+    | Free of EffectInstruction<EffectProgram<'a>>
     | Pure of 'a
 
 let rec bind f =
+    let mapI f =
+        function 
+        | Fetch(url, props, next) -> Fetch(url, props, next >> f)
+        | FetchJson(t, url, props, next) -> FetchJson(t, url, props, next >> f)
+        | FromStorage(key, next) -> FromStorage(key, next >> f)
     function 
     | Free x -> 
         x
@@ -26,13 +25,13 @@ let rec bind f =
         |> Free
     | Pure x -> f x
 
-type FaceBuilder() =
+type EffectBuilder() =
     member this.Bind(x, f) = bind f x
     member this.Return x = Pure x
     member this.ReturnFrom x = x
     member this.Zero() = Pure()
 
-let free = FaceBuilder()
+let effect = EffectBuilder()
 let fetchText url props = Free(Fetch(url, props, Pure))
 let fetchType<'t> url props = Free(FetchJson(typedefof<'t>, url, props, Pure)) |> bind (fun x -> x :?> 't |> Pure)
 
@@ -44,24 +43,6 @@ let fromStorage<'t> key =
            |> Pure)
 
 module Interpreter =
-    open Fable.Core
-    open Fable.PowerPack.Fetch
-    
-    let rec run cmd =
-        async { 
-            match cmd with
-            | Pure x -> return x
-            | Free(Fetch(url, props, next)) -> let! response = fetch url props |> Async.AwaitPromise
-                                               let! json = response.text() |> Async.AwaitPromise
-                                               return! run (next json)
-            | Free(FetchJson(t, url, props, next)) -> 
-                let! response = fetchAs url props |> Async.AwaitPromise
-                let x = response
-                return! run (next x)
-            | Free(FromStorage(key, next)) -> failwith "TODO"
-        }
-
-module Service =
     module Storage' =
         open Fable.Core
         
@@ -83,11 +64,30 @@ module Service =
         
         let load<'a> key = AsyncStorage.getItem key >>- tryParse<'a>
     
+    open Fable.Core
+    open Fable.PowerPack.Fetch
+    
+    let rec run cmd =
+        async { 
+            match cmd with
+            | Pure x -> return x
+            | Free(Fetch(url, props, next)) -> let! response = fetch url props |> Async.AwaitPromise
+                                               let! json = response.text() |> Async.AwaitPromise
+                                               return! run (next json)
+            | Free(FetchJson(t, url, props, next)) -> 
+                let! response = fetchAs url props |> Async.AwaitPromise
+                let x = response
+                return! run (next x)
+            | Free(FromStorage(key, next)) -> let! x = Storage'.load key
+                                              return! run (next x)
+        }
+
+module Service =
     open Fable.PowerPack.Fetch
     open Types
     
     let private fetchApi<'t> url =
-        free { 
+        effect { 
             let headers =
                 [ HttpRequestHeaders.UserAgent 
                       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ]
@@ -95,31 +95,31 @@ module Service =
         }
     
     let loadPost id =
-        free { 
+        effect { 
             let url = UrlBuilder.post id
             return! fetchApi<Post> url
         }
     
     let getCachedPosts source =
-        free { 
+        effect { 
             let! posts = source
                          |> Domain.sourceToString
                          |> fromStorage<Post []>
             return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
         }
     
-    let getMyName = free { let! page = fetchText "http://joyreactor.cc/donate" []
-                           return Domain.extractName page }
+    let getMyName = effect { let! page = fetchText "http://joyreactor.cc/donate" []
+                             return Domain.extractName page }
     
     let loadMyTags =
-        free { 
+        effect { 
             let! name = getMyName
             let url = Option.map UrlBuilder.user name |> Option.get
             return! fetchApi<Tag list> url
         }
     
     let login username password =
-        free { 
+        effect { 
             let! page = fetchText "http://joyreactor.cc/ads" []
             let csrf = Domain.getCsrfToken page
             let r = Requests.login username password (csrf.Value)
