@@ -26,16 +26,16 @@ let rec bind f =
     | Pure x -> f x
 
 type EffectBuilder() =
-    member this.Bind(x, f) = bind f x
-    member this.Return x = Pure x
-    member this.ReturnFrom x = x
-    member this.Zero() = Pure()
+    member __.Bind(x, f) = bind f x
+    member __.Return x = Pure x
+    member __.ReturnFrom x = x
+    member __.Zero() = Pure()
 
 let effect = EffectBuilder()
 let fetchText url props = Free(Fetch(url, props, Pure))
 let fetchType<'t> url props = Free(FetchJson(typedefof<'t>, url, props, Pure)) |> bind (fun x -> x :?> 't |> Pure)
-let loadFromStorage<'t> key : EffectProgram<'t option> = failwith "TODO"
-let saveToStorage (key : string) value : EffectProgram<unit> = failwith "TODO"
+let loadFromStorage<'t> key: EffectProgram<'t option> = failwith "TODO"
+let saveToStorage (key: string) value: EffectProgram<unit> = failwith "TODO"
 
 let fromStorage<'t> key =
     Free(FromStorage(key, Pure))
@@ -43,6 +43,11 @@ let fromStorage<'t> key =
            x
            |> Option.map (fun x -> x :?> 't)
            |> Pure)
+
+module Storage =
+    let load = loadFromStorage
+    let save = saveToStorage
+    let remove (key: string): EffectProgram<unit> = failwith "TODO"
 
 module Interpreter =
     module private Storage' =
@@ -64,7 +69,8 @@ module Interpreter =
                     >> unbox<'a>
                     >> Some)
         
-        let load<'a> key = AsyncStorage.getItem key >>- tryParse<'a>
+        let load<'a> key = async { let! value = AsyncStorage.getItem key
+                                   return tryParse<'a> value }
     
     open Fable.Core
     open Fable.PowerPack.Fetch
@@ -115,16 +121,16 @@ module Service =
             return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
         }
     
-    let getMyName = effect { let! page = fetchText "http://joyreactor.cc/donate" []
+    let getMyName = effect { let! page = fetchText UrlBuilder.donate []
                              return Domain.extractName page }
     
     let login username password =
         effect { 
-            let! page = fetchText "http://joyreactor.cc/ads" []
+            let! page = fetchText UrlBuilder.ads []
             let csrf = Domain.getCsrfToken page
             let r = Requests.login username password (csrf.Value)
             let! _ = r ||> fetchText
-            ()
+            return ()
         }
     
     let getTagsFromCache = effect { let! tags = loadFromStorage<Tag []> "tags"
@@ -155,7 +161,7 @@ module Service =
             return! fetchApi<Profile> url "profile"
         }
     
-    let logout = effect { let! _ = fetchText "http://joyreactor.cc/logout" []
+    let logout = effect { let! _ = fetchText ("http://" + UrlBuilder.domain + "/logout") []
                           return () }
     let private loadAllMessageFromStorage = effect { let! messages = loadFromStorage<Message []> "messages"
                                                      return messages |> Option.defaultValue [||] }
@@ -164,8 +170,8 @@ module Service =
     
     [<Fable.Core.Pojo>]
     type MessagesWithNext =
-        { messages : Message []
-          nextPage : String option }
+        { messages: Message []
+          nextPage: String option }
     
     let getMessagesAndNextPage page =
         effect { 
@@ -193,9 +199,80 @@ module Service =
             do! syncMessageWithWeb
             return! loadThreadsFromCache
         }
-
-    let loadMessages username = 
-        effect {
-            let! messages = loadAllMessageFromStorage
-            return Domain.selectMessageForUser username messages
+    
+    let loadMessages username = effect { let! messages = loadAllMessageFromStorage
+                                         return Domain.selectMessageForUser username messages }
+    
+    let private loadPosts source page =
+        effect { 
+            let! nameOpt = getMyName
+            let name = Option.get nameOpt
+            let url = UrlBuilder.posts source name page
+            let! response = fetchApi<PostResponse> url "posts"
+            return response.posts, response.nextPage
+        }
+    
+    let syncFirstPage source =
+        effect { 
+            let storageId = source |> Domain.sourceToString
+            let! x = loadFromStorage<Post []> storageId
+            let dbPosts = x |> Option.defaultValue [||]
+            let! (webPosts, nextPage) = loadPosts source None
+            let newState =
+                match dbPosts with
+                | [||] -> 
+                    { PostsWithLevels.empty with actual = webPosts |> List.toArray
+                                                 nextPage = nextPage }
+                | _ -> 
+                    { PostsWithLevels.empty with actual = dbPosts
+                                                 preloaded = webPosts |> List.toArray
+                                                 nextPage = nextPage }
+            do! saveToStorage storageId (Array.concat [ newState.actual;newState.old ])
+            return newState
+        }
+    
+    let applyUpdate source state =
+        effect { 
+            let ids = state.preloaded |> Array.map (fun x -> x.id)
+            
+            let newState =
+                { state with actual = state.preloaded
+                             old =
+                                 Array.concat [ state.actual;state.old ] 
+                                 |> Array.filter (fun x -> not <| Array.contains x.id ids)
+                             preloaded = [||] }
+            
+            let storageId = source |> Domain.sourceToString
+            do! Storage.save storageId (Array.concat [ newState.actual;newState.old ])
+            return newState
+        }
+    
+    let reset source =
+        effect { 
+            do! Storage.remove <| Domain.sourceToString source
+            return! syncFirstPage source
+        }
+    
+    let syncNextPage source (state: PostsWithLevels) =
+        effect { 
+            let! (webPosts, nextPage) = loadPosts source state.nextPage
+            let actualIds = state.actual |> Array.map (fun x -> x.id)
+            
+            let actualPosts =
+                Array.concat [ state.actual
+                               webPosts
+                               |> List.filter (fun x -> not <| Array.contains x.id actualIds)
+                               |> List.toArray ]
+            
+            let ids = actualPosts |> Array.map (fun x -> x.id)
+            
+            let newState =
+                { actual = actualPosts
+                  old = state.old |> Array.filter (fun x -> not <| Array.contains x.id ids)
+                  nextPage = nextPage
+                  preloaded = [||] }
+            
+            let storageId = source |> Domain.sourceToString
+            do! Storage.save storageId (Array.concat [ newState.actual;newState.old ])
+            return newState
         }
