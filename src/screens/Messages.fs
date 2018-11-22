@@ -37,16 +37,16 @@ let private itemView x =
         if x.isMine then 100., 0.
         else 0., 100.
     view [ ViewProperties.Style [ PaddingLeft lp
-                                  PaddingRight rp ] ] 
+                                  PaddingRight rp ] ]
         [ text [] x.text
           text [] x.userName
           text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd ] ] <| sprintf "%O" x.date ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] 
+    view [ ViewProperties.Style [ Flex 1. ] ]
         [ myFlatList model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
-          
-          view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] 
+
+          view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
               [ textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
                 (if model.isBusy then view [] []
                  else testButton "SEND" (fun _ -> dispatch SendMessage)) ] ]

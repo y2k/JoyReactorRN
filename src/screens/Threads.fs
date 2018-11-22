@@ -29,7 +29,7 @@ let update model msg =
     match msg with
     | ThreadsFromCache(Ok x) -> { model with items = x }, Cmd.ofEffect Service.loadThreadsFromWeb ThreadsFromWeb
     | ThreadsFromCache(Error e) -> log e model, Cmd.none
-    | ThreadsFromWeb(Ok x) -> 
+    | ThreadsFromWeb(Ok x) ->
         { model with items = x
                      status = Some <| Ok() }, Cmd.none
     | ThreadsFromWeb(Error e) -> { model with status = log e (Some <| Error e) }, Cmd.none
@@ -39,16 +39,16 @@ let update model msg =
 let private itemView dispatch i =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
-                         OnPress(always (ThreadSelected i.userName) >> dispatch) ] 
+                         OnPress(always (ThreadSelected i.userName) >> dispatch) ]
         [ view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
-                                        Padding 8. ] ] 
+                                        Padding 8. ] ]
               [ image [ ImageProperties.Style [ Width 48.
                                                 Height 48.
                                                 BorderRadius 24.
                                                 MarginRight 8. ]
                         Source [ Uri i.userImage ] ]
-                
-                view [ ViewProperties.Style [ Flex 1. ] ] 
+
+                view [ ViewProperties.Style [ Flex 1. ] ]
                     [ text [ TextProperties.Style [ FontWeight FontWeight.Bold
                                                     TextStyle.Color "#404040"
                                                     FontSize 15. ] ] i.userName
@@ -59,7 +59,7 @@ let private itemView dispatch i =
                                                     TextStyle.Color "#bdbdbd" ] ] (longToTimeDelay i.date) ] ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.items (itemView dispatch) (fun x -> x.userName) 
+    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.items (itemView dispatch) (fun x -> x.userName)
                                                     [ FlatListProperties.OnRefresh
                                                           (Func<_, _>(fun _ -> dispatch Refresh))
                                                       FlatListProperties.Refreshing false ]

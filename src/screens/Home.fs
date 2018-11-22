@@ -42,7 +42,7 @@ let init source =
 
 let postsToPostStates posts =
     if Array.isEmpty posts.old && Array.isEmpty posts.actual then [||]
-    else 
+    else
         Array.concat [ posts.actual |> Array.map Actual
                        (if (not <| Array.isEmpty posts.preloaded) || Array.isEmpty posts.actual then [||]
                         else [| Divider |])
@@ -50,7 +50,7 @@ let postsToPostStates posts =
 
 let update model msg: Model * Cmd<Msg> =
     match msg with
-    | PostsLoaded(Ok x) -> 
+    | PostsLoaded(Ok x) ->
         { model with items = postsToPostStates x
                      syncState = x
                      status =
@@ -58,11 +58,11 @@ let update model msg: Model * Cmd<Msg> =
                          else Some <| Ok() }, Cmd.none
     | PostsLoaded(Error e) -> log e { model with status = Some <| Error e }, Cmd.none
     | ApplyUpdate -> model, Cmd.ofEffect (ReactiveStore.applyUpdate model.source model.syncState) PostsLoaded
-    | Refresh -> 
-        if Array.isEmpty model.syncState.preloaded then 
+    | Refresh ->
+        if Array.isEmpty model.syncState.preloaded then
             { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
         else model, Cmd.ofMsg ApplyUpdate
-    | LoadNextPage -> 
+    | LoadNextPage ->
         { model with status = None }, Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
     | _ -> model, Cmd.none
 
@@ -73,14 +73,14 @@ module private Styles =
                                                                    else "#e4942100")
                                                    BorderRadius 4.
                                                    Overflow Overflow.Hidden ]
-    
+
     let nextButtonInner =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
                                Padding 15.
                                TextStyle.Color "white" ]
-    
+
     let card =
         ViewProperties.Style [ AlignItems ItemAlignment.Stretch
                                BackgroundColor "white"
@@ -88,13 +88,13 @@ module private Styles =
                                BorderWidth 1.
                                BorderRadius 8.
                                Overflow Overflow.Hidden ]
-    
+
     let avatar =
         ImageProperties.Style [ Width 36.
                                 Height 36.
                                 BorderRadius 18.
                                 MarginRight 9. ]
-    
+
     let userName =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 14.
@@ -110,8 +110,8 @@ let viewNextButton dispatch isSyncing =
 let viewPostImage post =
     post.image
     |> Option.map (Image.urlWithHeight (Globals.Dimensions.get("screen").width))
-    |> function 
-    | Some(img, h) -> 
+    |> function
+    | Some(img, h) ->
         image [ ImageProperties.Style [ Height h
                                         BorderTopLeftRadius 8.
                                         BorderTopRightRadius 8. ]
@@ -121,20 +121,20 @@ let viewPostImage post =
 let viewItem post dispatch =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
-                         OnPress(always (OpenPost post) >> dispatch) ] 
-        [ view [ Styles.card ] 
+                         OnPress(always (OpenPost post) >> dispatch) ]
+        [ view [ Styles.card ]
               [ viewPostImage post
-                
+
                 view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
-                                              Margin 9. ] ] 
+                                              Margin 9. ] ]
                     [ image [ Styles.avatar
                               Source [ Uri post.userImage.url ] ]
-                      
-                      view [ ViewProperties.Style [ Flex 1. ] ] 
+
+                      view [ ViewProperties.Style [ Flex 1. ] ]
                           [ text [ Styles.userName ] post.userName
-                            
+
                             view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd
-                                                          FlexDirection FlexDirection.Row ] ] 
+                                                          FlexDirection FlexDirection.Row ] ]
                                 [ text [ TextProperties.Style [ FontFamily "icomoon"
                                                                 TextStyle.Color "#ffb100" ] ] "\ue8b5"
                                   text [ TextProperties.Style [ MarginLeft 8.
@@ -142,16 +142,16 @@ let viewItem post dispatch =
 
 let view model dispatch =
     let isSyncing = Option.isNone model.status
-    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.items (function 
+    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.items (function
                                                     | Actual post -> viewItem post dispatch
                                                     | Old post -> viewItem post dispatch
-                                                    | Divider -> viewNextButton dispatch isSyncing) (function 
+                                                    | Divider -> viewNextButton dispatch isSyncing) (function
                                                     | Actual post -> string post.id
                                                     | Old post -> string post.id
                                                     | Divider -> "divider") [ FlatListProperties.OnRefresh
                                                                                   (Func<_, _>(dispatch <! Refresh))
                                                                               FlatListProperties.Refreshing false ]
-                                                
-                                                reloadButton (Array.isEmpty model.syncState.preloaded) 
+
+                                                reloadButton (Array.isEmpty model.syncState.preloaded)
                                                     "Есть новые посты" (always ApplyUpdate >> dispatch)
                                                 loadingView isSyncing ]

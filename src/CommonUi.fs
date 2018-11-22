@@ -18,7 +18,7 @@ module private Styles =
                                                                    else "#e49421")
                                                    BorderRadius 4.
                                                    Overflow Overflow.Hidden ]
-    
+
     let tabButtonInner =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
@@ -33,14 +33,14 @@ let testButton title f =
                                                    BorderRadius 4.
                                                    Height 48.
                                                    Overflow Overflow.Hidden ]
-    
+
     let tabButtonInner =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
                                Padding 15.
                                TextStyle.Color "white" ]
-    
+
     touchableOpacity [ nextButtonOutter
                        OnPress f ] [ text [ tabButtonInner ] title ]
 
@@ -67,14 +67,14 @@ let statusView status =
     match status with
     | Some(Ok _) -> view [] []
     | Some(Error _) -> text [] "ERROR"
-    | None -> 
+    | None ->
         activityIndicator [ ViewProperties.Style [ BackgroundColor "#212121"
                                                    Padding 4. ]
                             ActivityIndicator.Size Size.Large
                             ActivityIndicator.Color "#ffb100" ]
 
 let loadingView inProgress =
-    if inProgress then 
+    if inProgress then
         text [ TextProperties.Style [ BackgroundColor primaryColor
                                       Padding 10.
                                       TextStyle.Color "white"
@@ -83,7 +83,7 @@ let loadingView inProgress =
 
 let reloadButton show title dispatch =
     if show then view [] []
-    else 
+    else
         touchableOpacity [ TouchableWithoutFeedbackProperties.Style [ BackgroundColor primaryColor
                                                                       Overflow Overflow.Hidden ]
                            OnPress dispatch ] [ text [ TextProperties.Style [ Padding 10.
@@ -99,13 +99,13 @@ let roundButton title dispatch props =
                                                    JustifyContent JustifyContent.Center
                                                    Overflow Overflow.Hidden ]
                                                  @ props)
-    
+
     let tabButtonInner =
         [ TextProperties.NumberOfLines 1.
           TextProperties.Style [ FontWeight FontWeight.Bold
                                  FontSize 14.
                                  TextAlign TextAlignment.Center
                                  TextStyle.Color "white" ] ]
-    
+
     touchableOpacity [ nextButtonOutter
                        OnPress dispatch ] [ text tabButtonInner title ]

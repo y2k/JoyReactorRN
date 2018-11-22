@@ -32,15 +32,15 @@ let init: Model * Cmd<Msg> =
       subModel = LoginScreen.init }, Cmd.ofEffect Service.loadMyProfile ProfileMsg
 
 let update model =
-    function 
-    | Logout -> 
-        { model with stage = LoadingModel }, 
+    function
+    | Logout ->
+        { model with stage = LoadingModel },
         Cmd.ofEffect (Service.logout |> bind (fun _ -> Service.loadMyProfile)) ProfileMsg
     | ProfileMsg(Ok p) -> { model with stage = ProfileModel p }, Cmd.none
-    | ProfileMsg _ -> 
+    | ProfileMsg _ ->
         { model with stage = LoginModel
                      subModel = LoginScreen.init }, Cmd.none
-    | LoginMsg subMsg -> 
+    | LoginMsg subMsg ->
         let loginModel, cmd = LoginScreen.update model.subModel subMsg
         { model with subModel = loginModel }, Cmd.map LoginMsg cmd
 
@@ -50,51 +50,51 @@ module private Styles =
                                Margin 20.
                                TextStyle.Color "#616161"
                                FontSize 20. ]
-    
+
     let userName =
         TextProperties.Style [ AlignSelf Alignment.Center
                                Margin 8.
                                TextStyle.Color "#616161"
                                FontSize 13. ]
-    
+
     let avatar =
         ImageProperties.Style [ Width 90.
                                 Height 90.
                                 MarginTop 50.
                                 AlignSelf Alignment.Center
                                 BorderRadius 45. ]
-    
+
     let progressToNewStar x =
         ViewProperties.Style [ Width x
                                BorderRadius 4.
                                Height 21.
                                BackgroundColor "#edc95b" ]
-    
+
     let button margin =
         TouchableWithoutFeedbackProperties.Style [ MarginLeft margin
                                                    MarginRight margin
                                                    BackgroundColor Colors.primaryColor
                                                    BorderRadius 4.
                                                    Overflow Overflow.Hidden ]
-    
+
     let buttonText =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
                                Padding 15.
                                TextStyle.Color "white" ]
-    
+
     let starsPanel =
         ViewProperties.Style [ BackgroundColor "white"
                                Height 50.
                                FlexDirection FlexDirection.Row
                                AlignItems ItemAlignment.Center
                                JustifyContent JustifyContent.Center ]
-    
+
     let star color =
         TextProperties.Style [ FontSize 25.
                                TextStyle.Color color ]
-    
+
     let divider =
         view [ ViewProperties.Style [ Height 1.
                                       BackgroundColor Colors.gray ] ] []
@@ -110,20 +110,20 @@ let private viewProfile (profile: Profile) dispatch =
               text [ Styles.rating ] (sprintf "Рейтинг: %g" profile.rating)
               view [ ViewProperties.Style [ Height 10. ] ] []
               Styles.divider
-              
-              view [ Styles.starsPanel ] 
+
+              view [ Styles.starsPanel ]
                   [ text [ Styles.star "#edc95b" ] (String.replicate profile.stars "★")
                     text [ Styles.star "#e4e6e7" ] (String.replicate (max 0 (10 - profile.stars)) "★") ]
               Styles.divider
 
               view [ ViewProperties.Style [ Padding 20.
-                                            BackgroundColor "white" ] ] 
+                                            BackgroundColor "white" ] ]
                   [ text [] "Прогресс до следующей звезды:"
-                    
+
                     view [ ViewProperties.Style [ BorderRadius 4.
                                                   MarginTop 12.
                                                   Height 21.
-                                                  BackgroundColor Colors.gray ] ] 
+                                                  BackgroundColor Colors.gray ] ]
                         [ view [ Styles.progressToNewStar profile.progressToNewStar ] [] ] ]
               Styles.divider
               view [ ViewProperties.Style [ Height 10. ] ] []
@@ -132,7 +132,7 @@ let private viewProfile (profile: Profile) dispatch =
 let view model dispatch =
     let content =
         match model.stage with
-        | LoadingModel -> 
+        | LoadingModel ->
             activityIndicator [ ViewProperties.Style [ Flex 1. ]
                                 ActivityIndicator.Size Size.Large
                                 ActivityIndicator.Color "#ffb100" ]

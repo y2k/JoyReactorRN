@@ -40,10 +40,10 @@ let tagToSourse tag =
     | _ -> TagSource tag.name
 
 let update model =
-    function 
+    function
     | Refresh -> { model with loaded = false }, Service.getTagsFromWeb |> flip Cmd.ofEffect FromWeb
     | FromCache(Ok tags) -> { model with tags = addFavorite tags }, Cmd.none
-    | FromWeb(Ok tags) -> 
+    | FromWeb(Ok tags) ->
         { model with tags = addFavorite tags
                      loaded = true }, Cmd.none
     | FromCache(Error e) -> raise e
@@ -56,7 +56,7 @@ module Styles =
                                 Height 48.
                                 BorderRadius 24.
                                 MarginRight 8. ]
-    
+
     let label =
         TextProperties.Style [ FontSize 18.
                                TextStyle.Color "#404040"
@@ -64,14 +64,14 @@ module Styles =
 
 let viewItem dispatch (x: Tag) =
     touchableOpacity [ ActiveOpacity 0.4
-                       OnPress(dispatch <! OpenPosts(tagToSourse x)) ] 
+                       OnPress(dispatch <! OpenPosts(tagToSourse x)) ]
         [ view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
                                         Padding 8. ] ] [ image [ Styles.image
                                                                  Source [ Uri x.image ] ]
                                                          text [ Styles.label ] x.name ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.tags (viewItem dispatch) (fun x -> x.name) 
+    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.tags (viewItem dispatch) (fun x -> x.name)
                                                     [ FlatListProperties.OnRefresh
                                                           (Func<_, _>(fun _ -> dispatch Refresh))
                                                       FlatListProperties.Refreshing false ]

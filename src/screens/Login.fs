@@ -32,21 +32,21 @@ module private Styles =
                           BorderColor "#ececec"
                           BorderWidth 1.
                           BorderRadius 4. ]
-    
+
     let button margin =
         TouchableWithoutFeedbackProperties.Style [ MarginLeft margin
                                                    MarginRight margin
                                                    BackgroundColor "#e49421"
                                                    BorderRadius 4.
                                                    Overflow Overflow.Hidden ]
-    
+
     let buttonText =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
                                Padding 15.
                                TextStyle.Color "white" ]
-    
+
     let textInput text placeholder f ps =
         textInput ([ edit
                      TextInput.PlaceholderTextColor "gray"
@@ -62,11 +62,11 @@ let init =
 
 let update model msg: Model * Cmd<Msg> =
     match msg with
-    | LoginMsg -> 
+    | LoginMsg ->
         { model with isBusy = true
                      error = None }, Cmd.ofEffect (Service.login model.username model.password) LoginResultMsg
     | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.none
-    | LoginResultMsg(Error e) -> 
+    | LoginResultMsg(Error e) ->
         { model with isBusy = false
                      error = Some <| string e }, Cmd.none
     | UsernameMsg x -> { model with username = x }, Cmd.none
@@ -78,14 +78,14 @@ let private viewButton dispatch title margin =
 
 let view model dispatch =
     match model.isBusy with
-    | true -> 
+    | true ->
         activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                             ActivityIndicator.Size Size.Large
                             ActivityIndicator.Color "#ffb100" ]
-    | false -> 
+    | false ->
         view [ ViewProperties.Style [ Padding 20.
-                                      PaddingTop 50. ] ] 
-            [ Styles.textInput model.username "Логин" (UsernameMsg >> dispatch) 
+                                      PaddingTop 50. ] ]
+            [ Styles.textInput model.username "Логин" (UsernameMsg >> dispatch)
                   [ TextInput.AutoCapitalize AutoCapitalize.None ]
               view [ ViewProperties.Style [ Height 12. ] ] []
               Styles.textInput model.password "Пароль" (PasswordMsg >> dispatch) [ TextInput.SecureTextEntry true ]

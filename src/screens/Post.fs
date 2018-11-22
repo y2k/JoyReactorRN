@@ -36,10 +36,10 @@ let update model msg =
     | LoadPostResult(Ok post) -> { model with post = Some post }, Cmd.none
     | LoadPostResult(Error error) -> { model with error = Some <| string error }, Cmd.none
     | PostLoaded(Ok post) -> { model with post = Some post }, Cmd.none
-    | OpenInWeb -> 
-        model, 
+    | OpenInWeb ->
+        model,
         model.post
-        |> Option.map (fun x -> 
+        |> Option.map (fun x ->
                x.id
                |> sprintf "http://m.%s/post/%i" UrlBuilder.domain
                |> Platform.openUrl
@@ -52,13 +52,13 @@ module private Styles =
         ViewProperties.Style [ PaddingBottom 15.
                                PaddingHorizontal 13.
                                FlexDirection FlexDirection.Row ]
-    
+
     let image =
         ImageProperties.Style [ MarginRight 13.
                                 Width 36.
                                 Height 36.
                                 BorderRadius 18. ]
-    
+
     let panel =
         ViewProperties.Style [ FlexDirection FlexDirection.Row
                                MarginTop 8.
@@ -67,34 +67,34 @@ module private Styles =
 let viewAttachments (comment: Comment) =
     view [ Styles.panel ] (comment.attachments
                            |> Array.toList
-                           |> List.map (fun a -> 
+                           |> List.map (fun a ->
                                   image [ ImageProperties.Style [ Width 80.
                                                                   Height 80. ]
                                           Source [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
 
 let viewItem (comment: Comment) =
-    view [ Styles.home ] 
+    view [ Styles.home ]
         [ image [ Styles.image
                   Source [ Uri comment.image.url ] ]
-          
-          view [ ViewProperties.Style [ Flex 1. ] ] 
+
+          view [ ViewProperties.Style [ Flex 1. ] ]
               [ text [ TextProperties.Style [ TextStyle.Color "black"
                                               FontWeight FontWeight.Bold ] ] comment.userName
                 text [ NumberOfLines 3.
                        TextProperties.Style [ TextStyle.Color "#999" ] ] comment.text
                 viewAttachments comment
-                
-                view [ Styles.panel ] 
+
+                view [ Styles.panel ]
                     [ text [ TextProperties.Style [ FontFamily "icomoon"
                                                     TextStyle.Color "#ffb100" ] ] "\ue8dc"
                       text [ TextProperties.Style [ MarginLeft 8.
                                                     TextStyle.Color "#616161" ] ] (string comment.rating) ] ] ]
 
 let viewPostAttachments (post: Post) _ =
-    view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] 
+    view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
         (post.attachments
          |> Array.toList
-         |> List.map (fun a -> 
+         |> List.map (fun a ->
                 image [ ImageProperties.Style [ Width 80.
                                                 Height 80.
                                                 Margin 2. ]
@@ -126,7 +126,7 @@ let view model dispatch =
         match model with
         | { error = Some e } -> text [] ("Ошибка: " + e)
         | { post = Some post } -> viewContent post dispatch
-        | _ -> 
+        | _ ->
             activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                                 ActivityIndicator.Size Size.Large
                                 ActivityIndicator.Color "#ffb100" ]
