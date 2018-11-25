@@ -115,6 +115,11 @@ module Types =
           userName: String
           userImage: String }
 
+    [<Fable.Core.Pojo>]
+    type MessagesWithNext =
+        { messages: Message []
+          nextPage: String option }
+
 module Image =
     open Types
     open Fable.Import.JS
@@ -223,7 +228,6 @@ module Fetch =
 
     let fetchString url props = async { let! r = F.fetch url props |> Async.AwaitPromise
                                         return! r.text() |> Async.AwaitPromise }
-    let inline fetchType<'a> url props = async { return! F.fetchAs<'a> url props |> Async.AwaitPromise }
 
 module Requests =
     open JsInterop
@@ -239,9 +243,60 @@ module Requests =
           Credentials RequestCredentials.Sameorigin
           Body !^form ]
 
-    let parse parseApi (html: string) =
+module OpenApi =
+    open Types
+    open JsInterop
+    open Fable.PowerPack.Fetch
+
+    type Replay<'x> = 'x -> unit
+
+    type Html = string
+
+    module Types =
+        type ApiRequest =
+            | TagListRequest of Html * Replay<Tag list>
+            | ProfileRequest of Html * Replay<Profile>
+            | PostRequest of Html * Replay<Post>
+            | PostsRequest of Html * Replay<PostResponse>
+            | MessagesRequest of Html * Replay<MessagesWithNext>
+
+    open Types
+
+    module F = Fable.PowerPack.Fetch
+
+    let inline private fetchType<'a> url props = async { return! F.fetchAs<'a> url props |> Async.AwaitPromise }
+
+    let private parse parseApi (html: string) =
         let form = Fable.Import.Browser.FormData.Create()
         form.append ("html", html)
         (sprintf "https://jrs.y2k.work/%s" parseApi),
         [ Method HttpMethod.POST
           Body !^form ]
+
+    let handle (f: Replay<'x> -> ApiRequest): Async<'x> =
+        async {
+            let mutable result: 'x option = None
+            let a = f (fun x -> result <- Some x)
+            match a with
+            | TagListRequest(html, g) ->
+                let r = parse "tags" html
+                let! x = r ||> fetchType
+                g x
+            | ProfileRequest(html, g) ->
+                let r = parse "profile" html
+                let! x = r ||> fetchType
+                g x
+            | PostRequest(html, g) ->
+                let r = parse "post" html
+                let! x = r ||> fetchType
+                g x
+            | PostsRequest(html, g) ->
+                let r = parse "posts" html
+                let! x = r ||> fetchType
+                g x
+            | MessagesRequest(html, g) ->
+                let r = parse "messages" html
+                let! x = r ||> fetchType
+                g x
+            return result.Value
+        }
