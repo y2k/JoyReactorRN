@@ -7,8 +7,8 @@ open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-open JoyReactor.CommonUi
 
+module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 module ReactiveStore = JoyReactor.Free.Service
@@ -85,8 +85,7 @@ let viewItem (comment: Comment) =
                 viewAttachments comment
 
                 view [ Styles.panel ]
-                    [ text [ TextProperties.Style [ FontFamily "icomoon"
-                                                    TextStyle.Color "#ffb100" ] ] "\ue8dc"
+                    [ UI.iconView
                       text [ TextProperties.Style [ MarginLeft 8.
                                                     TextStyle.Color "#616161" ] ] (string comment.rating) ] ] ]
 
@@ -104,8 +103,8 @@ let viewTags post dispatch =
     post.tags
     |> Array.truncate 6
     |> Array.toList
-    |> List.map (fun x -> roundButton x (dispatch <! OpenTag(TagSource x)) [ PaddingHorizontal 8. ])
-    |> flip List.append [ roundButton "Все теги" ignore [ PaddingHorizontal 8. ] ]
+    |> List.map (fun x -> UI.roundButton x (dispatch <! OpenTag(TagSource x)) [ PaddingHorizontal 8. ])
+    |> flip List.append [ UI.roundButton "Все теги" ignore [ PaddingHorizontal 8. ] ]
     |> view [ ViewProperties.Style [ FlexWrap FlexWrap.Wrap
                                      FlexDirection FlexDirection.Row ] ]
 
@@ -113,7 +112,7 @@ let viewContent post dispatch =
     scrollView [] [ yield image [ ImageProperties.Style [ Height 300. ]
                                   Source [ Uri post.image.Value.url ] ]
                     yield button [ ButtonProperties.Title "Открыть в браузере"
-                                   ButtonProperties.OnPress(fun _ -> dispatch OpenInWeb) ] []
+                                   ButtonProperties.OnPress(dispatch <! OpenInWeb) ] []
                     yield text [ TextProperties.Style [ Padding 13. ] ] "Приложения:"
                     yield viewPostAttachments post dispatch
                     yield text [ TextProperties.Style [ Padding 13. ] ] "Теги:"

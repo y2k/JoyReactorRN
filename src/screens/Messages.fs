@@ -6,8 +6,8 @@ open Fable.Helpers.ReactNative.Props
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-open JoyReactor.CommonUi
 
+module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
@@ -44,9 +44,9 @@ let private itemView x =
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ]
-        [ myFlatList model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
+        [ UI.list model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
 
           view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
               [ textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
                 (if model.isBusy then view [] []
-                 else testButton "SEND" (fun _ -> dispatch SendMessage)) ] ]
+                 else UI.button "SEND" (fun _ -> dispatch SendMessage)) ] ]

@@ -26,7 +26,7 @@ module private Styles =
                                Padding 15.
                                TextStyle.Color "white" ]
 
-let testButton title f =
+let button title f =
     let nextButtonOutter =
         TouchableWithoutFeedbackProperties.Style [ Margin 4.
                                                    BackgroundColor "#e49421"
@@ -44,7 +44,7 @@ let testButton title f =
     touchableOpacity [ nextButtonOutter
                        OnPress f ] [ text [ tabButtonInner ] title ]
 
-let inline myFlatList (items: 'a []) f fid props =
+let inline list (items: 'a []) f fid props =
     flatList items ([ FlatListProperties.KeyExtractor(Func<_, _, _>(fun (i: 'a) _ -> fid i))
                       FlatListProperties.RenderItem(Func<_, _>(fun (i: FlatListRenderItemInfo<'a>) -> f i.item)) ]
                     @ props)
@@ -109,3 +109,7 @@ let roundButton title dispatch props =
 
     touchableOpacity [ nextButtonOutter
                        OnPress dispatch ] [ text tabButtonInner title ]
+
+let iconView =
+    text [ TextProperties.Style [ FontFamily "icomoon"
+                                  TextStyle.Color "#ffb100" ] ] "\ue8b5"

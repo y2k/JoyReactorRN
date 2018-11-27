@@ -8,8 +8,8 @@ open Elmish
 open JoyReactor
 open JoyReactor.Utils
 open JoyReactor.Types
-open JoyReactor.CommonUi
 
+module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 module ReactiveStore = JoyReactor.Free.Service
@@ -118,6 +118,10 @@ let viewPostImage post =
                 Source [ Uri img ] ]
     | None -> view [] []
 
+let iconView =
+    text [ TextProperties.Style [ FontFamily "icomoon"
+                                  TextStyle.Color "#ffb100" ] ] "\ue8b5"
+
 let viewItem post dispatch =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
@@ -135,14 +139,13 @@ let viewItem post dispatch =
 
                             view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd
                                                           FlexDirection FlexDirection.Row ] ]
-                                [ text [ TextProperties.Style [ FontFamily "icomoon"
-                                                                TextStyle.Color "#ffb100" ] ] "\ue8b5"
+                                [ UI.iconView
                                   text [ TextProperties.Style [ MarginLeft 8.
                                                                 TextStyle.Color "#bcbcbc" ] ] "2 часа" ] ] ] ] ]
 
 let view model dispatch =
     let isSyncing = Option.isNone model.status
-    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.items (function
+    view [ ViewProperties.Style [ Flex 1. ] ] [ UI.list model.items (function
                                                     | Actual post -> viewItem post dispatch
                                                     | Old post -> viewItem post dispatch
                                                     | Divider -> viewNextButton dispatch isSyncing) (function
@@ -152,6 +155,6 @@ let view model dispatch =
                                                                                   (Func<_, _>(dispatch <! Refresh))
                                                                               FlatListProperties.Refreshing false ]
 
-                                                reloadButton (Array.isEmpty model.syncState.preloaded)
-                                                    "Есть новые посты" (always ApplyUpdate >> dispatch)
-                                                loadingView isSyncing ]
+                                                UI.reloadButton (Array.isEmpty model.syncState.preloaded)
+                                                    "New posts" (always ApplyUpdate >> dispatch)
+                                                UI.loadingView isSyncing ]

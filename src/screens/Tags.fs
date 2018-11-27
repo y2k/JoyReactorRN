@@ -6,8 +6,8 @@ open Fable.Helpers.ReactNative
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-open JoyReactor.CommonUi
 
+module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
@@ -71,8 +71,8 @@ let viewItem dispatch (x: Tag) =
                                                          text [ Styles.label ] x.name ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.tags (viewItem dispatch) (fun x -> x.name)
+    view [ ViewProperties.Style [ Flex 1. ] ] [ UI.list model.tags (viewItem dispatch) (fun x -> x.name)
                                                     [ FlatListProperties.OnRefresh
                                                           (Func<_, _>(fun _ -> dispatch Refresh))
                                                       FlatListProperties.Refreshing false ]
-                                                loadingView <| not model.loaded ]
+                                                UI.loadingView <| not model.loaded ]

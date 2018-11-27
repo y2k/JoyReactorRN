@@ -6,8 +6,8 @@ open Fable.Helpers.ReactNative.Props
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-open JoyReactor.CommonUi
 
+module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
@@ -59,8 +59,8 @@ let private itemView dispatch i =
                                                     TextStyle.Color "#bdbdbd" ] ] (longToTimeDelay i.date) ] ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] [ myFlatList model.items (itemView dispatch) (fun x -> x.userName)
+    view [ ViewProperties.Style [ Flex 1. ] ] [ UI.list model.items (itemView dispatch) (fun x -> x.userName)
                                                     [ FlatListProperties.OnRefresh
                                                           (Func<_, _>(fun _ -> dispatch Refresh))
                                                       FlatListProperties.Refreshing false ]
-                                                loadingView <| Option.isNone model.status ]
+                                                UI.loadingView <| Option.isNone model.status ]
