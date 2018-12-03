@@ -13,33 +13,36 @@ module Operators =
 
 module Cmd =
     open Elmish
-    let ofEffect p f =
-        Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
-    let ofEffect0 p = 
-        Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
+
+    let ofEffect p f = Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 
 module Array =
     let tryMaxBy f xs =
         try
-            xs |> Array.maxBy f |> Some
-        with
-        | _ -> None
+            xs
+            |> Array.maxBy f
+            |> Some
+        with _ -> None
 
 [<AutoOpen>]
 module Utils =
     [<Emit("require($0)")>]
     let require (_: string) = jsNative
+
     let inline always a _ = a
     let inline flip f a b = f b a
     let longToTimeDelay _ = "2 часа"
     let inline curry f a b = f (a, b)
     let inline uncurry f (a, b) = f a b
     let mutable private startTime = DateTime.Now.Ticks / 10_000L
+
     let log msg x =
         let delay = DateTime.Now.Ticks / 10_000L - startTime
         printfn "LOGX (%O) :: %O" delay msg
         startTime <- DateTime.Now.Ticks / 10_000L
         x
+
     let trace msg x =
         printfn msg x
         x
@@ -47,79 +50,85 @@ module Utils =
 module String =
     let toUpper (x: string) = x.ToUpper()
 
-module Types = 
+module Types =
     type Source =
-    | FeedSource
-    | TagSource of string
-    | FavoriteSource
+        | FeedSource
+        | TagSource of string
+        | FavoriteSource
 
-    type Tag = 
+    type Tag =
         { name: string
           image: string }
 
-    type Attachment = 
-        { url : string
-          aspect : float }
+    type Attachment =
+        { url: string
+          aspect: float }
 
-    type AttachmentResource = 
-        { image : Attachment }
+    type AttachmentResource =
+        { image: Attachment }
 
-    type Comment = 
-        { text        : string
-          image       : Attachment
-          rating      : float
-          userName    : string
-          attachments : AttachmentResource [] }
+    type Comment =
+        { text: string
+          image: Attachment
+          rating: float
+          userName: string
+          attachments: AttachmentResource [] }
 
-    type Post = 
-        { id          : int
-          userName    : string
-          userImage   : Attachment
-          rating      : double
-          created     : DateTime
-          image       : Attachment option
-          attachments : AttachmentResource []
-          title       : string
-          tags        : string []
-          comments    : Comment [] }
+    type Post =
+        { id: int
+          userName: string
+          userImage: Attachment
+          rating: double
+          created: DateTime
+          image: Attachment option
+          attachments: AttachmentResource []
+          title: string
+          tags: string []
+          comments: Comment [] }
 
-    type PostResponse = 
-        { posts : Post list
-          nextPage : int option }
+    type PostResponse =
+        { posts: Post list
+          nextPage: int option }
 
-    type PostsWithLevels = 
-        { actual    : Post []
-          old       : Post []
-          preloaded : Post []
-          nextPage  : int option }
-    with static member empty : PostsWithLevels = { actual = [||]; old = [||]; preloaded = [||]; nextPage = None }
+    type PostsWithLevels =
+        { actual: Post []
+          old: Post []
+          preloaded: Post []
+          nextPage: int option }
+        static member empty: PostsWithLevels =
+            { actual = [||]
+              old = [||]
+              preloaded = [||]
+              nextPage = None }
 
-    type Profile = 
+    type Profile =
         { userName: string
           userImage: Attachment
           rating: float
           stars: int
           progressToNewStar: float }
 
-    type Message = 
+    type Message =
         { text: String
           date: Double
           isMine: Boolean
           userName: String
           userImage: String }
 
+    [<Fable.Core.Pojo>]
+    type MessagesWithNext =
+        { messages: Message []
+          nextPage: String option }
+
 module Image =
     open Types
     open Fable.Import.JS
 
-    let normilize url (w : float) (h : float) =
-        sprintf
-            "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s"
-            (int w)
-            (int h)
+    let normilize url (w: float) (h: float) =
+        sprintf "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
             (encodeURIComponent url)
 
-    let urlWithHeight limitWidth (attachment: Attachment) = 
+    let urlWithHeight limitWidth (attachment: Attachment) =
         let aspect = max 1.2 attachment.aspect
         let w = limitWidth
         let h = w / aspect
@@ -127,13 +136,11 @@ module Image =
 
 module Platform =
     open Fable.Import.ReactNative
-    let openUrl url = 
-        async {
-            let! _ = Globals.Linking.openURL url |> Async.AwaitPromise
-            return ()
-        }
 
-module Domain = 
+    let openUrl url = async { let! _ = Globals.Linking.openURL url |> Async.AwaitPromise
+                              return () }
+
+module Domain =
     open Types
     open System.Text.RegularExpressions
 
@@ -141,32 +148,41 @@ module Domain =
         let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
         if m.Success then Some m.Groups.[1].Value
         else None
-    let sourceToString = function
-        | FeedSource     -> "posts"
+
+    let sourceToString =
+        function
+        | FeedSource -> "posts"
         | TagSource name -> "posts-" + name
         | FavoriteSource -> "my-favorites"
-    let getCsrfToken html = 
+
+    let getCsrfToken html =
         let m = Regex.Match(html, "name=\"signin\\[_csrf_token\\]\" value=\"([^\"]+)")
-        if m.Success then Some <| m.Groups.[1].Value else None
-    let selectThreads messages = 
+        if m.Success then Some <| m.Groups.[1].Value
+        else None
+
+    let selectThreads messages =
         messages
         |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
+
     let selectMessageForUser userName messages =
         messages
         |> Array.filter (fun x -> x.userName = userName)
         |> Array.sortByDescending (fun x -> x.date)
-    let filterNewMessages (messages: Message[]) offset = 
-        messages |> Array.filter (fun x -> x.date > offset)
-    let checkMessagesIsOld (messages: Message[]) offset = 
-        messages |> Array.exists (fun x -> x.date <= offset)
+
+    let filterNewMessages (messages: Message []) offset = messages |> Array.filter (fun x -> x.date > offset)
+    let checkMessagesIsOld (messages: Message []) offset = messages |> Array.exists (fun x -> x.date <= offset)
+
     let getLastOffsetOrDefault xs =
-        xs |> Array.tryMaxBy (fun x -> x.date) 
-           |> Option.map (fun x -> x.date) 
-           |> Option.defaultValue 0.
+        xs
+        |> Array.tryMaxBy (fun x -> x.date)
+        |> Option.map (fun x -> x.date)
+        |> Option.defaultValue 0.
+
     let private isStop messages lastOffset nextPage newMessages =
         let flagIsStop = checkMessagesIsOld messages lastOffset
-        flagIsStop || Option.isNone nextPage || Array.length newMessages >= 200 
+        flagIsStop || Option.isNone nextPage || Array.length newMessages >= 200
+
     let mergeMessages parentMessages messages nextPage =
         let lastOffset = getLastOffsetOrDefault parentMessages
         let newMessages = Array.append parentMessages (filterNewMessages messages lastOffset)
@@ -177,270 +193,110 @@ module UrlBuilder =
     open Fable.Import.JS
     open Types
 
+    let domain = "joyreactor.cc"
+    let donate = "http://" + domain + "/donate"
+    let ads = "http://" + domain + "/ads"
+
     let messages page =
-        page 
+        page
         |> Option.defaultValue "/private/list"
-        |> (+) "http://joyreactor.cc"
-    
-    let user userName =
-        encodeURIComponent userName
-        |> sprintf "http://joyreactor.cc/user/%s"
+        |> (+) ("http://" + domain)
 
-    let post id = sprintf "http://joyreactor.cc/post/%i" id
+    let user userName = encodeURIComponent userName |> sprintf "http://%s/user/%s" domain
+    let post id = sprintf "http://%s/post/%i" domain id
 
-    let posts source userName (page : int option) =
+    let posts source userName (page: int option) =
         match source with
         | FeedSource ->
             page
-            |> Option.map string 
+            |> Option.map string
             |> Option.defaultValue ""
-            |> (+) "http://joyreactor.cc/"
+            |> (+) ("http://" + domain + "/")
         | TagSource name ->
             page
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
-            |> (+) (sprintf "http://joyreactor.cc/tag/%s" name)
+            |> (+) (sprintf "http://%s/tag/%s" domain name)
         | FavoriteSource ->
             page
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
-            |> (+) (sprintf "http://joyreactor.cc/user/%s/favorite" userName)
+            |> (+) (sprintf "http://%s/user/%s/favorite" domain userName)
 
 module Fetch =
     module F = Fable.PowerPack.Fetch
-    let fetchString url props =
-        async {
-            let! r = F.fetch url props |> Async.AwaitPromise
-            return! r.text() |> Async.AwaitPromise
-        }
-    let inline fetchType<'a> url props =
-        async {
-            return! F.fetchAs<'a> url props |> Async.AwaitPromise
-        }
+
+    let fetchString url props = async { let! r = F.fetch url props |> Async.AwaitPromise
+                                        return! r.text() |> Async.AwaitPromise }
 
 module Requests =
     open JsInterop
     open Fable.PowerPack.Fetch
 
     let login (username: string) (password: string) (token: string) =
-        let form = Fable.Import.Browser.FormData.Create ()
-        form.append("signin[username]", username)
-        form.append("signin[password]", password)
-        form.append("signin[_csrf_token]", token)
-        "http://joyreactor.cc/login",
+        let form = Fable.Import.Browser.FormData.Create()
+        form.append ("signin[username]", username)
+        form.append ("signin[password]", password)
+        form.append ("signin[_csrf_token]", token)
+        "http://" + UrlBuilder.domain + "/login",
         [ Method HttpMethod.POST
           Credentials RequestCredentials.Sameorigin
-          Body !^ form ]
+          Body !^form ]
 
-    let parse parseApi (html: string) =
+module OpenApi =
+    open Types
+    open JsInterop
+    open Fable.PowerPack.Fetch
+
+    type Replay<'x> = 'x -> unit
+
+    type Html = string
+
+    module Types =
+        type ApiRequest =
+            | TagListRequest of Html * Replay<Tag list>
+            | ProfileRequest of Html * Replay<Profile>
+            | PostRequest of Html * Replay<Post>
+            | PostsRequest of Html * Replay<PostResponse>
+            | MessagesRequest of Html * Replay<MessagesWithNext>
+
+    open Types
+
+    module F = Fable.PowerPack.Fetch
+
+    let inline private fetchType<'a> url props = async { return! F.fetchAs<'a> url props |> Async.AwaitPromise }
+
+    let private parse parseApi (html: string) =
         let form = Fable.Import.Browser.FormData.Create()
         form.append ("html", html)
         (sprintf "https://jrs.y2k.work/%s" parseApi),
         [ Method HttpMethod.POST
-          Body !^ form ]
+          Body !^form ]
 
-module Storage =
-    open Operators
-    module JS = Fable.Import.JS
-
-    module private AsyncStorage =
-        let private _as = Fable.Import.ReactNative.Globals.AsyncStorage
-        let setItem key value =
-            async {
-                let! _ = _as.setItem(key, value) |> Async.AwaitPromise
-                return ()
-            }
-        let getItem key =
-            async { return! _as.getItem key |> Async.AwaitPromise }
-        let clear =
-            async { 
-                let! _ = _as.clear () |> Async.AwaitPromise
-                return () 
-            }
-        let remove key =
-            async { 
-                let! _ = _as.removeItem key |> Async.AwaitPromise
-                return () 
-            }
-
-    let inline private tryParse<'a> json =
-         if isNull json then None 
-         else json |> (JS.JSON.parse >> unbox<'a> >> Some)
-    
-    let load<'a> key =
-        AsyncStorage.getItem key
-        >>- tryParse<'a>
-
-    let save key value =
-        JS.JSON.stringify value
-        |> AsyncStorage.setItem key
-
-    let clear = AsyncStorage.clear
-    let remove = AsyncStorage.remove
-
-module Service =
-    open Operators
-    open Fable.PowerPack.Fetch
-    open Fetch
-    open Utils
-    open Types
-
-    let loadAllMessageFromStorage =
-        Storage.load<Message[]> "messages"
-        >>- Option.defaultValue [||]
-
-    let loadThreadsFromCache = 
-        loadAllMessageFromStorage
-        >>- Domain.selectThreads
-
-    let inline private loadAndParse<'a> parseApi url = 
-        [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
-        |> fetchString url
-        >>- Requests.parse parseApi
-        >>= uncurry fetchType<'a>
-
-    [<Pojo>]
-    type MessagesWithNext = { messages: Message[]; nextPage: String option }
-    let getMessagesAndNextPage page = 
-        UrlBuilder.messages page
-        |> loadAndParse<MessagesWithNext> "messages"
-        >>- fun response -> response.messages, response.nextPage
-
-    let private syncMessageWithWeb =
-        let rec loadPageRec pageNumber parentMessages =
-            async {
-                let! messages, nextPage = getMessagesAndNextPage pageNumber
-                let newMessages, stop = Domain.mergeMessages parentMessages messages nextPage
-                return!
-                    if stop then async.Return newMessages
-                    else loadPageRec nextPage newMessages
-            }
-        loadAllMessageFromStorage
-        >>= loadPageRec None
-        >>= Storage.save "messages"
-
-    let loadThreadsFromWeb =
-        syncMessageWithWeb
-        >>= fun _ -> loadThreadsFromCache
-
-    let loadMessages username = 
-        loadAllMessageFromStorage
-        >>- Domain.selectMessageForUser username
-
-    let login username password =
-        fetchString "http://joyreactor.cc/ads" []
-        >>- (Domain.getCsrfToken >> Option.get >> Requests.login username password)
-        >>= uncurry fetchString
-        >>- ignore
-
-    let getMyName =
-        fetchString "http://joyreactor.cc/donate" []
-        >>- (Domain.extractName >> Option.get)
-
-    let loadMyTags = 
-        getMyName
-        >>- UrlBuilder.user
-        >>= loadAndParse<Tag list> "tags"
-    let loadMyProfile = 
-        getMyName
-        >>- UrlBuilder.user
-        >>= loadAndParse<Profile> "profile"
-
-    let loadPost id =
-        UrlBuilder.post id |> loadAndParse<Post> "post"
-
-    let loadPosts source page = 
-        getMyName
-        >>- flip (UrlBuilder.posts source) page 
-        >>= loadAndParse<PostResponse> "posts"
-        >>- fun response -> response.posts, response.nextPage
-
-    let logout =
-        fetchString "http://joyreactor.cc/logout" []
-        >>- ignore
-
-module ReactiveStore =
-    open Types
-    open Operators
-
-    let getTagsFromCache =
-        Storage.load<Tag []> "tags" >>- Option.defaultValue [||]
-    let getTagsFromWeb =
+    let handle (f: Replay<'x> -> ApiRequest): Async<'x> =
         async {
-            let! tags = Service.loadMyTags >>- List.toArray
-            Storage.save "tags" tags |> Async.StartImmediate
-            return tags
-        }
-
-    let loadPost id callback =
-        async {
-            do! Storage.load<Post> <| sprintf "post-%i" id
-                >>- Option.iter callback
-
-            let! post = Service.loadPost id
-            callback post
-
-            do! Storage.save (sprintf "post-%i" id) post
-        } |> Async.StartImmediate
-
-    // ===================================
-    // Posts
-    // ===================================
-
-    let getCachedPosts source =
-        async {
-            let! posts = source |> Domain.sourceToString |> Storage.load<Post[]>
-            return { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
-        }
-    let syncFirstPage source = 
-        async {
-            let storageId = source |> Domain.sourceToString
-            let! dbPosts = Storage.load<Post[]> storageId >>- Option.defaultValue [||]
-            let! (webPosts, nextPage) = Service.loadPosts source None
-
-            let newState = match dbPosts with
-                           | [||] -> { PostsWithLevels.empty with actual = webPosts |> List.toArray
-                                                                  nextPage = nextPage }
-                           | _    -> { PostsWithLevels.empty with actual = dbPosts
-                                                                  preloaded = webPosts |> List.toArray
-                                                                  nextPage = nextPage }
-
-            Storage.save storageId (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
-            return newState
-        }
-    let applyUpdate source state = 
-        async {
-            let ids = state.preloaded |> Array.map (fun x -> x.id)
-            let newState = { state with 
-                                   actual = state.preloaded
-                                   old = Array.concat [ state.actual; state.old ] |> Array.filter (fun x -> not <| Array.contains x.id ids)
-                                   preloaded = [||] }
-
-            let storageId = source |> Domain.sourceToString
-            Storage.save storageId (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
-            return newState
-        }
-    let syncNextPage source state = 
-        async {
-            let! (webPosts, nextPage) = Service.loadPosts source state.nextPage
-
-            let actualIds = state.actual |> Array.map (fun x -> x.id)
-            let actualPosts =
-                Array.concat [ state.actual; webPosts |> List.filter (fun x -> not <| Array.contains x.id actualIds)
-                                                      |> List.toArray ]
-            let ids = actualPosts |> Array.map (fun x -> x.id)
-            let newState =
-                { actual = actualPosts
-                  old = state.old |> Array.filter (fun x -> not <| Array.contains x.id ids)
-                  nextPage = nextPage
-                  preloaded = [||] }
-
-            let storageId = source |> Domain.sourceToString
-            Storage.save storageId (Array.concat [ newState.actual; newState.old ]) |> Async.StartImmediate
-            return newState
-        }
-    let reset source = 
-        async {
-            do! Storage.remove <| Domain.sourceToString source
-            return! syncFirstPage source
+            let mutable result: 'x option = None
+            let a = f (fun x -> result <- Some x)
+            match a with
+            | TagListRequest(html, g) ->
+                let r = parse "tags" html
+                let! x = r ||> fetchType
+                g x
+            | ProfileRequest(html, g) ->
+                let r = parse "profile" html
+                let! x = r ||> fetchType
+                g x
+            | PostRequest(html, g) ->
+                let r = parse "post" html
+                let! x = r ||> fetchType
+                g x
+            | PostsRequest(html, g) ->
+                let r = parse "posts" html
+                let! x = r ||> fetchType
+                g x
+            | MessagesRequest(html, g) ->
+                let r = parse "messages" html
+                let! x = r ||> fetchType
+                g x
+            return result.Value
         }
