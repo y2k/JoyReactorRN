@@ -1,5 +1,10 @@
 sudo: required
 dist: trusty  
+
+branches:
+  only:
+  - release
+
 services:
   - docker
 before_install:
