@@ -5,12 +5,6 @@ open Fable.Core
 open Fable.Helpers.ReactNative
 open Fable.Import.ReactNative
 
-[<AutoOpen>]
-module Operators =
-    let inline (>>=) ma mf = async.Bind(ma, mf)
-    let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
-    let inline (<!) f a () = f a
-
 module Cmd =
     open Elmish
 
@@ -27,6 +21,10 @@ module Array =
 
 [<AutoOpen>]
 module Utils =
+    let inline (<!) f a () = f a
+    let inline (>>=) ma mf = async.Bind(ma, mf)
+    let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
+
     [<Emit("require($0)")>]
     let require (_: string) = jsNative
 

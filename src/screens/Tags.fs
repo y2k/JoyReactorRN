@@ -11,9 +11,7 @@ module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
-type Model =
-    { tags: Tag []
-      loaded: Boolean }
+type Model = { tags: Tag []; loaded: Boolean }
 
 type Msg =
     | FromCache of Result<Tag [], Exception>
@@ -43,9 +41,7 @@ let update model =
     function
     | Refresh -> { model with loaded = false }, Service.getTagsFromWeb |> flip Cmd.ofEffect FromWeb
     | FromCache(Ok tags) -> { model with tags = addFavorite tags }, Cmd.none
-    | FromWeb(Ok tags) ->
-        { model with tags = addFavorite tags
-                     loaded = true }, Cmd.none
+    | FromWeb(Ok tags) -> { model with tags = addFavorite tags; loaded = true }, Cmd.none
     | FromCache(Error e) -> raise e
     | FromWeb(Error e) -> raise e
     | _ -> model, Cmd.none
@@ -63,16 +59,15 @@ module Styles =
                                AlignSelf Alignment.Center ]
 
 let viewItem dispatch (x: Tag) =
-    touchableOpacity [ ActiveOpacity 0.4
-                       OnPress(dispatch <! OpenPosts(tagToSourse x)) ]
-        [ view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
-                                        Padding 8. ] ] [ image [ Styles.image
-                                                                 Source [ Uri x.image ] ]
-                                                         text [ Styles.label ] x.name ] ]
+    touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse x)) ] [
+        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] [
+            image [ Styles.image; Source [ Uri x.image ] ]
+            text [ Styles.label ] x.name ] ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ] [ UI.list model.tags (viewItem dispatch) (fun x -> x.name)
-                                                    [ FlatListProperties.OnRefresh
-                                                          (Func<_, _>(fun _ -> dispatch Refresh))
-                                                      FlatListProperties.Refreshing false ]
-                                                UI.loadingView <| not model.loaded ]
+    view [ ViewProperties.Style [ Flex 1. ] ] [
+        UI.list model.tags (viewItem dispatch) (fun x -> x.name) [
+            FlatListProperties.OnRefresh (Func<_, _>(fun _ -> dispatch Refresh))
+            FlatListProperties.Refreshing false ]
+        UI.loadingView <| not model.loaded
+    ]
