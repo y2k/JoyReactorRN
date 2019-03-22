@@ -69,5 +69,4 @@ let view model dispatch =
         UI.list model.tags (viewItem dispatch) (fun x -> x.name) [
             FlatListProperties.OnRefresh (Func<_, _>(fun _ -> dispatch Refresh))
             FlatListProperties.Refreshing false ]
-        UI.loadingView <| not model.loaded
-    ]
+        UI.loadingView <| not model.loaded ]
