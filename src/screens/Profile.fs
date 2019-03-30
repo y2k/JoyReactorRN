@@ -1,9 +1,8 @@
 module ProfileScreen
 
-open System
-open Fable.Helpers.ReactNative.Props
-open Fable.Helpers.ReactNative
 open Elmish
+open Fable.Helpers.ReactNative
+open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.CommonUi
 open JoyReactor.Types
@@ -14,7 +13,7 @@ module Service = JoyReactor.Free.Service
 let bind = JoyReactor.Free.bind
 
 type Msg =
-    | ProfileMsg of Result<Profile, Exception>
+    | ProfileMsg of Result<Profile, exn>
     | LoginMsg of LoginScreen.Msg
     | Logout
 
@@ -24,10 +23,10 @@ type ModelStage =
     | LoginModel
 
 type Model =
-    { stage: ModelStage
-      subModel: LoginScreen.Model }
+    { stage : ModelStage
+      subModel : LoginScreen.Model }
 
-let init: Model * Cmd<Msg> =
+let init : Model * Cmd<Msg> =
     { stage = LoadingModel
       subModel = LoginScreen.init }, Cmd.ofEffect Service.loadMyProfile ProfileMsg
 
@@ -103,31 +102,24 @@ let private viewButton title margin onPress =
     touchableOpacity [ Styles.button margin
                        OnPress onPress ] [ text [ Styles.buttonText ] <| String.toUpper title ]
 
-let private viewProfile (profile: Profile) dispatch =
-    view [] [ image [ Styles.avatar
-                      Source [ Uri profile.userImage.url ] ]
-              text [ Styles.userName ] profile.userName
-              text [ Styles.rating ] (sprintf "Рейтинг: %g" profile.rating)
-              view [ ViewProperties.Style [ Height 10. ] ] []
-              Styles.divider
-
-              view [ Styles.starsPanel ]
-                  [ text [ Styles.star "#edc95b" ] (String.replicate profile.stars "★")
-                    text [ Styles.star "#e4e6e7" ] (String.replicate (max 0 (10 - profile.stars)) "★") ]
-              Styles.divider
-
-              view [ ViewProperties.Style [ Padding 20.
-                                            BackgroundColor "white" ] ]
-                  [ text [] "Прогресс до следующей звезды:"
-
-                    view [ ViewProperties.Style [ BorderRadius 4.
-                                                  MarginTop 12.
-                                                  Height 21.
-                                                  BackgroundColor Colors.gray ] ]
-                        [ view [ Styles.progressToNewStar profile.progressToNewStar ] [] ] ]
-              Styles.divider
-              view [ ViewProperties.Style [ Height 10. ] ] []
-              viewButton "Выйти" 20. (dispatch <! Logout) ]
+let private viewProfile (profile : Profile) dispatch =
+    view [] [
+        image [ Styles.avatar; Source [ Uri profile.userImage.url ] ]
+        text [ Styles.userName ] profile.userName
+        text [ Styles.rating ] (sprintf "Рейтинг: %g" profile.rating)
+        view [ ViewProperties.Style [ Height 10. ] ] []
+        Styles.divider
+        view [ Styles.starsPanel ] [
+            text [ Styles.star "#edc95b" ] (String.replicate profile.stars "★")
+            text [ Styles.star "#e4e6e7" ] (String.replicate (max 0 (10 - profile.stars)) "★") ]
+        Styles.divider
+        view [ ViewProperties.Style [ Padding 20.; BackgroundColor "white" ] ] [
+            text [] "Прогресс до следующей звезды:"
+            view [ ViewProperties.Style [ BorderRadius 4.; MarginTop 12.; Height 21.; BackgroundColor Colors.gray ] ] [
+                view [ Styles.progressToNewStar profile.progressToNewStar ] [] ] ]
+        Styles.divider
+        view [ ViewProperties.Style [ Height 10. ] ] []
+        viewButton "Выйти" 20. (dispatch <! Logout) ]
 
 let view model dispatch =
     let content =
@@ -138,5 +130,5 @@ let view model dispatch =
                                 ActivityIndicator.Color "#ffb100" ]
         | LoginModel -> LoginScreen.view model.subModel (LoginMsg >> dispatch)
         | ProfileModel p -> viewProfile p dispatch
-    view [ ViewProperties.Style [ BackgroundColor "#fafafa"
-                                  Flex 1. ] ] [ content ]
+    view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] [ 
+        content ]

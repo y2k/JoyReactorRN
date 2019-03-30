@@ -1,9 +1,8 @@
 module TagsScreen
 
-open System
-open Fable.Helpers.ReactNative.Props
-open Fable.Helpers.ReactNative
 open Elmish
+open Fable.Helpers.ReactNative
+open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
 
@@ -11,11 +10,11 @@ module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
-type Model = { tags: Tag []; loaded: Boolean }
+type Model = { tags : Tag []; loaded : bool }
 
 type Msg =
-    | FromCache of Result<Tag [], Exception>
-    | FromWeb of Result<Tag [], Exception>
+    | FromCache of Result<Tag [], exn>
+    | FromWeb of Result<Tag [], exn>
     | TagsLoaded of Tag []
     | OpenPosts of Source
     | Refresh
@@ -58,7 +57,7 @@ module Styles =
                                TextStyle.Color "#404040"
                                AlignSelf Alignment.Center ]
 
-let viewItem dispatch (x: Tag) =
+let viewItem dispatch (x : Tag) =
     touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse x)) ] [
         view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] [
             image [ Styles.image; Source [ Uri x.image ] ]
@@ -67,6 +66,6 @@ let viewItem dispatch (x: Tag) =
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
         UI.list model.tags (viewItem dispatch) (fun x -> x.name) [
-            FlatListProperties.OnRefresh (Func<_, _>(fun _ -> dispatch Refresh))
+            FlatListProperties.OnRefresh (System.Func<_, _>(fun _ -> dispatch Refresh))
             FlatListProperties.Refreshing false ]
         UI.loadingView <| not model.loaded ]

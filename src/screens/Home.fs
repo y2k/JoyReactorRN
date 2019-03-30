@@ -1,13 +1,12 @@
 module Home
 
-open System
-open Fable.Import.ReactNative
-open Fable.Helpers.ReactNative.Props
-open Fable.Helpers.ReactNative
 open Elmish
+open Fable.Helpers.ReactNative
+open Fable.Helpers.ReactNative.Props
+open Fable.Import.ReactNative
 open JoyReactor
-open JoyReactor.Utils
 open JoyReactor.Types
+open JoyReactor.Utils
 
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
@@ -20,17 +19,17 @@ type PostState =
     | Old of Post
 
 type Msg =
-    | PostsLoaded of Result<PostsWithLevels, Exception>
+    | PostsLoaded of Result<PostsWithLevels, exn>
     | LoadNextPage
     | OpenPost of Post
     | Refresh
     | ApplyUpdate
 
 type Model =
-    { syncState: PostsWithLevels
-      items: PostState []
-      status: Result<unit, exn> option
-      source: Source }
+    { syncState : PostsWithLevels
+      items : PostState []
+      status : Result<unit, exn> option
+      source : Source }
 
 let init source =
     let cmd1 = Cmd.ofEffect (ReactiveStore.getCachedPosts source) PostsLoaded
@@ -38,7 +37,7 @@ let init source =
     { syncState = PostsWithLevels.empty
       items = [||]
       status = None
-      source = source }, Cmd.batch [ cmd1;cmd2 ]
+      source = source }, Cmd.batch [ cmd1; cmd2 ]
 
 let postsToPostStates posts =
     if Array.isEmpty posts.old && Array.isEmpty posts.actual then [||]
@@ -48,7 +47,7 @@ let postsToPostStates posts =
                         else [| Divider |])
                        posts.old |> Array.map Old ]
 
-let update model msg: Model * Cmd<Msg> =
+let update model msg : Model * Cmd<Msg> =
     match msg with
     | PostsLoaded(Ok x) ->
         { model with items = postsToPostStates x
@@ -125,36 +124,29 @@ let iconView =
 let viewItem post dispatch =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
-                         OnPress(always (OpenPost post) >> dispatch) ]
-        [ view [ Styles.card ]
-              [ viewPostImage post
-
-                view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
-                                              Margin 9. ] ]
-                    [ image [ Styles.avatar
-                              Source [ Uri post.userImage.url ] ]
-
-                      view [ ViewProperties.Style [ Flex 1. ] ]
-                          [ text [ Styles.userName ] post.userName
-
-                            view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd
-                                                          FlexDirection FlexDirection.Row ] ]
-                                [ UI.iconView
-                                  text [ TextProperties.Style [ MarginLeft 8.
-                                                                TextStyle.Color "#bcbcbc" ] ] "2 часа" ] ] ] ] ]
+                         OnPress(always (OpenPost post) >> dispatch) ] [
+        view [ Styles.card ] [
+            viewPostImage post
+            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Margin 9. ] ] [
+                image [ Styles.avatar; Source [ Uri post.userImage.url ] ]
+                view [ ViewProperties.Style [ Flex 1. ] ] [
+                    text [ Styles.userName ] post.userName
+                    view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd; FlexDirection FlexDirection.Row ] ] [
+                        UI.iconView
+                        text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#bcbcbc" ] ]
+                             "2 часа" ] ] ] ] ]
 
 let view model dispatch =
     let isSyncing = Option.isNone model.status
-    view [ ViewProperties.Style [ Flex 1. ] ] [ UI.list model.items (function
-                                                    | Actual post -> viewItem post dispatch
-                                                    | Old post -> viewItem post dispatch
-                                                    | Divider -> viewNextButton dispatch isSyncing) (function
-                                                    | Actual post -> string post.id
-                                                    | Old post -> string post.id
-                                                    | Divider -> "divider") [ FlatListProperties.OnRefresh
-                                                                                  (Func<_, _>(dispatch <! Refresh))
-                                                                              FlatListProperties.Refreshing false ]
-
-                                                UI.reloadButton (Array.isEmpty model.syncState.preloaded)
-                                                    "New posts" (always ApplyUpdate >> dispatch)
-                                                UI.loadingView isSyncing ]
+    view [ ViewProperties.Style [ Flex 1. ] ] [
+        UI.list model.items (function
+            | Actual post -> viewItem post dispatch
+            | Old post -> viewItem post dispatch
+            | Divider -> viewNextButton dispatch isSyncing) (function
+            | Actual post -> string post.id
+            | Old post -> string post.id
+            | Divider -> "divider") [ FlatListProperties.OnRefresh (System.Func<_, _> (dispatch <! Refresh))
+                                      FlatListProperties.Refreshing false ]
+        UI.reloadButton (Array.isEmpty model.syncState.preloaded)
+            "New posts" (always ApplyUpdate >> dispatch)
+        UI.loadingView isSyncing ]

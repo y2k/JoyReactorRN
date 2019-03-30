@@ -1,8 +1,8 @@
 module JoyReactor.CommonUi
 
-open System
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
+open System
 
 let primaryColor = "#e49421"
 
@@ -41,12 +41,12 @@ let button title f =
                                Padding 15.
                                TextStyle.Color "white" ]
 
-    touchableOpacity [ nextButtonOutter
-                       OnPress f ] [ text [ tabButtonInner ] title ]
+    touchableOpacity [ nextButtonOutter; OnPress f ] [ 
+        text [ tabButtonInner ] title ]
 
-let inline list (items: 'a []) f fid props =
-    flatList items ([ FlatListProperties.KeyExtractor(Func<_, _, _>(fun (i: 'a) _ -> fid i))
-                      FlatListProperties.RenderItem(Func<_, _>(fun (i: FlatListRenderItemInfo<'a>) -> f i.item)) ]
+let inline list (items : 'a []) f fid props =
+    flatList items ([ FlatListProperties.KeyExtractor(Func<_, _, _>(fun (i : 'a) _ -> fid i))
+                      FlatListProperties.RenderItem(Func<_, _>(fun (i : FlatListRenderItemInfo<'a>) -> f i.item)) ]
                     @ props)
 
 let indicatorView =
@@ -82,13 +82,14 @@ let loadingView inProgress =
     else view [] []
 
 let reloadButton show title dispatch =
-    if show then view [] []
-    else
-        touchableOpacity [ TouchableWithoutFeedbackProperties.Style [ BackgroundColor primaryColor
-                                                                      Overflow Overflow.Hidden ]
-                           OnPress dispatch ] [ text [ TextProperties.Style [ Padding 10.
-                                                                              TextStyle.Color "white"
-                                                                              TextStyle.FontSize 18. ] ] title ]
+    if show
+        then view [] []
+        else
+            touchableOpacity [ TouchableWithoutFeedbackProperties.Style [
+                                   BackgroundColor primaryColor; Overflow Overflow.Hidden ]
+                               OnPress dispatch ] [
+                text [ TextProperties.Style [ Padding 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ]
+                    title ]
 
 let roundButton title dispatch props =
     let nextButtonOutter =

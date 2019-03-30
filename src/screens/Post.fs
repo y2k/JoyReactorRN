@@ -1,10 +1,9 @@
 module PostScreen
 
-open System
-open Fable.Core
-open Fable.Helpers.ReactNative.Props
-open Fable.Helpers.ReactNative
 open Elmish
+open Fable.Core
+open Fable.Helpers.ReactNative
+open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
 
@@ -15,20 +14,20 @@ module ReactiveStore = JoyReactor.Free.Service
 
 [<Pojo>]
 type Model =
-    { post: Post option
-      error: string option }
+    { post : Post option
+      error : string option }
 
 [<Pojo>]
 type Msg =
     | LoadPost of int
-    | PostLoaded of Result<Post, Exception>
-    | LoadPostResult of Result<Post, Exception>
+    | PostLoaded of Result<Post, exn>
+    | LoadPostResult of Result<Post, exn>
     | OpenInWeb
     | OpenTag of Source
 
 let init id =
-    { post = None
-      error = None }, Cmd.ofEffect (ReactiveStore.loadPost id) PostLoaded
+    { post = None; error = None },
+    Cmd.ofEffect (ReactiveStore.loadPost id) PostLoaded
 
 let update model msg =
     match msg with
@@ -64,39 +63,34 @@ module private Styles =
                                MarginTop 8.
                                AlignSelf Alignment.FlexEnd ]
 
-let viewAttachments (comment: Comment) =
-    view [ Styles.panel ] (comment.attachments
-                           |> Array.toList
-                           |> List.map (fun a ->
-                                  image [ ImageProperties.Style [ Width 80.
-                                                                  Height 80. ]
-                                          Source [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
+let viewAttachments (comment : Comment) =
+    view [ Styles.panel ]
+        (comment.attachments
+         |> Array.toList
+         |> List.map (fun a ->
+                image [ ImageProperties.Style [ Width 80.; Height 80. ]
+                        Source [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
 
-let viewItem (comment: Comment) =
-    view [ Styles.home ]
-        [ image [ Styles.image
-                  Source [ Uri comment.image.url ] ]
+let viewItem (comment : Comment) =
+    view [ Styles.home ] [
+        image [ Styles.image; Source [ Uri comment.image.url ] ]
+        view [ ViewProperties.Style [ Flex 1. ] ] [
+            text [ TextProperties.Style [ TextStyle.Color "black"; FontWeight FontWeight.Bold ] ]
+                comment.userName
+            text [ NumberOfLines 3.; TextProperties.Style [ TextStyle.Color "#999" ] ]
+                comment.text
+            viewAttachments comment
+            view [ Styles.panel ] [
+                UI.iconView
+                text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#616161" ] ]
+                    (string comment.rating) ] ] ]
 
-          view [ ViewProperties.Style [ Flex 1. ] ]
-              [ text [ TextProperties.Style [ TextStyle.Color "black"
-                                              FontWeight FontWeight.Bold ] ] comment.userName
-                text [ NumberOfLines 3.
-                       TextProperties.Style [ TextStyle.Color "#999" ] ] comment.text
-                viewAttachments comment
-
-                view [ Styles.panel ]
-                    [ UI.iconView
-                      text [ TextProperties.Style [ MarginLeft 8.
-                                                    TextStyle.Color "#616161" ] ] (string comment.rating) ] ] ]
-
-let viewPostAttachments (post: Post) _ =
+let viewPostAttachments (post : Post) _ =
     view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
         (post.attachments
          |> Array.toList
          |> List.map (fun a ->
-                image [ ImageProperties.Style [ Width 80.
-                                                Height 80.
-                                                Margin 2. ]
+                image [ ImageProperties.Style [ Width 80.; Height 80.; Margin 2. ]
                         Source [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
 
 let viewTags post dispatch =
@@ -109,16 +103,17 @@ let viewTags post dispatch =
                                      FlexDirection FlexDirection.Row ] ]
 
 let viewContent post dispatch =
-    scrollView [] [ yield image [ ImageProperties.Style [ Height 300. ]
-                                  Source [ Uri post.image.Value.url ] ]
-                    yield button [ ButtonProperties.Title "Открыть в браузере"
-                                   ButtonProperties.OnPress(dispatch <! OpenInWeb) ] []
-                    yield text [ TextProperties.Style [ Padding 13. ] ] "Приложения:"
-                    yield viewPostAttachments post dispatch
-                    yield text [ TextProperties.Style [ Padding 13. ] ] "Теги:"
-                    yield viewTags post dispatch
-                    yield text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
-                    yield! Array.map viewItem post.comments ]
+    scrollView [] [
+         yield image [ ImageProperties.Style [ Height 300. ]
+                       Source [ Uri post.image.Value.url ] ]
+         yield button [ ButtonProperties.Title "Открыть в браузере"
+                        ButtonProperties.OnPress(dispatch <! OpenInWeb) ] []
+         yield text [ TextProperties.Style [ Padding 13. ] ] "Приложения:"
+         yield viewPostAttachments post dispatch
+         yield text [ TextProperties.Style [ Padding 13. ] ] "Теги:"
+         yield viewTags post dispatch
+         yield text [ TextProperties.Style [ Padding 13. ] ] "Лучшие комментарии:"
+         yield! Array.map viewItem post.comments ]
 
 let view model dispatch =
     let contentView =
@@ -129,5 +124,5 @@ let view model dispatch =
             activityIndicator [ ActivityIndicator.Style [ Flex 1. ]
                                 ActivityIndicator.Size Size.Large
                                 ActivityIndicator.Color "#ffb100" ]
-    view [ ViewProperties.Style [ Flex 1.
-                                  BackgroundColor "#fafafa" ] ] [ contentView ]
+    view [ ViewProperties.Style [ Flex 1.; BackgroundColor "#fafafa" ] ] [
+        contentView ]

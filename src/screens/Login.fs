@@ -1,23 +1,22 @@
 module LoginScreen
 
-open System
-open Fable.Helpers.ReactNative.Props
-open Fable.Helpers.ReactNative
 open Elmish
+open Fable.Helpers.ReactNative
+open Fable.Helpers.ReactNative.Props
 open JoyReactor
 
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
 type Model =
-    { username: string
-      password: string
-      isBusy: bool
-      error: string option }
+    { username : string
+      password : string
+      isBusy : bool
+      error : string option }
 
 type Msg =
     | LoginMsg
-    | LoginResultMsg of Result<Unit, Exception>
+    | LoginResultMsg of Result<Unit, exn>
     | UsernameMsg of string
     | PasswordMsg of string
 
@@ -60,7 +59,7 @@ let init =
       isBusy = false
       error = None }
 
-let update model msg: Model * Cmd<Msg> =
+let update model msg : Model * Cmd<Msg> =
     match msg with
     | LoginMsg ->
         { model with isBusy = true
@@ -73,8 +72,8 @@ let update model msg: Model * Cmd<Msg> =
     | PasswordMsg x -> { model with password = x }, Cmd.none
 
 let private viewButton dispatch title margin =
-    touchableOpacity [ Styles.button margin
-                       OnPress(dispatch <! LoginMsg) ] [ text [ Styles.buttonText ] <| String.toUpper title ]
+    touchableOpacity [ Styles.button margin; OnPress(dispatch <! LoginMsg) ] [ 
+        text [ Styles.buttonText ] <| String.toUpper title ]
 
 let view model dispatch =
     match model.isBusy with
@@ -83,14 +82,12 @@ let view model dispatch =
                             ActivityIndicator.Size Size.Large
                             ActivityIndicator.Color "#ffb100" ]
     | false ->
-        view [ ViewProperties.Style [ Padding 20.
-                                      PaddingTop 50. ] ]
-            [ Styles.textInput model.username "Логин" (UsernameMsg >> dispatch)
-                  [ TextInput.AutoCapitalize AutoCapitalize.None ]
-              view [ ViewProperties.Style [ Height 12. ] ] []
-              Styles.textInput model.password "Пароль" (PasswordMsg >> dispatch) [ TextInput.SecureTextEntry true ]
-              view [ ViewProperties.Style [ Height 12. ] ] []
-              viewButton dispatch "Войти" 0.
-              text [ TextProperties.Style [ TextStyle.Color "red"
-                                            Padding 10.
-                                            FontSize 20. ] ] (model.error |> Option.defaultValue "") ]
+        view [ ViewProperties.Style [ Padding 20.; PaddingTop 50. ] ] [ 
+            Styles.textInput model.username "Логин" (UsernameMsg >> dispatch)
+                [ TextInput.AutoCapitalize AutoCapitalize.None ]
+            view [ ViewProperties.Style [ Height 12. ] ] []
+            Styles.textInput model.password "Пароль" (PasswordMsg >> dispatch) [ TextInput.SecureTextEntry true ]
+            view [ ViewProperties.Style [ Height 12. ] ] []
+            viewButton dispatch "Войти" 0.
+            text [ TextProperties.Style [ TextStyle.Color "red"; Padding 10.; FontSize 20. ] ] 
+                (model.error |> Option.defaultValue "") ]

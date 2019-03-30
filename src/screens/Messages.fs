@@ -1,19 +1,19 @@
 module MessagesScreen
 
-open System
+open Elmish
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
-open Elmish
 open JoyReactor
 open JoyReactor.Types
+open System
 
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Free.Cmd
 module Service = JoyReactor.Free.Service
 
 type Model =
-    { messages: Message []
-      isBusy: Boolean }
+    { messages : Message []
+      isBusy : Boolean }
 
 type Msg =
     | MessagesMsg of Result<Message [], Exception>
@@ -21,8 +21,8 @@ type Msg =
     | SendMessageResult of Result<Unit, Exception>
 
 let init userName =
-    { messages = [||]
-      isBusy = false }, Cmd.ofEffect (Service.loadMessages userName) MessagesMsg
+    { messages = [||]; isBusy = false }, 
+    Cmd.ofEffect (Service.loadMessages userName) MessagesMsg
 
 let update model msg =
     match msg with
@@ -33,20 +33,17 @@ let update model msg =
     | SendMessageResult(Error e) -> log (sprintf "%O" e) { model with isBusy = false }, Cmd.none
 
 let private itemView x =
-    let lp, rp =
-        if x.isMine then 100., 0.
-        else 0., 100.
-    view [ ViewProperties.Style [ PaddingLeft lp
-                                  PaddingRight rp ] ]
-        [ text [] x.text
-          text [] x.userName
-          text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd ] ] <| sprintf "%O" x.date ]
+    let lp, rp = if x.isMine then 100., 0. else 0., 100.
+    view [ ViewProperties.Style [ PaddingLeft lp; PaddingRight rp ] ] [
+        text [] x.text
+        text [] x.userName
+        text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd ] ] <| sprintf "%O" x.date ]
 
 let view model dispatch =
-    view [ ViewProperties.Style [ Flex 1. ] ]
-        [ UI.list model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
-
-          view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ]
-              [ textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
-                (if model.isBusy then view [] []
-                 else UI.button "SEND" (fun _ -> dispatch SendMessage)) ] ]
+    view [ ViewProperties.Style [ Flex 1. ] ] [
+        UI.list model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
+        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] [
+            textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
+            (if model.isBusy
+                then view [] []
+                else UI.button "SEND" (dispatch <! SendMessage)) ] ]
