@@ -1,8 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\paket-files\y2k\EffectsResearch\Effects\EffectsReactNative.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/EffectsReactNative.fs</Link>
+    </Compile>
+    <Compile Include="Types.fs" />
+    <Compile Include="Services.fs" />
     <Compile Include="Service.fs" />
     <Compile Include="Free.fs" />
     <Compile Include="CommonUi.fs" />

@@ -1,18 +1,21 @@
 module JoyReactor.Free
 
-open System
 open Fable.PowerPack.Fetch.Fetch_types
+open System
 
+[<System.Obsolete>]
 type EffectInstruction<'a> =
     | Fetch of (string * RequestProperties list * (string -> 'a))
     | FromStorage of (string * (obj option -> 'a))
     | SaveToStorage of (string * obj option * (unit -> 'a))
     | ApiRequest of (OpenApi.Replay<obj> -> OpenApi.Types.ApiRequest) * (obj -> 'a)
 
+[<System.Obsolete>]
 type EffectProgram<'a> =
     | Free of EffectInstruction<EffectProgram<'a>>
     | Pure of 'a
 
+[<System.Obsolete>]
 let rec bind f =
     let mapI f =
         function
@@ -27,6 +30,7 @@ let rec bind f =
         |> Free
     | Pure x -> f x
 
+[<System.Obsolete>]
 type EffectBuilder() =
     member __.Bind(x, f) = bind f x
     member __.Return x = Pure x
@@ -40,15 +44,16 @@ module Effects =
     open OpenApi
     open OpenApi.Types
 
-    let apiRequest (f: Replay<'x> -> ApiRequest): EffectProgram<'x> =
-        let r = fun (replayObj: Replay<obj>) -> f (fun x -> replayObj x)
+    let apiRequest (f : Replay<'x> -> ApiRequest) : EffectProgram<'x> =
+        let r = fun (replayObj : Replay<obj>) -> f (fun x -> replayObj x)
         let a = ApiRequest(r, fun x -> x :?> 'x |> Pure)
         Free(a)
 
+[<System.Obsolete>]
 module Storage =
     let load<'t> key = Free(FromStorage(key, Pure)) |> bind (fun x -> Pure(x |> Option.map (fun x -> x :?> 't)))
-    let save (key: string) value: EffectProgram<unit> = Free(SaveToStorage(key, Some value, Pure))
-    let remove (key: string): EffectProgram<unit> = Free(SaveToStorage(key, None, Pure))
+    let save (key : string) value : EffectProgram<unit> = Free(SaveToStorage(key, Some value, Pure))
+    let remove (key : string) : EffectProgram<unit> = Free(SaveToStorage(key, None, Pure))
 
 module Interpreter =
     module private Storage' =
@@ -101,15 +106,13 @@ module Cmd =
     let ofEffect e f = Cmd.ofEffect (async { return! Interpreter.run e }) f
 
 module Service =
-    open Fable.PowerPack.Fetch
-    open Types
     open Effects
+    open Fable.PowerPack.Fetch
     open OpenApi.Types
+    open Types
 
     let private loadHtml url =
-        let headers =
-            [ HttpRequestHeaders.UserAgent
-                  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ]
+        let headers = [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ]
         fetchText url [ requestHeaders headers ]
 
     let loadPost id = effect { let! html = UrlBuilder.post id |> loadHtml
@@ -135,8 +138,12 @@ module Service =
             return ()
         }
 
+    [<System.Obsolete>]
     let getTagsFromCache = effect { let! tags = Storage.load<Tag []> "tags"
                                     return Option.defaultValue [||] tags }
+
+    let getTagsFromCache' = 
+        ()
 
     let private loadMyTags =
         effect {
@@ -146,6 +153,7 @@ module Service =
             return! apiRequest (fun x -> TagListRequest(html, x))
         }
 
+    [<System.Obsolete>]
     let getTagsFromWeb =
         effect {
             let! tags' = loadMyTags
@@ -228,7 +236,7 @@ module Service =
                     { PostsWithLevels.empty with actual = dbPosts
                                                  preloaded = webPosts |> List.toArray
                                                  nextPage = nextPage }
-            do! Storage.save storageId (Array.concat [ newState.actual;newState.old ])
+            do! Storage.save storageId (Array.concat [ newState.actual; newState.old ])
             return newState
         }
 
@@ -239,12 +247,12 @@ module Service =
             let newState =
                 { state with actual = state.preloaded
                              old =
-                                 Array.concat [ state.actual;state.old ]
+                                 Array.concat [ state.actual; state.old ]
                                  |> Array.filter (fun x -> not <| Array.contains x.id ids)
                              preloaded = [||] }
 
             let storageId = source |> Domain.sourceToString
-            do! Storage.save storageId (Array.concat [ newState.actual;newState.old ])
+            do! Storage.save storageId (Array.concat [ newState.actual; newState.old ])
             return newState
         }
 
@@ -254,7 +262,7 @@ module Service =
             return! syncFirstPage source
         }
 
-    let syncNextPage source (state: PostsWithLevels) =
+    let syncNextPage source (state : PostsWithLevels) =
         effect {
             let! (webPosts, nextPage) = loadPosts source state.nextPage
             let actualIds = state.actual |> Array.map (fun x -> x.id)
@@ -274,6 +282,6 @@ module Service =
                   preloaded = [||] }
 
             let storageId = source |> Domain.sourceToString
-            do! Storage.save storageId (Array.concat [ newState.actual;newState.old ])
+            do! Storage.save storageId (Array.concat [ newState.actual; newState.old ])
             return newState
         }

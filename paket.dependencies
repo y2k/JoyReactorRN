@@ -19,3 +19,5 @@ nuget Microsoft.NET.Test.Sdk
 nuget xunit
 nuget xunit.runner.visualstudio
 clitool dotnet-xunit
+
+github y2k/EffectsResearch:c8bbb2badde617ea9e0bf22f08ce6946711d1be1 Effects/EffectsReactNative.fs
