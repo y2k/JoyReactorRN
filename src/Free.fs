@@ -37,6 +37,7 @@ type EffectBuilder() =
     member __.ReturnFrom x = x
     member __.Zero() = Pure()
 
+[<System.Obsolete>]
 let effect = EffectBuilder()
 let fetchText url props = Free(Fetch(url, props, Pure))
 
@@ -103,6 +104,7 @@ module Interpreter =
         }
 
 module Cmd =
+    [<System.Obsolete>]
     let ofEffect e f = Cmd.ofEffect (async { return! Interpreter.run e }) f
 
 module Service =

@@ -5,26 +5,23 @@ open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-open System
 
 module UI = JoyReactor.CommonUi
-module Cmd = JoyReactor.Free.Cmd
-module Service = JoyReactor.Free.Service
+module Cmd = JoyReactor.Services.Cmd
+module S = JoyReactor.Services
 
-type Model =
-    { messages : Message []
-      isBusy : Boolean }
+type Model = { messages : Message []; isBusy : bool }
 
 type Msg =
-    | MessagesMsg of Result<Message [], Exception>
+    | MessagesMsg of Result<Message [], exn>
     | SendMessage
-    | SendMessageResult of Result<Unit, Exception>
+    | SendMessageResult of Result<Unit, exn>
 
 let init userName =
-    { messages = [||]; isBusy = false }, 
-    Cmd.ofEffect (Service.loadMessages userName) MessagesMsg
+    { messages = [||]; isBusy = false },
+    (S.loadMessages userName) |> Cmd.ofEff MessagesMsg
 
-let update model msg =
+let update (model : Model) msg =
     match msg with
     | MessagesMsg(Ok x) -> { model with messages = x }, Cmd.none
     | MessagesMsg(Error e) -> log (sprintf "%O" e) model, Cmd.none

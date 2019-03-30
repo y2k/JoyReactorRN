@@ -1,14 +1,10 @@
 module JoyReactor.Services
 
-module Cmd = 
-    open Elmish
+module Cmd =
     open Effects.ReactNative
-
-    let ofEff0 (Eff a) =
-        Cmd.ofSub (fun _ -> Async.Start a)
-
-    let ofEff f (Eff a) =
-        Cmd.ofAsync (fun _ -> a) () (Ok >> f) (Error >> f)
+    open Elmish
+    let ofEff0 (Eff a) = Cmd.ofSub (fun _ -> Async.Start a)
+    let ofEff f (Eff a) = Cmd.ofAsync (fun _ -> a) () (Ok >> f) (Error >> f)
 
 module ApiRequests =
     open Effects.ReactNative
@@ -35,34 +31,6 @@ module ApiRequests =
             form.append ("html", html')
             return! downloadString parseUrl [ Method HttpMethod.POST; Body !^form ]
         } |> Eff.wrap (fun f -> ParseRequest(url, mkUrl, parseUrl, f))
-
-module OpenApi =
-    open Fable.PowerPack.Fetch
-    open Types
-
-    type Replay<'x> = 'x -> unit
-
-    type Html = string
-
-    module Types =
-        type ApiRequest =
-            | TagListRequest of Html * Replay<Tag list>
-            | ProfileRequest of Html * Replay<Profile>
-            | PostRequest of Html * Replay<Post>
-            | PostsRequest of Html * Replay<PostResponse>
-            | MessagesRequest of Html * Replay<MessagesWithNext>
-
-module private Web =
-    open Effects.ReactNative
-    open Fable.Core
-    open Fable.PowerPack.Fetch
-
-    type DownloadString = DownloadString of url : string * props : RequestProperties list * f : (string -> unit)
-    let downloadString url props =
-        async {
-            let! response = (fetch url props) |> Async.AwaitPromise
-            return! response.text() |> Async.AwaitPromise
-        } |> Eff.wrap (fun f -> DownloadString(url, props, f))
 
 module private Storage =
     open Effects.ReactNative
@@ -95,13 +63,33 @@ module private Storage =
 open Effects.ReactNative
 open JoyReactor.Types
 
+let saveMessageToCache (messages : Message []) =
+    Storage.serialize messages |> Storage.save "messages"
+
+let loadMessageFromWeb page parentMessages =
+    ApiRequests.parseRequest
+        (UrlBuilder.messages page)
+        (fun _ -> None)
+        (sprintf "https://jrs.y2k.work/%s" "messages")
+    <*> (Storage.tryParse<MessagesWithNext> >> Option.get)
+    <*> (fun response ->
+            let newMessages, _ = Domain.mergeMessages parentMessages response.messages response.nextPage
+            newMessages, response.nextPage)
+
+let private loadAllMessageFromStorage =
+    Storage.load "messages" <*> (Storage.tryParse<Message []> >> Option.defaultValue [||])
+
+let loadThreadsFromCache =
+    loadAllMessageFromStorage <*> Domain.selectThreads
+
+let loadMessages username =
+    loadAllMessageFromStorage <*> Domain.selectMessageForUser username
+
 let getTagsFromCache =
-    Storage.load "tags"
-    <*> (Storage.tryParse<Tag []> >> Option.defaultValue [||])
+    Storage.load "tags" <*> (Storage.tryParse<Tag []> >> Option.defaultValue [||])
 
 let saveTagToCache (tags : Tag []) =
-    Storage.serialize tags
-    |> Storage.save "tags"
+    Storage.serialize tags |> Storage.save "tags"
 
 let getTagsFromWeb =
     ApiRequests.parseRequest
