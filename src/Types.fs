@@ -156,3 +156,17 @@ module Domain =
         let newMessages = Array.append parentMessages (filterNewMessages messages lastOffset)
         let stop = isStop messages lastOffset nextPage newMessages
         newMessages, stop
+
+module Requests =
+    open Fable.Core.JsInterop
+    open Fable.PowerPack.Fetch
+
+    let login (username: string) (password: string) (token: string) =
+        let form = Fable.Import.Browser.FormData.Create()
+        form.append ("signin[username]", username)
+        form.append ("signin[password]", password)
+        form.append ("signin[_csrf_token]", token)
+        "http://" + UrlBuilder.domain + "/login",
+        [ Method HttpMethod.POST
+          Credentials RequestCredentials.Sameorigin
+          Body !^ form ]

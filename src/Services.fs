@@ -6,7 +6,7 @@ module Cmd =
     let ofEff0 (Eff a) = Cmd.ofSub (fun _ -> Async.Start a)
     let ofEff f (Eff a) = Cmd.ofAsync (fun _ -> a) () (Ok >> f) (Error >> f)
 
-module ApiRequests =
+module private ApiRequests =
     open Effects.ReactNative
     open Fable.Core
     open Fable.PowerPack.Fetch
@@ -31,6 +31,30 @@ module ApiRequests =
             form.append ("html", html')
             return! downloadString parseUrl [ Method HttpMethod.POST; Body !^form ]
         } |> Eff.wrap (fun f -> ParseRequest(url, mkUrl, parseUrl, f))
+
+    type SendForm = SendForm of csrfUrl : string * mkRequest : (string -> (string * RequestProperties list)) * f : (unit -> unit)
+    let sendForm csrfUrl mkRequest =
+        let fetchText url props = async {
+            let! response = fetch url props |> Async.AwaitPromise
+            return! response.text() |> Async.AwaitPromise
+        }
+        async {
+            let! html = fetchText csrfUrl []
+            let! _ = mkRequest html ||> fetchText
+            ()
+        } |> Eff.wrap (fun f -> SendForm(csrfUrl, mkRequest, f))
+
+module private Web =
+     open Effects.ReactNative
+     open Fable.Core
+     open Fable.PowerPack.Fetch
+
+     type DownloadString = DownloadString of url : string * props : RequestProperties list * f : (string -> unit)
+     let downloadString url props =
+         async {
+             let! response = (fetch url props) |> Async.AwaitPromise
+             return! response.text() |> Async.AwaitPromise
+         } |> Eff.wrap (fun f -> DownloadString(url, props, f))
 
 module private Storage =
     open Effects.ReactNative
@@ -62,6 +86,22 @@ module private Storage =
 
 open Effects.ReactNative
 open JoyReactor.Types
+
+let login username password =
+    ApiRequests.sendForm
+        UrlBuilder.ads
+        (Domain.getCsrfToken >> Option.get >> Requests.login username password)
+
+let logout =
+    Web.downloadString (sprintf "http://%s/logout" UrlBuilder.domain) []
+    <*> ignore
+
+let loadMyProfile =
+    ApiRequests.parseRequest
+        UrlBuilder.domain
+        (fun html -> Domain.extractName html |> Option.get |> UrlBuilder.user |> Some)
+        (sprintf "https://jrs.y2k.work/%s" "profile")
+    <*> (Storage.tryParse<Profile> >> Option.get)
 
 let saveMessageToCache (messages : Message []) =
     Storage.serialize messages |> Storage.save "messages"

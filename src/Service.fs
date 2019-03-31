@@ -71,20 +71,6 @@ module Fetch =
     let fetchString url props = async { let! r = F.fetch url props |> Async.AwaitPromise
                                         return! r.text() |> Async.AwaitPromise }
 
-module Requests =
-    open JsInterop
-    open Fable.PowerPack.Fetch
-
-    let login (username: string) (password: string) (token: string) =
-        let form = Fable.Import.Browser.FormData.Create()
-        form.append ("signin[username]", username)
-        form.append ("signin[password]", password)
-        form.append ("signin[_csrf_token]", token)
-        "http://" + UrlBuilder.domain + "/login",
-        [ Method HttpMethod.POST
-          Credentials RequestCredentials.Sameorigin
-          Body !^form ]
-
 module OpenApi =
     open Types
     open JsInterop

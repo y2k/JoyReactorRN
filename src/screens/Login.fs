@@ -5,8 +5,8 @@ open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open JoyReactor
 
-module Cmd = JoyReactor.Free.Cmd
-module Service = JoyReactor.Free.Service
+module Cmd = JoyReactor.Services.Cmd
+module S = JoyReactor.Services
 
 type Model =
     { username : string
@@ -16,7 +16,7 @@ type Model =
 
 type Msg =
     | LoginMsg
-    | LoginResultMsg of Result<Unit, exn>
+    | LoginResultMsg of Result<unit, exn>
     | UsernameMsg of string
     | PasswordMsg of string
 
@@ -62,12 +62,12 @@ let init =
 let update model msg : Model * Cmd<Msg> =
     match msg with
     | LoginMsg ->
-        { model with isBusy = true
-                     error = None }, Cmd.ofEffect (Service.login model.username model.password) LoginResultMsg
+        { model with isBusy = true; error = None }, 
+        S.login model.username model.password |> Cmd.ofEff LoginResultMsg
     | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.none
     | LoginResultMsg(Error e) ->
-        { model with isBusy = false
-                     error = Some <| string e }, Cmd.none
+        { model with isBusy = false; error = Some <| string e }, 
+        Cmd.none
     | UsernameMsg x -> { model with username = x }, Cmd.none
     | PasswordMsg x -> { model with password = x }, Cmd.none
 

@@ -1,47 +1,44 @@
 module ProfileScreen
 
 open Elmish
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.CommonUi
 open JoyReactor.Types
 
-module Cmd = JoyReactor.Free.Cmd
-module Service = JoyReactor.Free.Service
-
-let bind = JoyReactor.Free.bind
+module Cmd = JoyReactor.Services.Cmd
+module S = JoyReactor.Services
 
 type Msg =
     | ProfileMsg of Result<Profile, exn>
     | LoginMsg of LoginScreen.Msg
     | Logout
+    | LogoutComplete of Result<unit, exn>
 
 type ModelStage =
     | ProfileModel of Profile
     | LoadingModel
     | LoginModel
 
-type Model =
-    { stage : ModelStage
-      subModel : LoginScreen.Model }
+type Model = { stage : ModelStage; subModel : LoginScreen.Model }
 
 let init : Model * Cmd<Msg> =
-    { stage = LoadingModel
-      subModel = LoginScreen.init }, Cmd.ofEffect Service.loadMyProfile ProfileMsg
+    { stage = LoadingModel; subModel = LoginScreen.init },
+    S.loadMyProfile |> Cmd.ofEff ProfileMsg
 
 let update model =
     function
     | Logout ->
-        { model with stage = LoadingModel },
-        Cmd.ofEffect (Service.logout |> bind (fun _ -> Service.loadMyProfile)) ProfileMsg
+        { model with stage = LoadingModel }, S.logout |> Cmd.ofEff LogoutComplete
+    | LogoutComplete _ -> model, S.loadMyProfile |> Cmd.ofEff ProfileMsg
     | ProfileMsg(Ok p) -> { model with stage = ProfileModel p }, Cmd.none
     | ProfileMsg _ ->
-        { model with stage = LoginModel
-                     subModel = LoginScreen.init }, Cmd.none
+        { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
     | LoginMsg subMsg ->
         let loginModel, cmd = LoginScreen.update model.subModel subMsg
         { model with subModel = loginModel }, Cmd.map LoginMsg cmd
+
+open Fable.Helpers.ReactNative
+open Fable.Helpers.ReactNative.Props
 
 module private Styles =
     let rating =
@@ -99,8 +96,8 @@ module private Styles =
                                       BackgroundColor Colors.gray ] ] []
 
 let private viewButton title margin onPress =
-    touchableOpacity [ Styles.button margin
-                       OnPress onPress ] [ text [ Styles.buttonText ] <| String.toUpper title ]
+    touchableOpacity [ Styles.button margin; OnPress onPress ] [
+        text [ Styles.buttonText ] <| String.toUpper title ]
 
 let private viewProfile (profile : Profile) dispatch =
     view [] [
@@ -130,5 +127,5 @@ let view model dispatch =
                                 ActivityIndicator.Color "#ffb100" ]
         | LoginModel -> LoginScreen.view model.subModel (LoginMsg >> dispatch)
         | ProfileModel p -> viewProfile p dispatch
-    view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] [ 
+    view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] [
         content ]
