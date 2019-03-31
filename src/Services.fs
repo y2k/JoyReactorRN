@@ -87,6 +87,13 @@ module private Storage =
 open Effects.ReactNative
 open JoyReactor.Types
 
+let loadPost id = 
+    ApiRequests.parseRequest
+        (UrlBuilder.post id)
+        (fun _ -> None) // post
+        (sprintf "https://jrs.y2k.work/%s" "post")
+    <*> (Storage.tryParse<Post> >> Option.get)
+
 let login username password =
     ApiRequests.sendForm
         UrlBuilder.ads

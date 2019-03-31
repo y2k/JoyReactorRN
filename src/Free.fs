@@ -117,9 +117,6 @@ module Service =
         let headers = [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ]
         fetchText url [ requestHeaders headers ]
 
-    let loadPost id = effect { let! html = UrlBuilder.post id |> loadHtml
-                               return! apiRequest (fun x -> PostRequest(html, x)) }
-
     let getCachedPosts source =
         effect {
             let! posts = source

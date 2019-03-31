@@ -37,32 +37,35 @@ let init source =
     { syncState = PostsWithLevels.empty
       items = [||]
       status = None
-      source = source }, Cmd.batch [ cmd1; cmd2 ]
+      source = source }, 
+    Cmd.batch [ cmd1; cmd2 ]
 
 let postsToPostStates posts =
-    if Array.isEmpty posts.old && Array.isEmpty posts.actual then [||]
-    else
-        Array.concat [ posts.actual |> Array.map Actual
-                       (if (not <| Array.isEmpty posts.preloaded) || Array.isEmpty posts.actual then [||]
-                        else [| Divider |])
-                       posts.old |> Array.map Old ]
+    if Array.isEmpty posts.old && Array.isEmpty posts.actual 
+        then [||]
+        else Array.concat [ 
+                posts.actual |> Array.map Actual
+                (if (not <| Array.isEmpty posts.preloaded) || Array.isEmpty posts.actual 
+                    then [||]
+                    else [| Divider |])
+                posts.old |> Array.map Old ]
 
 let update model msg : Model * Cmd<Msg> =
     match msg with
     | PostsLoaded(Ok x) ->
         { model with items = postsToPostStates x
                      syncState = x
-                     status =
-                         if Array.isEmpty x.actual then None
-                         else Some <| Ok() }, Cmd.none
+                     status = if Array.isEmpty x.actual then None else Some <| Ok() }, 
+        Cmd.none
     | PostsLoaded(Error e) -> log e { model with status = Some <| Error e }, Cmd.none
     | ApplyUpdate -> model, Cmd.ofEffect (ReactiveStore.applyUpdate model.source model.syncState) PostsLoaded
     | Refresh ->
-        if Array.isEmpty model.syncState.preloaded then
-            { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
-        else model, Cmd.ofMsg ApplyUpdate
+        if Array.isEmpty model.syncState.preloaded 
+            then { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
+            else model, Cmd.ofMsg ApplyUpdate
     | LoadNextPage ->
-        { model with status = None }, Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
+        { model with status = None }, 
+        Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
     | _ -> model, Cmd.none
 
 module private Styles =
@@ -100,26 +103,22 @@ module private Styles =
                                TextStyle.Color "#616161" ]
 
 let viewNextButton dispatch isSyncing =
-    let onPress =
-        if isSyncing then ignore
-        else dispatch <! LoadNextPage
-    touchableOpacity [ Styles.nextButtonOutter <| not isSyncing
-                       OnPress onPress ] [ text [ Styles.nextButtonInner ] "Load next page" ]
+    let onPress = if isSyncing then ignore else dispatch <! LoadNextPage
+    touchableOpacity [ Styles.nextButtonOutter <| not isSyncing; OnPress onPress ] [ 
+        text [ Styles.nextButtonInner ] "Load next page" ]
 
 let viewPostImage post =
     post.image
     |> Option.map (Image.urlWithHeight (Globals.Dimensions.get("screen").width))
     |> function
     | Some(img, h) ->
-        image [ ImageProperties.Style [ Height h
-                                        BorderTopLeftRadius 8.
-                                        BorderTopRightRadius 8. ]
+        image [ ImageProperties.Style [ Height h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
                 Source [ Uri img ] ]
     | None -> view [] []
 
 let iconView =
-    text [ TextProperties.Style [ FontFamily "icomoon"
-                                  TextStyle.Color "#ffb100" ] ] "\ue8b5"
+    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ] 
+        "\ue8b5"
 
 let viewItem post dispatch =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]

@@ -8,14 +8,11 @@ open JoyReactor
 open JoyReactor.Types
 
 module UI = JoyReactor.CommonUi
-module Cmd = JoyReactor.Free.Cmd
-module Service = JoyReactor.Free.Service
-module ReactiveStore = JoyReactor.Free.Service
+module Cmd = JoyReactor.Services.Cmd
+module S = JoyReactor.Services
 
 [<Pojo>]
-type Model =
-    { post : Post option
-      error : string option }
+type Model = { post : Post option; error : string option }
 
 [<Pojo>]
 type Msg =
@@ -27,11 +24,11 @@ type Msg =
 
 let init id =
     { post = None; error = None },
-    Cmd.ofEffect (ReactiveStore.loadPost id) PostLoaded
+    S.loadPost id |> Cmd.ofEff PostLoaded
 
 let update model msg =
     match msg with
-    | LoadPost id -> model, Cmd.ofEffect (Service.loadPost id) LoadPostResult
+    | LoadPost id -> model, S.loadPost id |> Cmd.ofEff LoadPostResult
     | LoadPostResult(Ok post) -> { model with post = Some post }, Cmd.none
     | LoadPostResult(Error error) -> { model with error = Some <| string error }, Cmd.none
     | PostLoaded(Ok post) -> { model with post = Some post }, Cmd.none
@@ -99,8 +96,7 @@ let viewTags post dispatch =
     |> Array.toList
     |> List.map (fun x -> UI.roundButton x (dispatch <! OpenTag(TagSource x)) [ PaddingHorizontal 8. ])
     |> flip List.append [ UI.roundButton "Все теги" ignore [ PaddingHorizontal 8. ] ]
-    |> view [ ViewProperties.Style [ FlexWrap FlexWrap.Wrap
-                                     FlexDirection FlexDirection.Row ] ]
+    |> view [ ViewProperties.Style [ FlexWrap FlexWrap.Wrap; FlexDirection FlexDirection.Row ] ]
 
 let viewContent post dispatch =
     scrollView [] [
