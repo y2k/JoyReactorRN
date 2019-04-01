@@ -60,7 +60,7 @@ module TabsScreen =
             [ view [ ViewProperties.Style [ Flex 1. ] ] [ renderContent model dispatch ]
 
               view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
-                                            Padding 2. ] ]
+                                            Padding $ 2. ] ]
                   [ roundButton "Home" (dispatch <! SelectTab 0) [ Flex 1. ]
                     roundButton "Tags" (dispatch <! SelectTab 1) [ Flex 1. ]
                     roundButton "Messages" (dispatch <! SelectTab 2) [ Flex 1. ]
@@ -149,7 +149,7 @@ Program.mkProgram App.init App.update App.view
 // #if RELEASE
 // #else
 |> Program.withConsoleTrace
-|> Program.withHMR
+// |> Program.withHMR // FIXME:
 // #endif
 |> Program.withReactNative "joyreact"
 |> Program.run

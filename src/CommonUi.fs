@@ -13,40 +13,40 @@ module Colors =
 module private Styles =
     let tabButtonOuter selected =
         TouchableWithoutFeedbackProperties.Style [ Flex 1.
-                                                   Margin 4.
+                                                   Margin $ 4.
                                                    BackgroundColor(if selected then "#d48411"
                                                                    else "#e49421")
                                                    BorderRadius 4.
-                                                   Overflow Overflow.Hidden ]
+                                                   Overflow ImageOverflow.Hidden ]
 
     let tabButtonInner =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
-                               Padding 15.
+                               Padding $ 15.
                                TextStyle.Color "white" ]
 
 let button title f =
     let nextButtonOutter =
-        TouchableWithoutFeedbackProperties.Style [ Margin 4.
+        TouchableWithoutFeedbackProperties.Style [ Margin $ 4.
                                                    BackgroundColor "#e49421"
                                                    BorderRadius 4.
-                                                   Height 48.
-                                                   Overflow Overflow.Hidden ]
+                                                   Height $ 48.
+                                                   Overflow ImageOverflow.Hidden ]
 
     let tabButtonInner =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
-                               Padding 15.
+                               Padding $ 15.
                                TextStyle.Color "white" ]
 
-    touchableOpacity [ nextButtonOutter; OnPress f ] [ 
+    touchableOpacity [ nextButtonOutter; OnPress f ] [
         text [ tabButtonInner ] title ]
 
 let inline list (items : 'a []) f fid props =
-    flatList items ([ FlatListProperties.KeyExtractor(Func<_, _, _>(fun (i : 'a) _ -> fid i))
-                      FlatListProperties.RenderItem(Func<_, _>(fun (i : FlatListRenderItemInfo<'a>) -> f i.item)) ]
+    flatList items ([ FlatListProperties.KeyExtractor(fun (i : 'a) _ -> fid i)
+                      FlatListProperties.RenderItem(fun (i : FlatListRenderItemInfo<'a>) -> f i.item) ]
                     @ props)
 
 let indicatorView =
@@ -69,14 +69,14 @@ let statusView status =
     | Some(Error _) -> text [] "ERROR"
     | None ->
         activityIndicator [ ViewProperties.Style [ BackgroundColor "#212121"
-                                                   Padding 4. ]
+                                                   Padding $ 4. ]
                             ActivityIndicator.Size Size.Large
                             ActivityIndicator.Color "#ffb100" ]
 
 let loadingView inProgress =
     if inProgress then
         text [ TextProperties.Style [ BackgroundColor primaryColor
-                                      Padding 10.
+                                      Padding $ 10.
                                       TextStyle.Color "white"
                                       TextStyle.FontSize 18. ] ] "Loading"
     else view [] []
@@ -86,22 +86,22 @@ let reloadButton show title dispatch =
         then view [] []
         else
             touchableOpacity [ TouchableWithoutFeedbackProperties.Style [
-                                   BackgroundColor primaryColor; Overflow Overflow.Hidden ]
+                                   BackgroundColor primaryColor; Overflow ImageOverflow.Hidden ]
                                OnPress dispatch ] [
-                text [ TextProperties.Style [ Padding 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ]
+                text [ TextProperties.Style [ Padding $ 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ]
                     title ]
 
 let roundButton title dispatch props =
     let nextButtonOutter =
-        TouchableWithoutFeedbackProperties.Style([ Margin 2.
+        TouchableWithoutFeedbackProperties.Style([ Margin $ 2.
                                                    BackgroundColor primaryColor
                                                    BorderRadius 4.
-                                                   Height 48.
+                                                   Height $ 48.
                                                    JustifyContent JustifyContent.Center
-                                                   Overflow Overflow.Hidden ]
+                                                   Overflow ImageOverflow.Hidden ]
                                                  @ props)
 
-    let tabButtonInner =
+    let tabButtonInner : ITextProperties list =
         [ TextProperties.NumberOfLines 1.
           TextProperties.Style [ FontWeight FontWeight.Bold
                                  FontSize 14.
@@ -112,5 +112,5 @@ let roundButton title dispatch props =
                        OnPress dispatch ] [ text tabButtonInner title ]
 
 let iconView =
-    text [ TextProperties.Style [ FontFamily "icomoon"
-                                  TextStyle.Color "#ffb100" ] ] "\ue8b5"
+    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ]
+        "\ue8b5"

@@ -59,12 +59,18 @@ module private Web =
 module private Storage =
     open Effects.ReactNative
     open Fable.Core
+    open Fable.Import.JS
 
-    let private AS = Fable.Import.ReactNative.Globals.AsyncStorage
+    type IAsyncStorage =
+        abstract member getItem : string -> string Promise
+        abstract member removeItem : string -> unit Promise
+        abstract member setItem : string * string -> unit Promise
+    let private AS : IAsyncStorage = JsInterop.import "AsyncStorage" "react-native"
 
     type LoadFromStorage = LoadFromStorage of key : string * f : (string -> unit)
     let load key =
-        async { return! AS.getItem key |> Async.AwaitPromise }
+        async { 
+            return! AS.getItem key |> Async.AwaitPromise }
         |> Eff.wrap (fun f -> LoadFromStorage(key, f))
 
     let inline tryParse<'a> json =
