@@ -3,7 +3,7 @@ module JoyReactor.Services
 module Cmd =
     open Effects.ReactNative
     open Elmish
-    let ofEff0 (Eff a) = Cmd.ofSub (fun _ -> Async.Start a)
+    let ofEff0 (Eff a) = Cmd.ofSub (fun _ -> Async.StartImmediate a)
     let ofEff f (Eff a) = Cmd.ofAsync (fun _ -> a) () (Ok >> f) (Error >> f)
 
 module private ApiRequests =
@@ -87,7 +87,68 @@ module private Storage =
 open Effects.ReactNative
 open JoyReactor.Types
 
-let loadPost id = 
+module Posts =
+    let getCachedPosts source =
+        Domain.sourceToString source
+        |> Storage.load
+        <*> Storage.tryParse<Post []>
+        <*> fun posts -> { PostsWithLevels.empty with old = posts |> Option.defaultValue [||] }
+
+    let private loadPosts source page =
+        ApiRequests.parseRequest
+            (UrlBuilder.posts source (failwith "???") page)
+            (fun _ -> None)
+            (sprintf "https://jrs.y2k.work/%s" "posts")
+        <*> (Storage.tryParse<PostResponse> >> Option.get)
+        <*> (fun response -> response.posts, response.nextPage)
+
+    let syncFirstPage source (dbPosts : PostsWithLevels) =
+        loadPosts source None
+        <*> (fun (webPosts, nextPage) ->
+                match dbPosts.old with
+                | [||] -> { PostsWithLevels.empty with
+                                actual = webPosts |> List.toArray
+                                nextPage = nextPage }
+                | _ -> { PostsWithLevels.empty with
+                            actual = dbPosts.old
+                            preloaded = webPosts |> List.toArray
+                            nextPage = nextPage })
+
+    let applyUpdate source state =
+        let ids = state.preloaded |> Array.map (fun x -> x.id)
+        let newState =
+            { state with
+                actual = state.preloaded
+                old =
+                    Array.concat [ state.actual; state.old ]
+                    |> Array.filter (fun x -> not <| Array.contains x.id ids)
+                preloaded = [||] }
+        Array.concat [ newState.actual; newState.old ]
+        |> Storage.serialize
+        |> Storage.save (Domain.sourceToString source)
+        <*> fun _ -> newState
+
+    let syncNextPage source (state : PostsWithLevels) =
+        loadPosts source state.nextPage
+        <*> (fun (webPosts, nextPage) ->
+                let actualIds = state.actual |> Array.map (fun x -> x.id)
+                let actualPosts = 
+                    Array.concat [
+                        state.actual
+                        webPosts
+                        |> List.filter (fun x -> not <| Array.contains x.id actualIds)
+                        |> List.toArray ]
+                let ids = actualPosts |> Array.map (fun x -> x.id)
+                { actual = actualPosts
+                  old = state.old |> Array.filter (fun x -> not <| Array.contains x.id ids)
+                  nextPage = nextPage
+                  preloaded = [||] })
+
+    let savePostsToCache source (state : PostsWithLevels) =
+        Storage.serialize (Array.concat [ state.actual; state.old ])
+        |> Storage.save (source |> Domain.sourceToString)
+
+let loadPost id =
     ApiRequests.parseRequest
         (UrlBuilder.post id)
         (fun _ -> None) // post

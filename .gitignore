@@ -60,3 +60,4 @@ out
 paket-files
 
 .ionide/
+Paket.Restore.targets

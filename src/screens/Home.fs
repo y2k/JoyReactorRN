@@ -9,16 +9,13 @@ open JoyReactor.Types
 open JoyReactor.Utils
 
 module UI = JoyReactor.CommonUi
-module Cmd = JoyReactor.Free.Cmd
-module Service = JoyReactor.Free.Service
-module ReactiveStore = JoyReactor.Free.Service
+module S = JoyReactor.Services.Posts
+module Cmd = JoyReactor.Services.Cmd
 
-type PostState =
-    | Actual of Post
-    | Divider
-    | Old of Post
+type PostState = | Actual of Post | Divider | Old of Post
 
 type Msg =
+    | PostsLoadedFromCache of Result<PostsWithLevels, exn>
     | PostsLoaded of Result<PostsWithLevels, exn>
     | LoadNextPage
     | OpenPost of Post
@@ -32,47 +29,49 @@ type Model =
       source : Source }
 
 let init source =
-    let cmd1 = Cmd.ofEffect (ReactiveStore.getCachedPosts source) PostsLoaded
-    let cmd2 = Cmd.ofEffect (ReactiveStore.syncFirstPage source) PostsLoaded
-    { syncState = PostsWithLevels.empty
-      items = [||]
-      status = None
-      source = source }, 
-    Cmd.batch [ cmd1; cmd2 ]
+    { syncState = PostsWithLevels.empty; items = [||]; status = None; source = source },
+    S.getCachedPosts source |> Cmd.ofEff PostsLoadedFromCache
 
 let postsToPostStates posts =
-    if Array.isEmpty posts.old && Array.isEmpty posts.actual 
+    if Array.isEmpty posts.old && Array.isEmpty posts.actual
         then [||]
-        else Array.concat [ 
-                posts.actual |> Array.map Actual
-                (if (not <| Array.isEmpty posts.preloaded) || Array.isEmpty posts.actual 
-                    then [||]
-                    else [| Divider |])
-                posts.old |> Array.map Old ]
+        else Array.concat [
+                 posts.actual |> Array.map Actual
+                 (if (not <| Array.isEmpty posts.preloaded) || Array.isEmpty posts.actual
+                     then [||]
+                     else [| Divider |])
+                 posts.old |> Array.map Old ]
 
 let update model msg : Model * Cmd<Msg> =
     match msg with
+    | PostsLoadedFromCache(Ok x) ->
+        { model with items = postsToPostStates x
+                     syncState = x
+                     status = if Array.isEmpty x.actual then None else Some <| Ok() },
+        S.syncFirstPage model.source model.syncState |> Cmd.ofEff PostsLoaded
     | PostsLoaded(Ok x) ->
         { model with items = postsToPostStates x
                      syncState = x
-                     status = if Array.isEmpty x.actual then None else Some <| Ok() }, 
-        Cmd.none
+                     status = if Array.isEmpty x.actual then None else Some <| Ok() },
+        S.savePostsToCache model.source model.syncState |> Cmd.ofEff0
     | PostsLoaded(Error e) -> log e { model with status = Some <| Error e }, Cmd.none
-    | ApplyUpdate -> model, Cmd.ofEffect (ReactiveStore.applyUpdate model.source model.syncState) PostsLoaded
+    | ApplyUpdate ->
+        model, S.applyUpdate model.source model.syncState |> Cmd.ofEff PostsLoaded
     | Refresh ->
-        if Array.isEmpty model.syncState.preloaded 
-            then { model with status = None }, Cmd.ofEffect (ReactiveStore.reset model.source) PostsLoaded
+        if Array.isEmpty model.syncState.preloaded
+            then
+                { model with status = None },
+                S.syncFirstPage model.source PostsWithLevels.empty |> Cmd.ofEff PostsLoaded
             else model, Cmd.ofMsg ApplyUpdate
     | LoadNextPage ->
-        { model with status = None }, 
-        Cmd.ofEffect (ReactiveStore.syncNextPage model.source model.syncState) PostsLoaded
+        { model with status = None },
+        S.syncNextPage model.source model.syncState |> Cmd.ofEff PostsLoaded
     | _ -> model, Cmd.none
 
 module private Styles =
     let nextButtonOutter enabled =
         TouchableWithoutFeedbackProperties.Style [ Margin 4.
-                                                   BackgroundColor(if enabled then "#e49421"
-                                                                   else "#e4942100")
+                                                   BackgroundColor(if enabled then "#e49421" else "#e4942100")
                                                    BorderRadius 4.
                                                    Overflow Overflow.Hidden ]
 
@@ -104,7 +103,7 @@ module private Styles =
 
 let viewNextButton dispatch isSyncing =
     let onPress = if isSyncing then ignore else dispatch <! LoadNextPage
-    touchableOpacity [ Styles.nextButtonOutter <| not isSyncing; OnPress onPress ] [ 
+    touchableOpacity [ Styles.nextButtonOutter <| not isSyncing; OnPress onPress ] [
         text [ Styles.nextButtonInner ] "Load next page" ]
 
 let viewPostImage post =
@@ -117,7 +116,7 @@ let viewPostImage post =
     | None -> view [] []
 
 let iconView =
-    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ] 
+    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ]
         "\ue8b5"
 
 let viewItem post dispatch =

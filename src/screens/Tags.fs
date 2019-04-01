@@ -7,7 +7,6 @@ open JoyReactor.Types
 module S = JoyReactor.Services
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
-module Service = JoyReactor.Free.Service
 
 type Model = { tags : Tag []; loaded : bool }
 

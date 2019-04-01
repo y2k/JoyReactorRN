@@ -8,7 +8,6 @@ open JoyReactor.Types
 
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
-module Service = JoyReactor.Free.Service
 module S = JoyReactor.Services
 
 type Model = { items : Message []; status : Result<unit, exn> option }
