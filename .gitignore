@@ -61,3 +61,5 @@ paket-files
 
 .ionide/
 Paket.Restore.targets
+
+packages/

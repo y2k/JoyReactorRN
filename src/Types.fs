@@ -186,6 +186,7 @@ module Utils =
     open Fable.Core
     open System
 
+    let inline ($) f d = f (Fable.Helpers.ReactNative.dip d)
     let inline (<!) f a () = f a
     let inline (>>=) ma mf = async.Bind(ma, mf)
     let inline (>>-) ma f = async.Bind(ma, f >> async.Return)

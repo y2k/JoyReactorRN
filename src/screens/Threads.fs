@@ -43,12 +43,12 @@ let update model msg =
     | _ -> model, Cmd.none
 
 let private itemView dispatch i =
-    touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]
+    touchableHighlight [ TouchableHighlightProperties.Style [ Margin $ 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
                          OnPress(dispatch <! ThreadSelected i.userName) ] [
-        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] [
-            image [ ImageProperties.Style [ Width 48.; Height 48.; BorderRadius 24.; MarginRight 8. ]
-                    Source [ Uri i.userImage ] ]
+        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding $ 8. ] ] [
+            image [ ImageProperties.Style [ Width $ 48.; Height $ 48.; BorderRadius 24.; MarginRight $ 8. ]
+                    Source <| remoteImage [ Uri i.userImage ] ]
             view [ ViewProperties.Style [ Flex 1. ] ] [
                 text [ TextProperties.Style [ FontWeight FontWeight.Bold
                                               TextStyle.Color "#404040"
@@ -61,6 +61,6 @@ let private itemView dispatch i =
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
         UI.list model.items (itemView dispatch) (fun x -> x.userName)
-            [ FlatListProperties.OnRefresh (System.Func<_, _>(dispatch <! Refresh))
+            [ FlatListProperties.OnRefresh (dispatch <! Refresh)
               FlatListProperties.Refreshing false ]
         UI.loadingView <| Option.isNone model.status ]

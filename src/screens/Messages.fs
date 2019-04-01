@@ -31,7 +31,7 @@ let update (model : Model) msg =
 
 let private itemView x =
     let lp, rp = if x.isMine then 100., 0. else 0., 100.
-    view [ ViewProperties.Style [ PaddingLeft lp; PaddingRight rp ] ] [
+    view [ ViewProperties.Style [ PaddingLeft $ lp; PaddingRight $ rp ] ] [
         text [] x.text
         text [] x.userName
         text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd ] ] <| sprintf "%O" x.date ]
@@ -40,7 +40,7 @@ let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
         UI.list model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
         view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] [
-            textInput [ TextInput.Style [ Flex 1. ] ] "Message text"
+            textInputWithChild [ TextInput.TextInputProperties.Style [ Flex 1. ] ] "Message text"
             (if model.isBusy
                 then view [] []
                 else UI.button "SEND" (dispatch <! SendMessage)) ] ]

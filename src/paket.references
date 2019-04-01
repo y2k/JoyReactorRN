@@ -1,12 +1,11 @@
-dotnet-fable
+FSharp.Core
 Fable.Core
-Fable.Import.Browser
-
+Fable.PowerPack
+Fable.React
+Fable.React.Native
 Fable.Elmish
 Fable.Elmish.React
 Fable.Elmish.HMR
-
-Fable.React
-Fable.React.Native
+Fable.Import.Browser
 
 File: EffectsReactNative.fs

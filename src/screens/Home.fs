@@ -70,16 +70,16 @@ let update model msg : Model * Cmd<Msg> =
 
 module private Styles =
     let nextButtonOutter enabled =
-        TouchableWithoutFeedbackProperties.Style [ Margin 4.
+        TouchableWithoutFeedbackProperties.Style [ Margin $ 4.
                                                    BackgroundColor(if enabled then "#e49421" else "#e4942100")
                                                    BorderRadius 4.
-                                                   Overflow Overflow.Hidden ]
+                                                   Overflow ImageOverflow.Hidden ]
 
     let nextButtonInner =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 13.
                                TextAlign TextAlignment.Center
-                               Padding 15.
+                               Padding $ 15.
                                TextStyle.Color "white" ]
 
     let card =
@@ -88,13 +88,13 @@ module private Styles =
                                BorderColor "#eee"
                                BorderWidth 1.
                                BorderRadius 8.
-                               Overflow Overflow.Hidden ]
+                               Overflow ImageOverflow.Hidden ]
 
     let avatar =
-        ImageProperties.Style [ Width 36.
-                                Height 36.
+        ImageProperties.Style [ Width $ 36.
+                                Height $ 36.
                                 BorderRadius 18.
-                                MarginRight 9. ]
+                                MarginRight $ 9. ]
 
     let userName =
         TextProperties.Style [ FontWeight FontWeight.Bold
@@ -111,8 +111,8 @@ let viewPostImage post =
     |> Option.map (Image.urlWithHeight (Globals.Dimensions.get("screen").width))
     |> function
     | Some(img, h) ->
-        image [ ImageProperties.Style [ Height h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
-                Source [ Uri img ] ]
+        image [ ImageProperties.Style [ Height $ h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
+                Source <| remoteImage [ Uri img ] ]
     | None -> view [] []
 
 let iconView =
@@ -120,18 +120,18 @@ let iconView =
         "\ue8b5"
 
 let viewItem post dispatch =
-    touchableHighlight [ TouchableHighlightProperties.Style [ Margin 4. ]
+    touchableHighlight [ TouchableHighlightProperties.Style [ Margin $ 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
                          OnPress(always (OpenPost post) >> dispatch) ] [
         view [ Styles.card ] [
             viewPostImage post
-            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Margin 9. ] ] [
-                image [ Styles.avatar; Source [ Uri post.userImage.url ] ]
+            view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Margin $ 9. ] ] [
+                image [ Styles.avatar; Source <| remoteImage [ Uri post.userImage.url ] ]
                 view [ ViewProperties.Style [ Flex 1. ] ] [
                     text [ Styles.userName ] post.userName
                     view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd; FlexDirection FlexDirection.Row ] ] [
                         UI.iconView
-                        text [ TextProperties.Style [ MarginLeft 8.; TextStyle.Color "#bcbcbc" ] ]
+                        text [ TextProperties.Style [ MarginLeft $ 8.; TextStyle.Color "#bcbcbc" ] ]
                              "2 часа" ] ] ] ] ]
 
 let view model dispatch =
@@ -143,7 +143,7 @@ let view model dispatch =
             | Divider -> viewNextButton dispatch isSyncing) (function
             | Actual post -> string post.id
             | Old post -> string post.id
-            | Divider -> "divider") [ FlatListProperties.OnRefresh (System.Func<_, _> (dispatch <! Refresh))
+            | Divider -> "divider") [ FlatListProperties.OnRefresh (dispatch <! Refresh)
                                       FlatListProperties.Refreshing false ]
         UI.reloadButton (Array.isEmpty model.syncState.preloaded)
             "New posts" (always ApplyUpdate >> dispatch)

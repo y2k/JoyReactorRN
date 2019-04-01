@@ -36,8 +36,8 @@ let update model =
     function
     | Refresh -> { model with loaded = false }, S.getTagsFromWeb |> Cmd.ofEff FromWeb
     | FromCache(Ok tags) -> { model with tags = addFavorite tags }, Cmd.none
-    | FromWeb(Ok tags) -> 
-        { model with tags = addFavorite tags; loaded = true }, 
+    | FromWeb(Ok tags) ->
+        { model with tags = addFavorite tags; loaded = true },
         S.saveTagToCache tags |> Cmd.ofEff0
     | FromCache(Error e) -> raise e
     | FromWeb(Error e) -> raise e
@@ -48,7 +48,7 @@ open Fable.Helpers.ReactNative.Props
 
 module Styles =
     let image =
-        ImageProperties.Style [ Width 48.; Height 48.; BorderRadius 24.; MarginRight 8. ]
+        ImageProperties.Style [ Width $ 48.; Height $ 48.; BorderRadius 24.; MarginRight $ 8. ]
     let label =
         TextProperties.Style [ FontSize 18.
                                TextStyle.Color "#404040"
@@ -56,13 +56,13 @@ module Styles =
 
 let viewItem dispatch (x : Tag) =
     touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse x)) ] [
-        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding 8. ] ] [
-            image [ Styles.image; Source [ Uri x.image ] ]
+        view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding $ 8. ] ] [
+            image [ Styles.image; Source <| remoteImage [ Uri x.image ] ]
             text [ Styles.label ] x.name ] ]
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
         UI.list model.tags (viewItem dispatch) (fun x -> x.name) [
-            FlatListProperties.OnRefresh (System.Func<_, _>(fun _ -> dispatch Refresh))
+            FlatListProperties.OnRefresh(dispatch <! Refresh)
             FlatListProperties.Refreshing false ]
         UI.loadingView <| not model.loaded ]

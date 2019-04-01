@@ -16,7 +16,9 @@ console.log("Bundling for " + define + "...");
 module.exports = {
     entry: resolve('src/joyreact.fsproj'),
     outDir: resolve("out"),
-    babel: { },
+    babel: {
+        presets: ["module:metro-react-native-babel-preset"]
+    },
     fable: {
         define: define
     }
