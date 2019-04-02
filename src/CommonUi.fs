@@ -2,20 +2,18 @@ module JoyReactor.CommonUi
 
 open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
-open System
-
-let primaryColor = "#e49421"
 
 module Colors =
-    let primaryColor = "#e49421"
+    let primary = "#e49421"
     let gray = "#e4e4e4"
+    let orange = "#ffb100"
+    let darkGray = "#616161"
 
 module private Styles =
     let tabButtonOuter selected =
         TouchableWithoutFeedbackProperties.Style [ Flex 1.
                                                    Margin $ 4.
-                                                   BackgroundColor(if selected then "#d48411"
-                                                                   else "#e49421")
+                                                   BackgroundColor(if selected then "#d48411" else Colors.primary)
                                                    BorderRadius 4.
                                                    Overflow ImageOverflow.Hidden ]
 
@@ -29,7 +27,7 @@ module private Styles =
 let button title f =
     let nextButtonOutter =
         TouchableWithoutFeedbackProperties.Style [ Margin $ 4.
-                                                   BackgroundColor "#e49421"
+                                                   BackgroundColor Colors.primary
                                                    BorderRadius 4.
                                                    Height $ 48.
                                                    Overflow ImageOverflow.Hidden ]
@@ -52,7 +50,7 @@ let inline list (items : 'a []) f fid props =
 let indicatorView =
     activityIndicator [ ViewProperties.Style [ Flex 1. ]
                         ActivityIndicator.Size Size.Large
-                        ActivityIndicator.Color "#ffb100" ]
+                        ActivityIndicator.Color Colors.orange ]
 
 let viewNavigationBar selected onSelect =
     let button title index =
@@ -71,11 +69,11 @@ let statusView status =
         activityIndicator [ ViewProperties.Style [ BackgroundColor "#212121"
                                                    Padding $ 4. ]
                             ActivityIndicator.Size Size.Large
-                            ActivityIndicator.Color "#ffb100" ]
+                            ActivityIndicator.Color Colors.orange ]
 
 let loadingView inProgress =
     if inProgress then
-        text [ TextProperties.Style [ BackgroundColor primaryColor
+        text [ TextProperties.Style [ BackgroundColor Colors.primary
                                       Padding $ 10.
                                       TextStyle.Color "white"
                                       TextStyle.FontSize 18. ] ] "Loading"
@@ -86,7 +84,7 @@ let reloadButton show title dispatch =
         then view [] []
         else
             touchableOpacity [ TouchableWithoutFeedbackProperties.Style [
-                                   BackgroundColor primaryColor; Overflow ImageOverflow.Hidden ]
+                                   BackgroundColor Colors.primary; Overflow ImageOverflow.Hidden ]
                                OnPress dispatch ] [
                 text [ TextProperties.Style [ Padding $ 10.; TextStyle.Color "white"; TextStyle.FontSize 18. ] ]
                     title ]
@@ -94,7 +92,7 @@ let reloadButton show title dispatch =
 let roundButton title dispatch props =
     let nextButtonOutter =
         TouchableWithoutFeedbackProperties.Style([ Margin $ 2.
-                                                   BackgroundColor primaryColor
+                                                   BackgroundColor Colors.primary
                                                    BorderRadius 4.
                                                    Height $ 48.
                                                    JustifyContent JustifyContent.Center
@@ -112,5 +110,9 @@ let roundButton title dispatch props =
                        OnPress dispatch ] [ text tabButtonInner title ]
 
 let iconView =
-    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ]
+    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color Colors.orange ] ]
         "\ue8b5"
+
+type FlatListPropertiesExt<'a> =
+    | Inverted of bool
+    interface IFlatListProperties<'a>

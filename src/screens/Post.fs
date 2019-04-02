@@ -77,7 +77,7 @@ let viewItem (comment : Comment) =
             viewAttachments comment
             view [ Styles.panel ] [
                 UI.iconView
-                text [ TextProperties.Style [ MarginLeft $ 8.; TextStyle.Color "#616161" ] ]
+                text [ TextProperties.Style [ MarginLeft $ 8.; TextStyle.Color UI.Colors.darkGray ] ]
                     (string comment.rating) ] ] ]
 
 let viewPostAttachments (post : Post) _ =
@@ -117,6 +117,6 @@ let view model dispatch =
         | _ ->
             activityIndicator [ ViewProperties.Style [ Flex 1. ]
                                 ActivityIndicator.Size Size.Large
-                                ActivityIndicator.Color "#ffb100" ]
+                                ActivityIndicator.Color UI.Colors.orange ]
     view [ ViewProperties.Style [ Flex 1.; BackgroundColor "#fafafa" ] ] [
         contentView ]

@@ -71,7 +71,7 @@ let update model msg : Model * Cmd<Msg> =
 module private Styles =
     let nextButtonOutter enabled =
         TouchableWithoutFeedbackProperties.Style [ Margin $ 4.
-                                                   BackgroundColor(if enabled then "#e49421" else "#e4942100")
+                                                   BackgroundColor(if enabled then UI.Colors.primary else "#e4942100")
                                                    BorderRadius 4.
                                                    Overflow ImageOverflow.Hidden ]
 
@@ -99,7 +99,7 @@ module private Styles =
     let userName =
         TextProperties.Style [ FontWeight FontWeight.Bold
                                FontSize 14.
-                               TextStyle.Color "#616161" ]
+                               TextStyle.Color UI.Colors.darkGray ]
 
 let viewNextButton dispatch isSyncing =
     let onPress = if isSyncing then ignore else dispatch <! LoadNextPage
@@ -116,7 +116,7 @@ let viewPostImage post =
     | None -> view [] []
 
 let iconView =
-    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color "#ffb100" ] ]
+    text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color UI.Colors.orange ] ]
         "\ue8b5"
 
 let viewItem post dispatch =

@@ -5,6 +5,7 @@ open JoyReactor
 open JoyReactor.CommonUi
 open JoyReactor.Types
 
+module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
 
@@ -44,13 +45,13 @@ module private Styles =
     let rating =
         TextProperties.Style [ AlignSelf Alignment.Center
                                Margin $ 20.
-                               TextStyle.Color "#616161"
+                               TextStyle.Color UI.Colors.darkGray
                                FontSize 20. ]
 
     let userName =
         TextProperties.Style [ AlignSelf Alignment.Center
                                Margin $ 8.
-                               TextStyle.Color "#616161"
+                               TextStyle.Color UI.Colors.darkGray
                                FontSize 13. ]
 
     let avatar =
@@ -69,7 +70,7 @@ module private Styles =
     let button margin =
         TouchableWithoutFeedbackProperties.Style [ MarginLeft margin
                                                    MarginRight margin
-                                                   BackgroundColor Colors.primaryColor
+                                                   BackgroundColor Colors.primary
                                                    BorderRadius 4.
                                                    Overflow ImageOverflow.Hidden ]
 
@@ -124,7 +125,7 @@ let view model dispatch =
         | LoadingModel ->
             activityIndicator [ ViewProperties.Style [ Flex 1. ]
                                 ActivityIndicator.Size Size.Large
-                                ActivityIndicator.Color "#ffb100" ]
+                                ActivityIndicator.Color UI.Colors.orange ]
         | LoginModel -> LoginScreen.view model.subModel (LoginMsg >> dispatch)
         | ProfileModel p -> viewProfile p dispatch
     view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] [

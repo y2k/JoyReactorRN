@@ -7,6 +7,7 @@ open JoyReactor
 
 module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
+module UI = JoyReactor.CommonUi
 
 type Model =
     { username : string
@@ -36,7 +37,7 @@ module private Styles =
     let button margin =
         TouchableWithoutFeedbackProperties.Style [ MarginLeft margin
                                                    MarginRight margin
-                                                   BackgroundColor "#e49421"
+                                                   BackgroundColor UI.Colors.primary
                                                    BorderRadius 4.
                                                    Overflow ImageOverflow.Hidden ]
 
@@ -82,7 +83,7 @@ let view model dispatch =
     | true ->
         activityIndicator [ ViewProperties.Style [ Flex 1. ]
                             ActivityIndicator.Size Size.Large
-                            ActivityIndicator.Color "#ffb100" ]
+                            ActivityIndicator.Color UI.Colors.orange ]
     | false ->
         view [ ViewProperties.Style [ Padding $ 20.; PaddingTop $ 50. ] ] [ 
             Styles.textInput model.username "Логин" (UsernameMsg >> dispatch)

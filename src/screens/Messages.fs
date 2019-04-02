@@ -38,7 +38,7 @@ let private itemView x =
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
-        UI.list model.messages itemView (fun x -> sprintf "%O" x.date) [ FlatListProperties.Inverted true ]
+        UI.list model.messages itemView (fun x -> sprintf "%O" x.date) [ UI.FlatListPropertiesExt.Inverted true ]
         view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] [
             textInputWithChild [ TextInput.TextInputProperties.Style [ Flex 1. ] ] "Message text"
             (if model.isBusy

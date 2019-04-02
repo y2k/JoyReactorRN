@@ -1,9 +1,9 @@
 module Tests
 
-open Xunit
 open JoyReactor.Domain
 open JoyReactor.Types
 open JoyReactor.Utils
+open Xunit
 
 let private def =
     { text = ""
@@ -13,7 +13,7 @@ let private def =
       userImage = "" }
 
 [<Fact>]
-let ``selectMessageForUser is success`` () =
+let ``selectMessageForUser should success``() =
     let actual =
         [| { def with userName = "1"; date = 1. }
            { def with userName = "2"; date = 110. }
@@ -28,16 +28,16 @@ let ``selectMessageForUser is success`` () =
     Assert.Equal(expected |> Array.toList, actual)
 
 [<Fact>]
-let ``getLastOffsetOrDefault is success`` () =
+let ``getLastOffsetOrDefault should success``() =
     Assert.Equal(0., getLastOffsetOrDefault [||])
-    getLastOffsetOrDefault 
+    getLastOffsetOrDefault
         [| { def with date = 1. }
            { def with date = 100. }
            { def with date = 10. } |]
     |> curry Assert.Equal 100.
 
 [<Fact>]
-let ``selectThreads is success`` () =
+let ``selectThreads should success``() =
     let actual =
         [| { def with userName = "1"; date = 1. }
            { def with userName = "2"; date = 110. }

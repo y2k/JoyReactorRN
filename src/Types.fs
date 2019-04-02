@@ -65,7 +65,6 @@ module Types =
           userName : string
           userImage : string }
 
-    [<Fable.Core.Pojo>]
     type MessagesWithNext =
         { messages : Message []
           nextPage : string option }
