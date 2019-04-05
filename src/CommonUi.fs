@@ -106,8 +106,8 @@ let roundButton title dispatch props =
                                  TextAlign TextAlignment.Center
                                  TextStyle.Color "white" ] ]
 
-    touchableOpacity [ nextButtonOutter
-                       OnPress dispatch ] [ text tabButtonInner title ]
+    touchableOpacity [ nextButtonOutter; OnPress dispatch ] [ 
+        text tabButtonInner title ]
 
 let iconView =
     text [ TextProperties.Style [ FontFamily "icomoon"; TextStyle.Color Colors.orange ] ]
