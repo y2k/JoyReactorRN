@@ -18,7 +18,7 @@ module private ApiRequests =
             return! response.text() |> Async.AwaitPromise
         }
 
-    let private props = [ requestHeaders [ HttpRequestHeaders.UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
+    let private props = [ requestHeaders [ UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
 
     type ParseRequest = ParseRequest of url : string * mkUrl : (string -> string option) * parseUrl : string * f : (string -> unit)
     let parseRequest url mkUrl parseUrl =
@@ -173,7 +173,7 @@ let logout =
 let loadMyProfile =
     ApiRequests.parseRequest
         UrlBuilder.domain
-        (fun html -> Domain.extractName html |> Option.get |> UrlBuilder.user |> Some)
+        (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
         (sprintf "https://jrs.y2k.work/%s" "profile")
     <*> (Storage.tryParse<Profile> >> Option.get)
 
@@ -208,6 +208,6 @@ let saveTagToCache (tags : Tag []) =
 let getTagsFromWeb =
     ApiRequests.parseRequest
         UrlBuilder.domain
-        (fun html -> Domain.extractName html |> Option.get |> UrlBuilder.user |> Some)
+        (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
         (sprintf "https://jrs.y2k.work/%s" "tags")
     <*> (Storage.tryParse<Tag []> >> Option.get)

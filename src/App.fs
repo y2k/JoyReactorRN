@@ -29,7 +29,7 @@ module TabsScreen =
 
     let init = Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
 
-    let update model msg: Model * Cmd<Msg> =
+    let update model msg : Model * Cmd<Msg> =
         match msg, model with
         | SelectTab 0, _ -> Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
         | SelectTab 1, _ -> TagsScreen.init |> fun (model, cmd) -> TagsModel model, Cmd.map TagsMsg cmd
@@ -47,7 +47,7 @@ module TabsScreen =
             MessagesScreen.update subModel subMsg |> fun (m, cmd) -> MessagesModel m, Cmd.map MessagesMsg cmd
         | _ -> model, Cmd.none
 
-    let private renderContent (model: Model) dispatch =
+    let private renderContent (model : Model) dispatch =
         match model with
         | HomeModel sm -> Home.view sm (HomeMsg >> dispatch)
         | TagsModel sm -> TagsScreen.view sm (TagsMsg >> dispatch)
@@ -58,7 +58,6 @@ module TabsScreen =
     let view model dispatch =
         view [ ViewProperties.Style [ Flex 1. ] ]
             [ view [ ViewProperties.Style [ Flex 1. ] ] [ renderContent model dispatch ]
-
               view [ ViewProperties.Style [ FlexDirection FlexDirection.Row
                                             Padding $ 2. ] ]
                   [ roundButton "Home" (dispatch <! SelectTab 0) [ Flex 1. ]
@@ -88,8 +87,8 @@ module App =
         | TagsModel of TagsScreen.Model
 
     type Model =
-        { subModel: SubModel
-          history: SubModel list }
+        { subModel : SubModel
+          history : SubModel list }
 
     let init _ =
         TabsScreen.init
@@ -97,7 +96,7 @@ module App =
             { subModel = TabsModel model
               history = [] }, Cmd.map TabsMsg cmd
 
-    let update msg model: Model * Cmd<Msg> =
+    let update msg model : Model * Cmd<Msg> =
         let wrap ctor msgCtor model (subModel, cmd) = { model with subModel = ctor subModel }, Cmd.map msgCtor cmd
         match msg, model.subModel with
         | NavigateBack, _ ->
