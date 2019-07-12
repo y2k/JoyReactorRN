@@ -5,10 +5,13 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ParserTests.fs" />
     <Compile Include="Tests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\joyreact.fsproj" />
+    <ProjectReference Include="..\core\core.fsproj" />
+    <ProjectReference Include="..\parser\parser.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

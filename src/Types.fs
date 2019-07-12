@@ -4,7 +4,7 @@ module UrlBuilder =
     open Fable.Import.JS
     open Types
 
-    let domain = "joyreactor.cc"
+    let domain = UrlBuilder.domain
     let donate = "http://" + domain + "/donate"
     let ads = "http://" + domain + "/ads"
 
@@ -116,21 +116,12 @@ module Utils =
     open Fable.Core
     open System
 
-    let inline (^) f x = f x
-
     let inline ($) f d = f (Fable.Helpers.ReactNative.dip d)
-    let inline (<!) f a () = f a
-    let inline (>>=) ma mf = async.Bind(ma, mf)
-    let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
 
     [<Emit("require($0)")>]
     let require (_ : string) = jsNative
 
-    let inline always a _ = a
-    let inline flip f a b = f b a
     let longToTimeDelay _ = "2 часа"
-    let inline curry f a b = f (a, b)
-    let inline uncurry f (a, b) = f a b
     let mutable private startTime = DateTime.Now.Ticks / 10_000L
 
     let log msg x =

@@ -1,5 +1,18 @@
 ﻿namespace JoyReactor
 
+[<AutoOpen>]
+module CommonUtils =
+    let inline (^) f x = f x
+
+    let inline (<!) f a () = f a
+    let inline (>>=) ma mf = async.Bind(ma, mf)
+    let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
+
+    let inline always a _ = a
+    let inline flip f a b = f b a
+    let inline curry f a b = f (a, b)
+    let inline uncurry f (a, b) = f a b
+
 module Types =
     type Source =
         | FeedSource
@@ -68,3 +81,15 @@ module Types =
     type MessagesWithNext =
         { messages : Message []
           nextPage : string option }
+
+module CofxStorage =
+  open Types
+
+  type LocalDb =
+      { posts : Map<Source, Post list>
+        tags : Tag list
+        messages : Message list
+        profile : Profile option }
+
+module UrlBuilder =
+    let domain = "joyreactor.cc"

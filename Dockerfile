@@ -17,4 +17,3 @@ RUN curl \
     -F "ipa=@android/app/build/outputs/apk/app-release.apk" \
     -H "X-HockeyAppToken: $HOCKEYAPP_TOKEN" \
     https://rink.hockeyapp.net/api/2/apps/upload
-
