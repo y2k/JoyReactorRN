@@ -5,41 +5,30 @@ open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 type Model = { items : Message []; status : Result<unit, exn> option }
 
 type Msg =
-    | ThreadsFromCache of Result<Message [], exn>
-    | ThreadsFromWeb of Result<Message [] * string option, exn>
-    | ThreadSelected of string
     | Refresh
+    | RefreshComplete of Result<string option, exn>
+    | ThreadsLoaded of Message []
+    | ThreadSelected of string
 
-let init : Model * Cmd<Msg> =
-    { items = [||]; status = None },
-    S.loadThreadsFromCache |> Cmd.ofEff ThreadsFromCache
+let sub (db : LocalDb) = ThreadsLoaded ^ Domain.selectThreads db.messages
+
+let init : Model * Cmd<Msg> = { items = [||]; status = None }, Cmd.ofMsg Refresh
 
 let update model msg =
     match msg with
-    | ThreadsFromCache(Ok x) ->
-        { model with items = x },
-        S.loadMessageFromWeb None model.items |> Cmd.ofEff ThreadsFromWeb
-    | ThreadsFromWeb(Ok(messages, nextPage)) ->
-        match nextPage with
-        | Some _ -> 
-            { model with items = messages },
-            Cmd.batch [
-                S.saveMessageToCache model.items |> Cmd.ofEff0
-                S.loadMessageFromWeb nextPage model.items |> Cmd.ofEff ThreadsFromWeb ]
-        | None -> { model with items = messages; status = Some <| Ok() }, Cmd.none
-    | Refresh ->
-        { model with status = None },
-        S.loadMessageFromWeb None [||] |> Cmd.ofEff ThreadsFromWeb
-    | ThreadsFromCache(Error e) -> log e model, Cmd.none
-    | ThreadsFromWeb(Error e) -> { model with status = log e (Some <| Error e) }, Cmd.none
+    | ThreadsLoaded x -> { model with items = x }, Cmd.none
+    | Refresh -> { model with status = None }, S.syncMessages None |> Cmd.ofEffect RefreshComplete
+    | RefreshComplete (Ok (Some next)) -> model, Some next |> S.syncMessages |> Cmd.ofEffect RefreshComplete
+    | RefreshComplete (Ok None) -> { model with status = Some <| Ok () }, Cmd.none
+    | RefreshComplete (Error x) -> log x { model with status = Some <| Error x }, Cmd.none
     | _ -> model, Cmd.none
 
 let private itemView dispatch i =

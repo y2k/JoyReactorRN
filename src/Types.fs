@@ -103,7 +103,7 @@ module Requests =
 
 module Cmd =
     open Elmish
-    let ofEffect p f = Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofEffect f p = Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
     let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 
 module Array =

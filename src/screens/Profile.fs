@@ -4,13 +4,13 @@ open Elmish
 open JoyReactor
 open JoyReactor.CommonUi
 open JoyReactor.Types
-
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 type Msg =
-    | ProfileMsg of Result<Profile, exn>
+    | ProfileMsg of Profile option
     | LoginMsg of LoginScreen.Msg
     | Logout
     | LogoutComplete of Result<unit, exn>
@@ -22,18 +22,20 @@ type ModelStage =
 
 type Model = { stage : ModelStage; subModel : LoginScreen.Model }
 
+let sub (db : LocalDb) = ProfileMsg db.profile
+
 let init : Model * Cmd<Msg> =
     { stage = LoadingModel; subModel = LoginScreen.init },
-    S.loadMyProfile |> Cmd.ofEff ProfileMsg
+    S.syncMyProfile |> Cmd.ofEffect0
 
-let update model =
-    function
-    | Logout ->
-        { model with stage = LoadingModel }, S.logout |> Cmd.ofEff LogoutComplete
-    | LogoutComplete _ -> model, S.loadMyProfile |> Cmd.ofEff ProfileMsg
-    | ProfileMsg(Ok p) -> { model with stage = ProfileModel p }, Cmd.none
-    | ProfileMsg _ ->
+let update model = function
+    | ProfileMsg (Some p) -> 
+        { model with stage = ProfileModel p }, Cmd.none
+    | ProfileMsg None -> 
         { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
+    | Logout ->
+        { model with stage = LoadingModel }, S.logout |> Cmd.ofEffect LogoutComplete
+    | LogoutComplete _ -> model, S.syncMyProfile |> Cmd.ofEffect0
     | LoginMsg subMsg ->
         let loginModel, cmd = LoginScreen.update model.subModel subMsg
         { model with subModel = loginModel }, Cmd.map LoginMsg cmd

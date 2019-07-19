@@ -5,26 +5,25 @@ open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
-type Model = { messages : Message []; isBusy : bool }
+type Model = { messages : Message []; isBusy : bool; username : string }
 
 type Msg =
-    | MessagesMsg of Result<Message [], exn>
+    | MessagesLoaded of Message []
     | SendMessage
     | SendMessageResult of Result<Unit, exn>
 
-let init userName =
-    { messages = [||]; isBusy = false },
-    (S.loadMessages userName) |> Cmd.ofEff MessagesMsg
+let sub (db : LocalDb) = MessagesLoaded db.messages
+
+let init username = { messages = [||]; isBusy = false; username = username }, Cmd.none
 
 let update (model : Model) msg =
     match msg with
-    | MessagesMsg(Ok x) -> { model with messages = x }, Cmd.none
-    | MessagesMsg(Error e) -> log (sprintf "%O" e) model, Cmd.none
+    | MessagesLoaded x -> { model with messages = x |> Domain.selectMessageForUser model.username }, Cmd.none
     | SendMessage -> { model with isBusy = true }, Cmd.none
     | SendMessageResult(Ok _) -> { model with isBusy = false }, Cmd.none
     | SendMessageResult(Error e) -> log (sprintf "%O" e) { model with isBusy = false }, Cmd.none

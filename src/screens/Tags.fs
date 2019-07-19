@@ -3,28 +3,25 @@ module TagsScreen
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-
 module S = JoyReactor.Services
 module UI = JoyReactor.CommonUi
-module Cmd = JoyReactor.Services.Cmd
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 type Model = { tags : Tag []; loaded : bool }
 
 type Msg =
-    | FromCache of Result<Tag [], exn>
-    | FromWeb of Result<Tag [], exn>
+    | Refresh
+    | RefreshComplete of Result<unit, exn>
     | TagsLoaded of Tag []
     | OpenPosts of Source
-    | Refresh
 
-let init =
-    { tags = [||]; loaded = false },
-    Cmd.batch [ S.getTagsFromCache |> Cmd.ofEff FromCache
-                S.getTagsFromWeb |> Cmd.ofEff FromWeb ]
+let sub (db : LocalDb) = TagsLoaded db.tags
+
+let init = { tags = [||]; loaded = false }, Cmd.ofMsg Refresh
 
 let addFavorite tags =
     Array.concat [
-        [| { name = "Избранное"; image = "http://img1." + UrlBuilder.domain + "/pics/avatar/tag/1279" } |]
+        [| { name = "Избранное"; image = sprintf "http://img1.%s/pics/avatar/tag/1279" UrlBuilder.domain } |]
         tags ]
 
 let tagToSourse tag =
@@ -32,15 +29,10 @@ let tagToSourse tag =
     | "Избранное" -> FavoriteSource
     | _ -> TagSource tag.name
 
-let update model =
-    function
-    | Refresh -> { model with loaded = false }, S.getTagsFromWeb |> Cmd.ofEff FromWeb
-    | FromCache(Ok tags) -> { model with tags = addFavorite tags }, Cmd.none
-    | FromWeb(Ok tags) ->
-        { model with tags = addFavorite tags; loaded = true },
-        S.saveTagToCache tags |> Cmd.ofEff0
-    | FromCache(Error e) -> raise e
-    | FromWeb(Error e) -> raise e
+let update (model : Model) = function
+    | TagsLoaded tags -> { model with tags = addFavorite tags }, Cmd.none
+    | Refresh -> { model with loaded = false }, S.syncTagsWithBackend |> Cmd.ofEffect RefreshComplete
+    | RefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 
 open Fable.Helpers.ReactNative

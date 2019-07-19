@@ -6,39 +6,42 @@ open Fable.Helpers.ReactNative
 open Fable.Helpers.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-
 module UI = JoyReactor.CommonUi
 module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
-type Model = { post : Post option; error : string option }
+type Model = { post : Post option; error : string option; id : int }
 
 type Msg =
+    | PostsLoaded of Map<Source, Post []>
     | LoadPost of int
     | PostLoaded of Result<Post, exn>
     | LoadPostResult of Result<Post, exn>
     | OpenInWeb
     | OpenTag of Source
 
+let sub (db : LocalDb) = PostsLoaded db.posts
+    // (db.posts |> Map.toList |> List.map snd |> Array.concat |> Array.tryFind ^ fun x -> x.id)
+
 let init id =
-    { post = None; error = None },
+    { post = None; error = None; id = id },
     S.loadPost id |> Cmd.ofEff PostLoaded
+
+let private findPost posts id : Post option = 
+    (posts |> Map.toList |> List.map snd |> Array.concat |> Array.tryFind ^ fun x -> x.id = id)
 
 let update model msg =
     match msg with
+    | PostsLoaded map -> { model with post = findPost map model.id }, Cmd.none
     | LoadPost id -> model, S.loadPost id |> Cmd.ofEff LoadPostResult
     | LoadPostResult(Ok post) -> { model with post = Some post }, Cmd.none
     | LoadPostResult(Error error) -> { model with error = Some <| string error }, Cmd.none
     | PostLoaded(Ok post) -> { model with post = Some post }, Cmd.none
     | OpenInWeb ->
         model,
-        model.post
-        |> Option.map (fun x ->
-               x.id
-               |> sprintf "http://m.%s/post/%i" UrlBuilder.domain
-               |> Platform.openUrl
-               |> Cmd.ofEffect0)
-        |> Option.defaultValue Cmd.none
+        sprintf "http://m.%s/post/%i" UrlBuilder.domain model.id
+        |> Platform.openUrl |> Cmd.ofEffect0
     | _ -> model, Cmd.none
 
 module private Styles =

@@ -6,6 +6,7 @@ open Elmish.React
 open Elmish.ReactNative
 open Elmish.HMR
 open JoyReactor.CommonUi
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 module TabsScreen =
     open Fable.Helpers.ReactNative.Props
@@ -19,6 +20,7 @@ module TabsScreen =
         | ThreadsMsg of ThreadsScreen.Msg
         | ProfileMsg of ProfileScreen.Msg
         | MessagesMsg of MessagesScreen.Msg
+        | SubMsg of LocalDb
 
     type Model =
         | HomeModel of Home.Model
@@ -27,10 +29,17 @@ module TabsScreen =
         | ProfileModel of ProfileScreen.Model
         | MessagesModel of MessagesScreen.Model
 
+    let sub (db : LocalDb) = SubMsg db
+
     let init = Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
 
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
+        | SubMsg db, _ ->
+            match model with
+            | TagsModel _ -> model, Cmd.ofMsg ^ TagsMsg ^ TagsScreen.sub db
+            | ThreadsModel _ -> model, Cmd.ofMsg ^ ThreadsMsg ^ ThreadsScreen.sub db
+            | _ -> model, Cmd.none
         | SelectTab 0, _ -> Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
         | SelectTab 1, _ -> TagsScreen.init |> fun (model, cmd) -> TagsModel model, Cmd.map TagsMsg cmd
         | SelectTab 2, _ -> ThreadsScreen.init |> fun (model, cmd) -> ThreadsModel model, Cmd.map ThreadsMsg cmd
@@ -76,6 +85,7 @@ module App =
         | ProfileMsg of ProfileScreen.Msg
         | LoginMsg of LoginScreen.Msg
         | TagsMsg of TagsScreen.Msg
+        | LocalDbMsg of LocalDb
 
     type SubModel =
         | TabsModel of TabsScreen.Model
@@ -88,17 +98,26 @@ module App =
 
     type Model =
         { subModel : SubModel
-          history : SubModel list }
+          history : SubModel list
+          subHistory : (LocalDb -> Msg) list }
+
+    let sub = JoyReactor.Services.Storage'.sub |> Cmd.map LocalDbMsg
 
     let init _ =
         TabsScreen.init
         |> fun (model, cmd) ->
             { subModel = TabsModel model
-              history = [] }, Cmd.map TabsMsg cmd
+              history = []
+              subHistory = [ (fun db -> TabsScreen.sub db |> TabsMsg) ] }, Cmd.map TabsMsg cmd
 
     let update msg model : Model * Cmd<Msg> =
         let wrap ctor msgCtor model (subModel, cmd) = { model with subModel = ctor subModel }, Cmd.map msgCtor cmd
         match msg, model.subModel with
+        | LocalDbMsg db, _ ->
+            model,
+            match model.subHistory with
+            | f :: _ -> Cmd.ofMsg <| f db
+            | _ -> Cmd.Empty
         | NavigateBack, _ ->
             match model.history with
             | x :: xs ->
@@ -115,7 +134,10 @@ module App =
             Home.init p |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | TabsMsg(TabsScreen.ThreadsMsg(ThreadsScreen.ThreadSelected id)), _ ->
             MessagesScreen.init id
-            |> wrap MessagesModel MessagesMsg { model with history = model.subModel :: model.history }
+            |> wrap MessagesModel MessagesMsg 
+                { model with 
+                    history = model.subModel :: model.history
+                    subHistory = (fun db -> MessagesScreen.sub db |> MessagesMsg) :: model.subHistory }
         | PostMsg(PostScreen.OpenTag source), _ ->
             Home.init source |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | PostMsg subMsg, PostModel subModel -> PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
@@ -141,7 +163,10 @@ let setupBackHandler dispatch =
         true
     setOnHardwareBackPressHandler backHandler
 
-let subscribe _ = Cmd.batch [ Cmd.ofSub setupBackHandler ]
+let subscribe _ = 
+    Cmd.batch [ 
+        Cmd.ofSub setupBackHandler
+        App.sub ]
 
 Program.mkProgram App.init App.update App.view
 |> Program.withSubscription subscribe

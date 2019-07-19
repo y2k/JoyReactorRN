@@ -86,10 +86,11 @@ module CofxStorage =
   open Types
 
   type LocalDb =
-      { posts : Map<Source, Post list>
-        tags : Tag list
-        messages : Message list
+      { posts : Map<Source, Post []>
+        tags : Tag []
+        messages : Message []
         profile : Profile option }
 
 module UrlBuilder =
     let domain = "joyreactor.cc"
+    let apiDomain = "jrs.y2k.work"
