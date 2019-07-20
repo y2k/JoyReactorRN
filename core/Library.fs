@@ -86,7 +86,8 @@ module CofxStorage =
   open Types
 
   type LocalDb =
-      { posts : Map<Source, Post []>
+      { feeds : Map<Source, Post []>
+        posts : Map<int, Post>
         tags : Tag []
         messages : Message []
         profile : Profile option }

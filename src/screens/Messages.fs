@@ -17,13 +17,13 @@ type Msg =
     | SendMessage
     | SendMessageResult of Result<Unit, exn>
 
-let sub (db : LocalDb) = MessagesLoaded db.messages
+let sub username (db : LocalDb) = MessagesLoaded <| Domain.selectMessageForUser username db.messages
 
 let init username = { messages = [||]; isBusy = false; username = username }, Cmd.none
 
 let update (model : Model) msg =
     match msg with
-    | MessagesLoaded x -> { model with messages = x |> Domain.selectMessageForUser model.username }, Cmd.none
+    | MessagesLoaded x -> { model with messages = x }, Cmd.none
     | SendMessage -> { model with isBusy = true }, Cmd.none
     | SendMessageResult(Ok _) -> { model with isBusy = false }, Cmd.none
     | SendMessageResult(Error e) -> log (sprintf "%O" e) { model with isBusy = false }, Cmd.none

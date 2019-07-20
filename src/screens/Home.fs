@@ -7,14 +7,15 @@ open Fable.Import.ReactNative
 open JoyReactor
 open JoyReactor.Types
 open JoyReactor.Utils
-
 module UI = JoyReactor.CommonUi
-module S = JoyReactor.Services.Posts
+module S = JoyReactor.Services
 module Cmd = JoyReactor.Services.Cmd
+type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 type PostState = | Actual of Post | Divider | Old of Post
 
 type Msg =
+    | PostsMsg of Post []
     | PostsLoadedFromCache of Result<PostsWithLevels, exn>
     | PostsLoaded of Result<PostsWithLevels, exn>
     | LoadNextPage
@@ -28,9 +29,12 @@ type Model =
       status : Result<unit, exn> option
       source : Source }
 
+let sub source (db : LocalDb) =
+    Map.tryFind source db.feeds |> Option.defaultValue [||] |> PostsMsg
+
 let init source =
-    { syncState = PostsWithLevels.empty; items = [||]; status = None; source = source },
-    S.getCachedPosts source |> Cmd.ofEff PostsLoadedFromCache
+    { syncState = PostsWithLevels.empty; items = [||]; status = None; source = source }, 
+    S.syncFirstPage source PostsWithLevels.empty |> Cmd.ofEffect PostsLoaded
 
 let postsToPostStates posts =
     if Array.isEmpty posts.old && Array.isEmpty posts.actual
@@ -42,30 +46,33 @@ let postsToPostStates posts =
                      else [| Divider |])
                  posts.old |> Array.map Old ]
 
-let update model msg : Model * Cmd<Msg> =
-    match msg with
+let update model = function
+    | PostsMsg posts ->
+        if Array.isEmpty model.items then 
+            { model with items = postsToPostStates { PostsWithLevels.empty with old = posts } }, Cmd.none
+        else model, Cmd.none
     | PostsLoadedFromCache(Ok x) ->
         { model with items = postsToPostStates x
                      syncState = x
                      status = if Array.isEmpty x.actual then None else Some <| Ok() },
-        S.syncFirstPage model.source model.syncState |> Cmd.ofEff PostsLoaded
+        S.syncFirstPage model.source model.syncState |> Cmd.ofEffect PostsLoaded
     | PostsLoaded(Ok x) ->
         { model with items = postsToPostStates x
                      syncState = x
                      status = if Array.isEmpty x.actual then None else Some <| Ok() },
-        S.savePostsToCache model.source model.syncState |> Cmd.ofEff0
+        S.savePostsToCache model.source model.syncState |> Cmd.ofEffect0
     | PostsLoaded(Error e) -> log e { model with status = Some <| Error e }, Cmd.none
     | ApplyUpdate ->
-        model, S.applyUpdate model.source model.syncState |> Cmd.ofEff PostsLoaded
+        model, S.applyUpdate model.source model.syncState |> Cmd.ofEffect PostsLoaded
     | Refresh ->
-        if Array.isEmpty model.syncState.preloaded
-            then
-                { model with status = None },
-                S.syncFirstPage model.source PostsWithLevels.empty |> Cmd.ofEff PostsLoaded
-            else model, Cmd.ofMsg ApplyUpdate
+        if Array.isEmpty model.syncState.preloaded then
+            { model with status = None },
+            S.syncFirstPage model.source PostsWithLevels.empty |> Cmd.ofEffect PostsLoaded
+        else 
+            model, Cmd.ofMsg ApplyUpdate
     | LoadNextPage ->
         { model with status = None },
-        S.syncNextPage model.source model.syncState |> Cmd.ofEff PostsLoaded
+        S.syncNextPage model.source model.syncState |> Cmd.ofEffect PostsLoaded
     | _ -> model, Cmd.none
 
 module private Styles =

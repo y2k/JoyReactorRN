@@ -14,30 +14,19 @@ type LocalDb = JoyReactor.CofxStorage.LocalDb
 type Model = { post : Post option; error : string option; id : int }
 
 type Msg =
-    | PostsLoaded of Map<Source, Post []>
-    | LoadPost of int
-    | PostLoaded of Result<Post, exn>
-    | LoadPostResult of Result<Post, exn>
+    | PostLoaded of Post option
+    | RefreshComplete of Result<unit, exn>
     | OpenInWeb
     | OpenTag of Source
 
-let sub (db : LocalDb) = PostsLoaded db.posts
-    // (db.posts |> Map.toList |> List.map snd |> Array.concat |> Array.tryFind ^ fun x -> x.id)
+let sub id (db : LocalDb) = PostLoaded <| Map.tryFind id db.posts 
 
-let init id =
-    { post = None; error = None; id = id },
-    S.loadPost id |> Cmd.ofEff PostLoaded
+let init id = { post = None; error = None; id = id }, S.syncPost id |> Cmd.ofEffect RefreshComplete
 
-let private findPost posts id : Post option = 
-    (posts |> Map.toList |> List.map snd |> Array.concat |> Array.tryFind ^ fun x -> x.id = id)
-
-let update model msg =
-    match msg with
-    | PostsLoaded map -> { model with post = findPost map model.id }, Cmd.none
-    | LoadPost id -> model, S.loadPost id |> Cmd.ofEff LoadPostResult
-    | LoadPostResult(Ok post) -> { model with post = Some post }, Cmd.none
-    | LoadPostResult(Error error) -> { model with error = Some <| string error }, Cmd.none
-    | PostLoaded(Ok post) -> { model with post = Some post }, Cmd.none
+let update model = function
+    | PostLoaded x -> { model with post = x }, Cmd.none
+    | RefreshComplete(Ok _) -> { model with error = None }, Cmd.none
+    | RefreshComplete(Error x) -> { model with error = Some <| string x }, Cmd.none
     | OpenInWeb ->
         model,
         sprintf "http://m.%s/post/%i" UrlBuilder.domain model.id

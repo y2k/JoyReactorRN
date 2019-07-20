@@ -1,10 +1,10 @@
 module Scenes
 
-open Fable.Helpers.ReactNative
 open Elmish
+open Elmish.HMR
 open Elmish.React
 open Elmish.ReactNative
-open Elmish.HMR
+open Fable.Helpers.ReactNative
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
 
@@ -120,24 +120,26 @@ module App =
             | _ -> Cmd.Empty
         | NavigateBack, _ ->
             match model.history with
-            | x :: xs ->
-                { model with subModel = x
-                             history = xs }, Cmd.none
+            | x :: xs -> { model with subModel = x; history = xs }, Cmd.none
             | [] ->
                 exitApp()
                 model, Cmd.none
         | TabsMsg(TabsScreen.HomeMsg(Home.OpenPost p)), _ ->
             PostScreen.init p.id |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
         | HomeMsg(Home.OpenPost p), _ ->
-            PostScreen.init p.id |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
+            PostScreen.init p.id
+            |> wrap PostModel PostMsg
+                { model with
+                    subHistory = (fun db -> PostScreen.sub p.id db |> PostMsg) :: model.subHistory
+                    history = model.subModel :: model.history }
         | TabsMsg(TabsScreen.TagsMsg(TagsScreen.OpenPosts p)), _ ->
             Home.init p |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | TabsMsg(TabsScreen.ThreadsMsg(ThreadsScreen.ThreadSelected id)), _ ->
             MessagesScreen.init id
-            |> wrap MessagesModel MessagesMsg 
-                { model with 
+            |> wrap MessagesModel MessagesMsg
+                { model with
                     history = model.subModel :: model.history
-                    subHistory = (fun db -> MessagesScreen.sub db |> MessagesMsg) :: model.subHistory }
+                    subHistory = (fun db -> MessagesScreen.sub id db |> MessagesMsg) :: model.subHistory }
         | PostMsg(PostScreen.OpenTag source), _ ->
             Home.init source |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | PostMsg subMsg, PostModel subModel -> PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
@@ -163,8 +165,8 @@ let setupBackHandler dispatch =
         true
     setOnHardwareBackPressHandler backHandler
 
-let subscribe _ = 
-    Cmd.batch [ 
+let subscribe _ =
+    Cmd.batch [
         Cmd.ofSub setupBackHandler
         App.sub ]
 
