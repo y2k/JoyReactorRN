@@ -50,6 +50,14 @@
         },
         {
             "label": "fable",
+            "command": "yarn cold-start",
+            "type": "shell",
+            "group": "build",
+            "presentation": { "reveal": "always" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "fable - DEPRECATED",
             "command": "dotnet fable npm-build",
             "type": "shell",
             "group": "build",

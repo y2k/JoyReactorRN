@@ -17,7 +17,8 @@ module.exports = {
     entry: resolve('src/joyreact.fsproj'),
     outDir: resolve("out"),
     babel: {
-        presets: ["module:metro-react-native-babel-preset"]
+        presets: ["module:metro-react-native-babel-preset"],
+        sourceMaps: true
     },
     fable: {
         define: define

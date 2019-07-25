@@ -59,10 +59,7 @@ module Types =
           preloaded : Post []
           nextPage : int option }
         static member empty : PostsWithLevels =
-            { actual = [||]
-              old = [||]
-              preloaded = [||]
-              nextPage = None }
+            { actual = [||]; old = [||]; preloaded = [||]; nextPage = None }
 
     type Profile =
         { userName : string
@@ -87,6 +84,7 @@ module CofxStorage =
 
   type LocalDb =
       { feeds : Map<Source, Post []>
+        feeds' : Map<Source, PostsWithLevels>
         posts : Map<int, Post>
         tags : Tag []
         messages : Message []

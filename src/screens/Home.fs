@@ -15,7 +15,6 @@ type LocalDb = JoyReactor.CofxStorage.LocalDb
 type PostState = | Actual of Post | Divider | Old of Post
 
 type Msg =
-    | PostsMsg of Post []
     | PostsLoadedFromCache of Result<PostsWithLevels, exn>
     | PostsLoaded of Result<PostsWithLevels, exn>
     | LoadNextPage
@@ -28,9 +27,6 @@ type Model =
       items : PostState []
       status : Result<unit, exn> option
       source : Source }
-
-let sub source (db : LocalDb) =
-    Map.tryFind source db.feeds |> Option.defaultValue [||] |> PostsMsg
 
 let init source =
     { syncState = PostsWithLevels.empty; items = [||]; status = None; source = source }, 
@@ -47,10 +43,6 @@ let postsToPostStates posts =
                  posts.old |> Array.map Old ]
 
 let update model = function
-    | PostsMsg posts ->
-        if Array.isEmpty model.items then 
-            { model with items = postsToPostStates { PostsWithLevels.empty with old = posts } }, Cmd.none
-        else model, Cmd.none
     | PostsLoadedFromCache(Ok x) ->
         { model with items = postsToPostStates x
                      syncState = x
@@ -129,7 +121,7 @@ let iconView =
 let viewItem post dispatch =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin $ 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
-                         OnPress(always (OpenPost post) >> dispatch) ] [
+                         OnPress (dispatch <! (OpenPost post)) ] [
         view [ Styles.card ] [
             viewPostImage post
             view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Margin $ 9. ] ] [
@@ -139,19 +131,20 @@ let viewItem post dispatch =
                     view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd; FlexDirection FlexDirection.Row ] ] [
                         UI.iconView
                         text [ TextProperties.Style [ MarginLeft $ 8.; TextStyle.Color "#bcbcbc" ] ]
-                             "2 часа" ] ] ] ] ]
+                             (longToTimeDelay post.created) ] ] ] ] ]
 
 let view model dispatch =
+    let mkId = function Divider -> -1 | Actual x -> x.id | Old x -> x.id
     let isSyncing = Option.isNone model.status
     view [ ViewProperties.Style [ Flex 1. ] ] [
-        UI.list model.items (function
-            | Actual post -> viewItem post dispatch
-            | Old post -> viewItem post dispatch
-            | Divider -> viewNextButton dispatch isSyncing) (function
-            | Actual post -> string post.id
-            | Old post -> string post.id
-            | Divider -> "divider") [ FlatListProperties.OnRefresh (dispatch <! Refresh)
-                                      FlatListProperties.Refreshing false ]
+        UI.list model.items 
+            (function
+             | Actual post -> viewItem post dispatch
+             | Old post -> viewItem post dispatch
+             | Divider -> viewNextButton dispatch isSyncing) 
+            (mkId >> string) 
+            [ FlatListProperties.OnRefresh (dispatch <! Refresh)
+              FlatListProperties.Refreshing false ]
         UI.reloadButton (Array.isEmpty model.syncState.preloaded)
             "New posts" (always ApplyUpdate >> dispatch)
         UI.loadingView isSyncing ]

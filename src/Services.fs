@@ -65,6 +65,7 @@ module Storage' =
 
     let private refDb = 
         { feeds = Map.empty
+          feeds' = Map.empty
           posts = Map.empty
           tags = [||]
           messages = [||]
@@ -83,7 +84,7 @@ module Storage' =
         match !callback with Some f -> f db | _ -> ()
         return x }
 
-let private loadPosts source page = async {
+let loadPosts source page = async {
     let (Eff x) =
         ApiRequests.parseRequest
             (UrlBuilder.posts source "FIXME" page) // FIXME:

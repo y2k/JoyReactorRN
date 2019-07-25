@@ -79,8 +79,8 @@ let loadingView inProgress =
                                       TextStyle.FontSize 18. ] ] "Loading"
     else view [] []
 
-let reloadButton show title dispatch =
-    if show
+let reloadButton hide title dispatch =
+    if hide
         then view [] []
         else
             touchableOpacity [ TouchableWithoutFeedbackProperties.Style [

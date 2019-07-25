@@ -7,6 +7,7 @@ open Elmish.ReactNative
 open Fable.Helpers.ReactNative
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
+module Home = PostsComponent
 
 module TabsScreen =
     open Fable.Helpers.ReactNative.Props
@@ -23,7 +24,7 @@ module TabsScreen =
         | SubMsg of LocalDb
 
     type Model =
-        | HomeModel of Home.Model
+        | HomeModel of Home.Model * (LocalDb -> Home.Msg)
         | TagsModel of TagsScreen.Model
         | ThreadsModel of ThreadsScreen.Model
         | ProfileModel of ProfileScreen.Model
@@ -31,21 +32,24 @@ module TabsScreen =
 
     let sub (db : LocalDb) = SubMsg db
 
-    let init = Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
+    let init = 
+        Home.init FeedSource 
+        |> fun (model, cmd) -> HomeModel (model, fun x -> Home.sub FeedSource x), Cmd.map HomeMsg cmd
 
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
         | SubMsg db, _ ->
             match model with
+            | HomeModel (_,sub) -> model, Cmd.ofMsg ^ HomeMsg ^ sub db
             | TagsModel _ -> model, Cmd.ofMsg ^ TagsMsg ^ TagsScreen.sub db
             | ThreadsModel _ -> model, Cmd.ofMsg ^ ThreadsMsg ^ ThreadsScreen.sub db
             | _ -> model, Cmd.none
-        | SelectTab 0, _ -> Home.init FeedSource |> fun (model, cmd) -> HomeModel model, Cmd.map HomeMsg cmd
+        | SelectTab 0, _ -> Home.init FeedSource |> fun (model, cmd) -> HomeModel (model, fun x -> Home.sub FeedSource x), Cmd.map HomeMsg cmd
         | SelectTab 1, _ -> TagsScreen.init |> fun (model, cmd) -> TagsModel model, Cmd.map TagsMsg cmd
         | SelectTab 2, _ -> ThreadsScreen.init |> fun (model, cmd) -> ThreadsModel model, Cmd.map ThreadsMsg cmd
         | SelectTab 3, _ -> ProfileScreen.init |> fun (model, cmd) -> ProfileModel model, Cmd.map ProfileMsg cmd
-        | HomeMsg subMsg, HomeModel subModel ->
-            Home.update subModel subMsg |> fun (m, cmd) -> HomeModel m, Cmd.map HomeMsg cmd
+        | HomeMsg subMsg, HomeModel (subModel,s) ->
+            Home.update subModel subMsg |> fun (m, cmd) -> HomeModel (m,s), Cmd.map HomeMsg cmd
         | TagsMsg subMsg, TagsModel subModel ->
             TagsScreen.update subModel subMsg |> fun (m, cmd) -> TagsModel m, Cmd.map TagsMsg cmd
         | ThreadsMsg subMsg, ThreadsModel subModel ->
@@ -58,7 +62,7 @@ module TabsScreen =
 
     let private renderContent (model : Model) dispatch =
         match model with
-        | HomeModel sm -> Home.view sm (HomeMsg >> dispatch)
+        | HomeModel (sm,_) -> Home.view sm (HomeMsg >> dispatch)
         | TagsModel sm -> TagsScreen.view sm (TagsMsg >> dispatch)
         | ThreadsModel sm -> ThreadsScreen.view sm (ThreadsMsg >> dispatch)
         | ProfileModel sm -> ProfileScreen.view sm (ProfileMsg >> dispatch)

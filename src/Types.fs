@@ -1,5 +1,15 @@
 namespace JoyReactor
 
+type Log() =
+    static member log (message : string,
+                       [<System.Runtime.CompilerServices.CallerFilePath;
+                         System.Runtime.InteropServices.Optional;
+                         System.Runtime.InteropServices.DefaultParameterValue("")>] file : string,
+                       [<System.Runtime.CompilerServices.CallerLineNumber;
+                         System.Runtime.InteropServices.Optional;
+                         System.Runtime.InteropServices.DefaultParameterValue(0)>] line : int) =
+        printfn "LOG %s:%i :: %s" file line message
+
 module UrlBuilder =
     open Fable.Import.JS
     open Types
@@ -104,6 +114,7 @@ module Requests =
 module Cmd =
     open Elmish
     let ofEffect f p = Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofFiber f p = Cmd.ofAsync (fun () -> p) () f raise
     let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 
 module Array =
