@@ -15,7 +15,6 @@
     <Compile Include="screens/Messages.fs" />
     <Compile Include="screens/Threads.fs" />
     <Compile Include="screens/Post.fs" />
-    <Compile Include="screens/Home.fs" />
     <Compile Include="screens/Login.fs" />
     <Compile Include="screens/Tags.fs" />
     <Compile Include="screens/Profile.fs" />

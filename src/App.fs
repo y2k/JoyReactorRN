@@ -7,7 +7,6 @@ open Elmish.ReactNative
 open Fable.Helpers.ReactNative
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
-module Home = PostsComponent
 
 module TabsScreen =
     open Fable.Helpers.ReactNative.Props
@@ -16,7 +15,7 @@ module TabsScreen =
 
     type Msg =
         | SelectTab of int
-        | HomeMsg of Home.Msg
+        | HomeMsg of PostsComponent.Msg
         | TagsMsg of TagsScreen.Msg
         | ThreadsMsg of ThreadsScreen.Msg
         | ProfileMsg of ProfileScreen.Msg
@@ -24,7 +23,7 @@ module TabsScreen =
         | SubMsg of LocalDb
 
     type Model =
-        | HomeModel of Home.Model * (LocalDb -> Home.Msg)
+        | HomeModel of PostsComponent.Model * (LocalDb -> PostsComponent.Msg)
         | TagsModel of TagsScreen.Model
         | ThreadsModel of ThreadsScreen.Model
         | ProfileModel of ProfileScreen.Model
@@ -33,8 +32,8 @@ module TabsScreen =
     let sub (db : LocalDb) = SubMsg db
 
     let init = 
-        Home.init FeedSource 
-        |> fun (model, cmd) -> HomeModel (model, fun x -> Home.sub FeedSource x), Cmd.map HomeMsg cmd
+        PostsComponent.init FeedSource 
+        |> fun (model, cmd) -> HomeModel (model, fun x -> PostsComponent.sub FeedSource x), Cmd.map HomeMsg cmd
 
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
@@ -44,12 +43,12 @@ module TabsScreen =
             | TagsModel _ -> model, Cmd.ofMsg ^ TagsMsg ^ TagsScreen.sub db
             | ThreadsModel _ -> model, Cmd.ofMsg ^ ThreadsMsg ^ ThreadsScreen.sub db
             | _ -> model, Cmd.none
-        | SelectTab 0, _ -> Home.init FeedSource |> fun (model, cmd) -> HomeModel (model, fun x -> Home.sub FeedSource x), Cmd.map HomeMsg cmd
+        | SelectTab 0, _ -> PostsComponent.init FeedSource |> fun (model, cmd) -> HomeModel (model, fun x -> PostsComponent.sub FeedSource x), Cmd.map HomeMsg cmd
         | SelectTab 1, _ -> TagsScreen.init |> fun (model, cmd) -> TagsModel model, Cmd.map TagsMsg cmd
         | SelectTab 2, _ -> ThreadsScreen.init |> fun (model, cmd) -> ThreadsModel model, Cmd.map ThreadsMsg cmd
         | SelectTab 3, _ -> ProfileScreen.init |> fun (model, cmd) -> ProfileModel model, Cmd.map ProfileMsg cmd
         | HomeMsg subMsg, HomeModel (subModel,s) ->
-            Home.update subModel subMsg |> fun (m, cmd) -> HomeModel (m,s), Cmd.map HomeMsg cmd
+            PostsComponent.update subModel subMsg |> fun (m, cmd) -> HomeModel (m,s), Cmd.map HomeMsg cmd
         | TagsMsg subMsg, TagsModel subModel ->
             TagsScreen.update subModel subMsg |> fun (m, cmd) -> TagsModel m, Cmd.map TagsMsg cmd
         | ThreadsMsg subMsg, ThreadsModel subModel ->
@@ -62,7 +61,7 @@ module TabsScreen =
 
     let private renderContent (model : Model) dispatch =
         match model with
-        | HomeModel (sm,_) -> Home.view sm (HomeMsg >> dispatch)
+        | HomeModel (sm,_) -> PostsComponent.view sm (HomeMsg >> dispatch)
         | TagsModel sm -> TagsScreen.view sm (TagsMsg >> dispatch)
         | ThreadsModel sm -> ThreadsScreen.view sm (ThreadsMsg >> dispatch)
         | ProfileModel sm -> ProfileScreen.view sm (ProfileMsg >> dispatch)
@@ -81,7 +80,7 @@ module TabsScreen =
 module App =
     type Msg =
         | TabsMsg of TabsScreen.Msg
-        | HomeMsg of Home.Msg
+        | HomeMsg of PostsComponent.Msg
         | PostMsg of PostScreen.Msg
         | MessagesMsg of MessagesScreen.Msg
         | OpenPost
@@ -93,7 +92,7 @@ module App =
 
     type SubModel =
         | TabsModel of TabsScreen.Model
-        | HomeModel of Home.Model
+        | HomeModel of PostsComponent.Model
         | PostModel of PostScreen.Model
         | MessagesModel of MessagesScreen.Model
         | ProfileModel of ProfileScreen.Model
@@ -128,16 +127,16 @@ module App =
             | [] ->
                 exitApp()
                 model, Cmd.none
-        | TabsMsg(TabsScreen.HomeMsg(Home.OpenPost p)), _ ->
+        | TabsMsg(TabsScreen.HomeMsg(PostsComponent.OpenPost p)), _ ->
             PostScreen.init p.id |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
-        | HomeMsg(Home.OpenPost p), _ ->
+        | HomeMsg(PostsComponent.OpenPost p), _ ->
             PostScreen.init p.id
             |> wrap PostModel PostMsg
                 { model with
                     subHistory = (fun db -> PostScreen.sub p.id db |> PostMsg) :: model.subHistory
                     history = model.subModel :: model.history }
         | TabsMsg(TabsScreen.TagsMsg(TagsScreen.OpenPosts p)), _ ->
-            Home.init p |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
+            PostsComponent.init p |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | TabsMsg(TabsScreen.ThreadsMsg(ThreadsScreen.ThreadSelected id)), _ ->
             MessagesScreen.init id
             |> wrap MessagesModel MessagesMsg
@@ -145,17 +144,17 @@ module App =
                     history = model.subModel :: model.history
                     subHistory = (fun db -> MessagesScreen.sub id db |> MessagesMsg) :: model.subHistory }
         | PostMsg(PostScreen.OpenTag source), _ ->
-            Home.init source |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
+            PostsComponent.init source |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | PostMsg subMsg, PostModel subModel -> PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
         | MessagesMsg subMsg, MessagesModel subModel ->
             MessagesScreen.update subModel subMsg |> wrap MessagesModel MessagesMsg model
         | TabsMsg subMsg, TabsModel subModel -> TabsScreen.update subModel subMsg |> wrap TabsModel TabsMsg model
-        | HomeMsg subMsg, HomeModel subModel -> Home.update subModel subMsg |> wrap HomeModel HomeMsg model
+        | HomeMsg subMsg, HomeModel subModel -> PostsComponent.update subModel subMsg |> wrap HomeModel HomeMsg model
         | _ -> model, Cmd.none
 
     let view model dispatch =
         match model.subModel with
-        | HomeModel subModel -> Home.view subModel (HomeMsg >> dispatch)
+        | HomeModel subModel -> PostsComponent.view subModel (HomeMsg >> dispatch)
         | PostModel subModel -> PostScreen.view subModel (PostMsg >> dispatch)
         | ProfileModel subModel -> ProfileScreen.view subModel (ProfileMsg >> dispatch)
         | LoginModel subModel -> LoginScreen.view subModel (LoginMsg >> dispatch)

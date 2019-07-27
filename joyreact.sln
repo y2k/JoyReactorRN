@@ -11,6 +11,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "joyreact", "src\joyreact.fs
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "test", "test\test.fsproj", "{23BDF4A7-6E5E-4EB3-8B90-8367D11DB4DE}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "server", "server\server.fsproj", "{F910D754-C00D-4FE9-9D3F-A151F4410550}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,17 @@ Global
 		{23BDF4A7-6E5E-4EB3-8B90-8367D11DB4DE}.Release|x64.Build.0 = Release|Any CPU
 		{23BDF4A7-6E5E-4EB3-8B90-8367D11DB4DE}.Release|x86.ActiveCfg = Release|Any CPU
 		{23BDF4A7-6E5E-4EB3-8B90-8367D11DB4DE}.Release|x86.Build.0 = Release|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Debug|x64.Build.0 = Debug|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Debug|x86.Build.0 = Debug|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Release|x64.ActiveCfg = Release|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Release|x64.Build.0 = Release|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Release|x86.ActiveCfg = Release|Any CPU
+		{F910D754-C00D-4FE9-9D3F-A151F4410550}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

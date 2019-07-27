@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\core\core.fsproj" />
-    <ProjectReference Include="..\parser\parser.csproj" />
+    <ProjectReference Include="..\parser\parser.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
