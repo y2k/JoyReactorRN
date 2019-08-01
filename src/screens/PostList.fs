@@ -1,8 +1,8 @@
 module PostsComponent
 
 open Elmish
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
 type LocalDb = JoyReactor.CofxStorage.LocalDb
@@ -141,7 +141,7 @@ module private Styles =
 let viewItem dispatch post =
     let viewPostImage post =
         post.image
-        |> Option.map (Image.urlWithHeight (Fable.Import.ReactNative.Globals.Dimensions.get("screen").width))
+        |> Option.map (Image.urlWithHeight (Fable.ReactNative.RN.Dimensions.get("screen").width))
         |> function
            | Some(img, h) ->
                image [ ImageProperties.Style [ Height $ h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
@@ -176,7 +176,6 @@ let view model dispatch =
              | Old x -> viewItem dispatch x
              | Divider -> viewNextButton dispatch model.loading)
             (mkId >> string)
-            [ FlatListProperties.OnRefresh(dispatch <! Refresh)
-              FlatListProperties.Refreshing false ]
+            [ OnRefresh(dispatch <! Refresh); Refreshing false ]
         UI.reloadButton (not model.hasNew) "New posts" (dispatch <! ApplyUpdate)
         UI.loadingView model.loading ]

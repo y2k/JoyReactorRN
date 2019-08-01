@@ -40,8 +40,8 @@ let update model = function
         let loginModel, cmd = LoginScreen.update model.subModel subMsg
         { model with subModel = loginModel }, Cmd.map LoginMsg cmd
 
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 
 module private Styles =
     let rating =

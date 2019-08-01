@@ -4,12 +4,12 @@ open Elmish
 open Elmish.HMR
 open Elmish.React
 open Elmish.ReactNative
-open Fable.Helpers.ReactNative
+open Fable.ReactNative.Helpers
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 module TabsScreen =
-    open Fable.Helpers.ReactNative.Props
+    open Fable.ReactNative.Props
     open JoyReactor
     open JoyReactor.Types
 

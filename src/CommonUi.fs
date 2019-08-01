@@ -1,7 +1,7 @@
 module JoyReactor.CommonUi
 
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 
 module Colors =
     let primary = "#e49421"

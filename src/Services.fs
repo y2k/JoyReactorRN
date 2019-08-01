@@ -4,12 +4,12 @@ module Cmd =
     open Effects.ReactNative
     open Elmish
     let ofEff0 (Eff a) = Cmd.ofSub (fun _ -> Async.StartImmediate a)
-    let ofEff f (Eff a) = Cmd.ofAsync (fun _ -> a) () (Ok >> f) (Error >> f)
+    let ofEff f (Eff a) = Cmd.OfAsync.either (fun _ -> a) () (Ok >> f) (Error >> f)
 
 module private ApiRequests =
     open Effects.ReactNative
     open Fable.Core
-    open Fable.PowerPack.Fetch
+    open Fetch
     open JsInterop
 
     let private downloadString url props = async {
@@ -25,9 +25,8 @@ module private ApiRequests =
             let! html' = match mkUrl html with
                          | Some url -> downloadString url props
                          | None -> async.Return html
-            let form = Fable.Import.Browser.FormData.Create()
-            form.append ("html", html')
-            return! downloadString parseUrl [ Method HttpMethod.POST; Body !^form ]
+            let html'' = sprintf "html=%s" ^ System.Uri.EscapeDataString html'
+            return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html''; requestHeaders [ ContentType "application/x-www-form-urlencoded" ] ]
         } |> Eff.wrap (fun f -> ParseRequest(url, mkUrl, parseUrl, f))
     let parseRequest' url mkUrl path =
         parseRequest url mkUrl (sprintf "https://%s/%s" UrlBuilder.apiDomain path)
@@ -36,8 +35,7 @@ module private ApiRequests =
     let sendForm csrfUrl mkRequest =
         let fetchText url props = async {
             let! response = fetch url props |> Async.AwaitPromise
-            return! response.text() |> Async.AwaitPromise
-        }
+            return! response.text() |> Async.AwaitPromise }
         async {
             let! html = fetchText csrfUrl []
             let! _ = mkRequest html ||> fetchText
@@ -47,7 +45,7 @@ module private ApiRequests =
 module private Web =
      open Effects.ReactNative
      open Fable.Core
-     open Fable.PowerPack.Fetch
+     open Fetch
 
      type DownloadString = DownloadString of url : string * props : RequestProperties list * f : (string -> unit)
      let downloadString url props =
@@ -90,7 +88,7 @@ let loadPosts source page = async {
             (UrlBuilder.posts source "FIXME" page) // FIXME:
             (fun _ -> None)
             (sprintf "https://%s/%s" UrlBuilder.apiDomain "posts")
-        <*> (Fable.Import.JS.JSON.parse >> unbox<PostResponse>)
+        <*> (Fable.Core.JS.JSON.parse >> unbox<PostResponse>)
     let! x = x
     return x.posts, x.nextPage }
 
@@ -141,7 +139,7 @@ let syncFirstPage source (dbPosts : PostsWithLevels) = async {
 let syncPost id = async {
     let (Eff x) = 
         ApiRequests.parseRequest (UrlBuilder.post id) (fun _ -> None) "post"
-        <*> (Fable.Import.JS.JSON.parse >> unbox<Post>)
+        <*> (Fable.Core.JS.JSON.parse >> unbox<Post>)
     let! x = x
     do! Storage'.update ^ fun db -> { db with posts = Map.add id x db.posts }, () }
 
@@ -156,7 +154,7 @@ let syncMyProfile = async {
             UrlBuilder.domain
             (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
             "profile"
-        <*> (Fable.Import.JS.JSON.parse >> unbox<Profile>)
+        <*> (Fable.Core.JS.JSON.parse >> unbox<Profile>)
     let! x = x
     do! Storage'.update ^ fun db -> { db with profile = Some x }, () }
 
@@ -168,7 +166,7 @@ let logout = async {
 let syncMessages page = async {
     let (Eff x) = ApiRequests.parseRequest' (UrlBuilder.messages page) (fun _ -> None) "messages"
     let! x = x
-    let x = x |> (Fable.Import.JS.JSON.parse >> unbox<MessagesWithNext>)
+    let x = x |> (Fable.Core.JS.JSON.parse >> unbox<MessagesWithNext>)
     return!
         Storage'.update ^ fun db ->
             let newMessages, _ = Domain.mergeMessages db.messages x.messages x.nextPage
@@ -180,6 +178,6 @@ let syncTagsWithBackend = async {
             UrlBuilder.domain
             (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
             "tags"
-        <*> (Fable.Import.JS.JSON.parse >> unbox<Tag []>)
+        <*> (Fable.Core.JS.JSON.parse >> unbox<Tag []>)
     let! x = x
     do! Storage'.update ^ fun db -> { db with tags = x }, () }

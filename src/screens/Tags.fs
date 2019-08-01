@@ -35,16 +35,14 @@ let update (model : Model) = function
     | RefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 
 module Styles =
     let image =
         ImageProperties.Style [ Width $ 48.; Height $ 48.; BorderRadius 24.; MarginRight $ 8. ]
     let label =
-        TextProperties.Style [ FontSize 18.
-                               TextStyle.Color "#404040"
-                               AlignSelf Alignment.Center ]
+        TextProperties.Style [ FontSize 18.; TextStyle.Color "#404040"; AlignSelf Alignment.Center ]
 
 let viewItem dispatch (x : Tag) =
     touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse x)) ] [
@@ -54,7 +52,5 @@ let viewItem dispatch (x : Tag) =
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
-        UI.list model.tags (viewItem dispatch) (fun x -> x.name) [
-            FlatListProperties.OnRefresh(dispatch <! Refresh)
-            FlatListProperties.Refreshing false ]
+        UI.list model.tags (viewItem dispatch) (fun x -> x.name) [ OnRefresh(dispatch <! Refresh); Refreshing false ]
         UI.loadingView <| not model.loaded ]

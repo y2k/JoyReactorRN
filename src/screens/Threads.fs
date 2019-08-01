@@ -1,8 +1,8 @@
 module ThreadsScreen
 
 open Elmish
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
 module UI = JoyReactor.CommonUi
@@ -43,13 +43,11 @@ let private itemView dispatch i =
                                               TextStyle.Color "#404040"
                                               FontSize 15. ] ] i.userName
                 text [ TextProperties.Style [ TextStyle.Color "#808080"; FontSize 15. ]
-                       TextProperties.NumberOfLines 2. ] i.text
-                text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd
-                                              TextStyle.Color "#bdbdbd" ] ] (longToTimeDelay i.date) ] ] ]
+                       NumberOfLines 2. ] i.text
+                text [ TextProperties.Style [ AlignSelf Alignment.FlexEnd; TextStyle.Color "#bdbdbd" ] ] 
+                     (longToTimeDelay i.date) ] ] ]
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
-        UI.list model.items (itemView dispatch) (fun x -> x.userName)
-            [ FlatListProperties.OnRefresh (dispatch <! Refresh)
-              FlatListProperties.Refreshing false ]
+        UI.list model.items (itemView dispatch) (fun x -> x.userName) [ OnRefresh (dispatch <! Refresh); Refreshing false ]
         UI.loadingView <| Option.isNone model.status ]

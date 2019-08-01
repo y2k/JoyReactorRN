@@ -1,8 +1,8 @@
 module LoginScreen
 
 open Elmish
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 open JoyReactor
 
 module Cmd = JoyReactor.Services.Cmd

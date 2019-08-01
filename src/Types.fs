@@ -11,7 +11,7 @@ type Log() =
         printfn "LOG %s:%i :: %s" file line message
 
 module UrlBuilder =
-    open Fable.Import.JS
+    open Fable.Core.JS
     open Types
 
     let domain = UrlBuilder.domain
@@ -99,22 +99,23 @@ module Domain =
 
 module Requests =
     open Fable.Core.JsInterop
-    open Fable.PowerPack.Fetch
+    open Fetch
 
     let login (username : string) (password : string) (token : string) =
-        let form = Fable.Import.Browser.FormData.Create()
+        let form = Browser.XMLHttpRequest.FormData.Create()
         form.append ("signin[username]", username)
         form.append ("signin[password]", password)
         form.append ("signin[_csrf_token]", token)
-        "http://" + UrlBuilder.domain + "/login",
+        sprintf "http://%s/login" UrlBuilder.domain,
         [ Method HttpMethod.POST
           Credentials RequestCredentials.Sameorigin
-          Body !^form ]
+          Body !^ (string form) ]
 
 module Cmd =
     open Elmish
-    let ofEffect f p = Cmd.ofAsync (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
-    let ofFiber f p = Cmd.ofAsync (fun () -> p) () f raise
+    let ofEffect f p = 
+        Cmd.OfAsync.either (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofFiber f p = Cmd.OfAsync.either (fun () -> p) () f raise
     let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 
 module Array =
@@ -127,7 +128,7 @@ module Utils =
     open Fable.Core
     open System
 
-    let inline ($) f d = f (Fable.Helpers.ReactNative.dip d)
+    let inline ($) f d = f (Fable.ReactNative.Helpers.dip d)
 
     [<Emit("require($0)")>]
     let require (_ : string) = jsNative
@@ -149,7 +150,7 @@ module String =
     let toUpper (x : string) = x.ToUpper()
 
 module Image =
-    open Fable.Import.JS
+    open Fable.Core.JS
     open Types
 
     let normilize url (w : float) (h : float) =
@@ -164,7 +165,7 @@ module Image =
 
 module Platform =
     open Fable.Core
-    open Fable.Import.ReactNative
+    open Fable.ReactNative
 
-    let openUrl url =
-        async { do! Globals.Linking.openURL url |> Async.AwaitPromise |> Async.Ignore }
+    let openUrl url = async {
+        do! RN.Linking.openURL url |> Async.AwaitPromise |> Async.Ignore }

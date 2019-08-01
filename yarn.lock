@@ -1658,9 +1658,9 @@ fable-babel-plugins@^2.2.0:
   integrity sha512-4g8CIyXCILk5LLiwNPtvtrPy3YuV5eJV18SYJCZxu3A1BSKNvPGHLSg5YcFJ2zt4qmBvSkBewlQ2bVQYG+TnrQ==
 
 fable-compiler@^2.3.8:
-  version "2.3.14"
-  resolved "https://registry.yarnpkg.com/fable-compiler/-/fable-compiler-2.3.14.tgz#af510f90fa948cfe5d7742a50584ddd4fa339d4c"
-  integrity sha512-kTJTeCWlQxdaoopGN52bagM7YKKwVRoW4aoHwPXLINdZXHgnC/eh6HvSDqoFi/nbm3ZJkO8E2QiY4sj95fqPVQ==
+  version "2.3.15"
+  resolved "https://registry.yarnpkg.com/fable-compiler/-/fable-compiler-2.3.15.tgz#1110611f57f368748016a8d3eb3d029fc67b273c"
+  integrity sha512-GEKvfMjTqfHOC/eaLzaJAWrz7dnSq8Y1dwRZTwfANHondN3z5FNvghIIoaYYsjKVhEmqUV5yeYrJwtkAmBa8ug==
 
 fable-splitter@^2.1.8:
   version "2.1.10"

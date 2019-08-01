@@ -1,8 +1,8 @@
 module MessagesScreen
 
 open Elmish
-open Fable.Helpers.ReactNative
-open Fable.Helpers.ReactNative.Props
+open Fable.ReactNative.Helpers
+open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
 module UI = JoyReactor.CommonUi
