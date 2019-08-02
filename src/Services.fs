@@ -25,11 +25,10 @@ module private ApiRequests =
             let! html' = match mkUrl html with
                          | Some url -> downloadString url props
                          | None -> async.Return html
-            let html'' = sprintf "html=%s" ^ System.Uri.EscapeDataString html'
-            return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html''; requestHeaders [ ContentType "application/x-www-form-urlencoded" ] ]
+            return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html' ]
         } |> Eff.wrap (fun f -> ParseRequest(url, mkUrl, parseUrl, f))
     let parseRequest' url mkUrl path =
-        parseRequest url mkUrl (sprintf "https://%s/%s" UrlBuilder.apiDomain path)
+        parseRequest url mkUrl (sprintf "%s/%s" UrlBuilder.apiBaseUri path)
 
     type SendForm = SendForm of csrfUrl : string * mkRequest : (string -> (string * RequestProperties list)) * f : (unit -> unit)
     let sendForm csrfUrl mkRequest =
@@ -87,7 +86,7 @@ let loadPosts source page = async {
         ApiRequests.parseRequest
             (UrlBuilder.posts source "FIXME" page) // FIXME:
             (fun _ -> None)
-            (sprintf "https://%s/%s" UrlBuilder.apiDomain "posts")
+            (sprintf "%s/%s" UrlBuilder.apiBaseUri "posts")
         <*> (Fable.Core.JS.JSON.parse >> unbox<PostResponse>)
     let! x = x
     return x.posts, x.nextPage }
