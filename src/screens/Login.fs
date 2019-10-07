@@ -5,7 +5,6 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 
-module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
 module UI = JoyReactor.CommonUi
 
@@ -66,7 +65,7 @@ let update model msg : Model * Cmd<Msg> =
     match msg with
     | LoginMsg ->
         { model with isBusy = true; error = None }, 
-        S.login model.username model.password |> Cmd.ofEff LoginResultMsg
+        S.login model.username model.password |> Cmd.ofEffect LoginResultMsg
     | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.none
     | LoginResultMsg(Error e) ->
         { model with isBusy = false; error = Some <| string e }, 

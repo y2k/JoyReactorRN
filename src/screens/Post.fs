@@ -7,7 +7,6 @@ open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
 module UI = JoyReactor.CommonUi
-module Cmd = JoyReactor.Services.Cmd
 module S = JoyReactor.Services
 type LocalDb = JoyReactor.CofxStorage.LocalDb
 

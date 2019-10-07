@@ -11,7 +11,7 @@ let getHtml name =
 [<Fact>]
 let ``reading tags``() =
     let actual = getHtml "tags_test.html" |> Parsers.readTags
-    Assert.Equal(36, List.length actual)
+    Assert.Equal(36, Seq.length actual)
 
 [<Fact>]
 let ``parse small_favorite should success``() =

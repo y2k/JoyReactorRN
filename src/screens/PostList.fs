@@ -7,7 +7,7 @@ open JoyReactor
 open JoyReactor.Types
 type LocalDb = JoyReactor.CofxStorage.LocalDb
 module UI = JoyReactor.CommonUi
-module Effects = JoyReactor.Services.Storage'
+module Effects = JoyReactor.Services.Storage
 
 module Effects =
     open JoyReactor.Services
@@ -16,7 +16,7 @@ module Effects =
     let sync (s : Source) (p : int option) (f : LocalDb -> NextPosts -> LocalDb) : unit Async = async {
         let! (x, y) = loadPosts s p
         let x = Seq.toArray x
-        do! Storage'.update ^ fun db -> f db (x, y), () }
+        do! Storage.update ^ fun db -> f db (x, y), () }
 
 type PostState = | Actual of Post | Divider | Old of Post
 
@@ -95,7 +95,7 @@ let update model = function
     //
     | ApplyUpdate ->
         model,
-        (Services.Storage'.update ^ fun db -> F.mergeApply db model.source, ()) |> Cmd.ofEffect0
+        (Services.Storage.update ^ fun db -> F.mergeApply db model.source, ()) |> Cmd.ofEffect0
     | LoadNextPage ->
         { model with loading = true },
         Effects.sync model.source model.nextPage ^ F.mergeNextPage model.source |> Cmd.ofEffect SyncResultMsg

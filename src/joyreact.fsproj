@@ -4,10 +4,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\paket-files\y2k\EffectsResearch\Effects\EffectsReactNative.fs">
-      <Paket>True</Paket>
-      <Link>paket-files/EffectsReactNative.fs</Link>
-    </Compile>
     <Compile Include="Types.fs" />
     <Compile Include="Services.fs" />
     <Compile Include="CommonUi.fs" />

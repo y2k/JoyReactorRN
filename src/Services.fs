@@ -1,13 +1,6 @@
 module JoyReactor.Services
 
-module Cmd =
-    open Effects.ReactNative
-    open Elmish
-    let ofEff0 (Eff a) = Cmd.ofSub (fun _ -> Async.StartImmediate a)
-    let ofEff f (Eff a) = Cmd.OfAsync.either (fun _ -> a) () (Ok >> f) (Error >> f)
-
 module private ApiRequests =
-    open Effects.ReactNative
     open Fable.Core
     open Fetch
     open JsInterop
@@ -26,7 +19,7 @@ module private ApiRequests =
                          | Some url -> downloadString url props
                          | None -> async.Return html
             return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html' ]
-        } |> Eff.wrap (fun f -> ParseRequest(url, mkUrl, parseUrl, f))
+        }
     let parseRequest' url mkUrl path =
         parseRequest url mkUrl (sprintf "%s/%s" UrlBuilder.apiBaseUri path)
 
@@ -39,24 +32,18 @@ module private ApiRequests =
             let! html = fetchText csrfUrl []
             let! _ = mkRequest html ||> fetchText
             ()
-        } |> Eff.wrap (fun f -> SendForm(csrfUrl, mkRequest, f))
+        }
 
 module private Web =
-     open Effects.ReactNative
      open Fable.Core
      open Fetch
 
      type DownloadString = DownloadString of url : string * props : RequestProperties list * f : (string -> unit)
-     let downloadString url props =
-         async {
-             let! response = (fetch url props) |> Async.AwaitPromise
-             return! response.text() |> Async.AwaitPromise
-         } |> Eff.wrap (fun f -> DownloadString(url, props, f))
+     let downloadString url props = async {
+         let! response = (fetch url props) |> Async.AwaitPromise
+         return! response.text() |> Async.AwaitPromise }
 
-open Effects.ReactNative
-open JoyReactor.Types
-
-module Storage' =
+module Storage =
     open CofxStorage
     open Elmish
 
@@ -81,14 +68,17 @@ module Storage' =
         match !callback with Some f -> f db | _ -> ()
         return x }
 
+open JoyReactor.Types
+
+let inline parseObj<'a> = Fable.Core.JS.JSON.parse >> unbox<'a>
+
 let loadPosts source page = async {
-    let (Eff x) =
+    let! x =
         ApiRequests.parseRequest
             (UrlBuilder.posts source "FIXME" page) // FIXME:
             (fun _ -> None)
             (sprintf "%s/%s" UrlBuilder.apiBaseUri "posts")
-        <*> (Fable.Core.JS.JSON.parse >> unbox<PostResponse>)
-    let! x = x
+        >>- parseObj<PostResponse>
     return x.posts, x.nextPage }
 
 let syncNextPage source (state : PostsWithLevels) = async {
@@ -108,7 +98,7 @@ let syncNextPage source (state : PostsWithLevels) = async {
           preloaded = [||] } }
 
 let savePostsToCache source (state : PostsWithLevels) =
-    Storage'.update ^ fun db -> 
+    Storage.update ^ fun db -> 
         { db with feeds = Map.add source (Array.concat [ state.actual; state.old ]) db.feeds }, ()
 
 let applyUpdate source state =
@@ -121,7 +111,7 @@ let applyUpdate source state =
                 |> Array.filter (fun x -> not <| Array.contains x.id ids)
             preloaded = [||] }
     let newPosts = Array.concat [ newState.actual; newState.old ]
-    Storage'.update ^ fun db -> { db with feeds = Map.add source newPosts db.feeds }, newState
+    Storage.update ^ fun db -> { db with feeds = Map.add source newPosts db.feeds }, newState
 
 let syncFirstPage source (dbPosts : PostsWithLevels) = async {
     let! (webPosts, nextPage) = loadPosts source None
@@ -136,11 +126,10 @@ let syncFirstPage source (dbPosts : PostsWithLevels) = async {
                     nextPage = nextPage } }
 
 let syncPost id = async {
-    let (Eff x) = 
-        ApiRequests.parseRequest (UrlBuilder.post id) (fun _ -> None) "post"
-        <*> (Fable.Core.JS.JSON.parse >> unbox<Post>)
-    let! x = x
-    do! Storage'.update ^ fun db -> { db with posts = Map.add id x db.posts }, () }
+    let! x = 
+        ApiRequests.parseRequest (UrlBuilder.post id) (always None) "post"
+        >>- parseObj<Post>
+    do! Storage.update ^ fun db -> { db with posts = Map.add id x db.posts }, () }
 
 let login username password =
     ApiRequests.sendForm
@@ -148,35 +137,33 @@ let login username password =
         (Domain.getCsrfToken >> Option.get >> Requests.login username password)
 
 let syncMyProfile = async {
-    let (Eff x) =
+    let! x =
         ApiRequests.parseRequest
             UrlBuilder.domain
             (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
             "profile"
-        <*> (Fable.Core.JS.JSON.parse >> unbox<Profile>)
-    let! x = x
-    do! Storage'.update ^ fun db -> { db with profile = Some x }, () }
+        >>- parseObj<Profile>
+    do! Storage.update ^ fun db -> { db with profile = Some x }, () }
 
 let logout = async {
-    let (Eff x) = Web.downloadString (sprintf "http://%s/logout" UrlBuilder.domain) []
+    let x = Web.downloadString (sprintf "http://%s/logout" UrlBuilder.domain) []
     let! _ = x
     return () }
 
 let syncMessages page = async {
-    let (Eff x) = ApiRequests.parseRequest' (UrlBuilder.messages page) (fun _ -> None) "messages"
-    let! x = x
-    let x = x |> (Fable.Core.JS.JSON.parse >> unbox<MessagesWithNext>)
+    let! x = 
+        ApiRequests.parseRequest' (UrlBuilder.messages page) (always None) "messages"
+        >>- parseObj<MessagesWithNext>
     return!
-        Storage'.update ^ fun db ->
+        Storage.update ^ fun db ->
             let newMessages, _ = Domain.mergeMessages db.messages x.messages x.nextPage
             { db with messages = newMessages }, x.nextPage }
 
 let syncTagsWithBackend = async {
-    let (Eff x) = 
+    let! x = 
         ApiRequests.parseRequest
             UrlBuilder.domain
             (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
             "tags"
-        <*> (Fable.Core.JS.JSON.parse >> unbox<Tag []>)
-    let! x = x
-    do! Storage'.update ^ fun db -> { db with tags = x }, () }
+        >>- parseObj<Tag []>
+    do! Storage.update ^ fun db -> { db with tags = x }, () }

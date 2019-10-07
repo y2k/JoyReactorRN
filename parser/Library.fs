@@ -1,15 +1,34 @@
 ﻿namespace JoyReactor
 
-module private TagResolver =
-    // FIXME: TODO:
-    let tryGetImageId _ : _ option = None
-    let userIcons = ()
+module TagResolver =
+    type Storage = { names : int []; icons : int [] }
+
+    let private hashCode (value : string) =
+        value |> Seq.fold (fun h i -> 31 * h + (int i)) 0
+
+    let tryGetImageId (storage : Storage) (name : string) : int option =
+        let index = System.Array.BinarySearch(storage.names, hashCode name)
+        if index >= 0 then storage.icons.[index] |> Some else None
+
+    let inline (!!) x = if isNull x then raise <| System.NullReferenceException() else x
+
+    let private readInts path =
+        let input = !!(typeof<Storage>).Assembly.GetManifestResourceStream(path) 
+        use out = new System.IO.MemoryStream()
+        input.CopyTo(out)
+        let bytes = out.ToArray()
+        let ints = Array.zeroCreate<int> (bytes.Length / 4)
+        System.Buffer.BlockCopy(bytes, 0, ints, 0, bytes.Length)
+        ints
+
+    let userIcons = { names = readInts "user.names.dat"; icons = readInts "user.icons.dat" }
+    let tagIcons = { names = readInts "tag.names.dat"; icons = readInts "tag.icons.dat" }
 
 module Parsers =
     open HtmlAgilityPack
     open JoyReactor.Types
     open System
-    type Regex = System.Text.RegularExpressions.Regex
+    type Regex = Text.RegularExpressions.Regex
 
     let private domain = UrlBuilder.domain
 
@@ -28,7 +47,7 @@ module Parsers =
         |> Seq.filter (fun x -> x.InnerText = "Читает")
         |> Seq.collect (fun x -> x.NextSiblingElement().GetChildElements())
         |> Seq.map (fun x -> { name = x.InnerText; image = resolveTagImage (x) })
-        |> Seq.toList
+        |> Seq.toArray
 
     let private normalizeUrl link =
         let replace regex (r : string) value = Regex.Replace(value, regex, r)
@@ -177,8 +196,8 @@ module Parsers =
 
     let getMessages html =
         let getUserImage (name : String) : String =
-            TagResolver.tryGetImageId (TagResolver.userIcons, name)
-            |> Option.map ^ sprintf "http://img0.%s/pics/avatar/user/%s" domain
+            TagResolver.tryGetImageId TagResolver.userIcons name
+            |> Option.map ^ sprintf "http://img0.%s/pics/avatar/user/%i" domain
             |> Option.defaultValue ^ sprintf "http://img0.%s/images/default_avatar.jpeg" domain
 
         let document = getDocument html
@@ -191,12 +210,13 @@ module Parsers =
                   isMine = Seq.isEmpty ^ x.QuerySelectorAll("div.mess_reply")
                   userName = username
                   userImage = getUserImage (username) }
+            |> Seq.toArray
 
         let nextPage =
             document.QuerySelectorAll("a.next")
             |> Seq.tryPick ^ fun x -> Some x.Attributes.["href"].Value
 
-        messages, nextPage
+        { messages = messages; nextPage = nextPage }
 
     let profile html =
         let document = getDocument html

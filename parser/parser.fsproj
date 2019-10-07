@@ -10,6 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="data/tag.icons.dat" />
+    <EmbeddedResource Include="data/tag.names.dat" />
+    <EmbeddedResource Include="data/user.icons.dat" />
+    <EmbeddedResource Include="data/user.names.dat" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Library.fs" />
   </ItemGroup>
 
