@@ -102,7 +102,7 @@ module Requests =
     open Fetch
 
     let login (username : string) (password : string) (token : string) =
-        let form = Browser.XMLHttpRequest.FormData.Create()
+        let form = Browser.Blob.FormData.Create()
         form.append ("signin[username]", username)
         form.append ("signin[password]", password)
         form.append ("signin[_csrf_token]", token)

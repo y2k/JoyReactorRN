@@ -15,6 +15,7 @@ nuget Fable.Import.Browser
 nuget Fable.Promise
 nuget Fable.Fetch
 nuget Fable.Browser.XMLHttpRequest
+nuget Fable.Browser.Dom
 
 source https://nuget.org/api/v2
 nuget FAKE < 5
