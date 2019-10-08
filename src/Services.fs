@@ -12,16 +12,12 @@ module private ApiRequests =
     let private props = [ requestHeaders [ UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
 
     type ParseRequest = ParseRequest of url : string * mkUrl : (string -> string option) * parseUrl : string * f : (string -> unit)
-    let parseRequest url mkUrl parseUrl =
-        async {
-            let! html = downloadString url props
-            let! html' = match mkUrl html with
-                         | Some url -> downloadString url props
-                         | None -> async.Return html
-            return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html' ]
-        }
-    let parseRequest' url mkUrl path =
-        parseRequest url mkUrl (sprintf "%s/%s" UrlBuilder.apiBaseUri path)
+    let parseRequest url mkUrl parseUrl = async {
+        let! html = downloadString url props
+        let! html' = match mkUrl with
+                     | Some f -> downloadString (f html) props
+                     | None -> async.Return html
+        return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html' ] }
 
     type SendForm = SendForm of csrfUrl : string * mkRequest : (string -> (string * RequestProperties list)) * f : (unit -> unit)
     let sendForm csrfUrl mkRequest =
@@ -76,58 +72,14 @@ let loadPosts source page = async {
     let! x =
         ApiRequests.parseRequest
             (UrlBuilder.posts source "FIXME" page) // FIXME:
-            (fun _ -> None)
+            None
             (sprintf "%s/%s" UrlBuilder.apiBaseUri "posts")
         >>- parseObj<PostResponse>
     return x.posts, x.nextPage }
 
-let syncNextPage source (state : PostsWithLevels) = async {
-    let! (webPosts, nextPage) = loadPosts source state.nextPage
-    let actualIds = state.actual |> Array.map (fun x -> x.id)
-    let actualPosts = 
-        Array.concat [
-            state.actual
-            webPosts
-            |> List.filter (fun x -> not <| Array.contains x.id actualIds)
-            |> List.toArray ]
-    let ids = actualPosts |> Array.map (fun x -> x.id)
-    return
-        { actual = actualPosts
-          old = state.old |> Array.filter (fun x -> not <| Array.contains x.id ids)
-          nextPage = nextPage
-          preloaded = [||] } }
-
-let savePostsToCache source (state : PostsWithLevels) =
-    Storage.update ^ fun db -> 
-        { db with feeds = Map.add source (Array.concat [ state.actual; state.old ]) db.feeds }, ()
-
-let applyUpdate source state =
-    let ids = state.preloaded |> Array.map (fun x -> x.id)
-    let newState =
-        { state with
-            actual = state.preloaded
-            old =
-                Array.concat [ state.actual; state.old ]
-                |> Array.filter (fun x -> not <| Array.contains x.id ids)
-            preloaded = [||] }
-    let newPosts = Array.concat [ newState.actual; newState.old ]
-    Storage.update ^ fun db -> { db with feeds = Map.add source newPosts db.feeds }, newState
-
-let syncFirstPage source (dbPosts : PostsWithLevels) = async {
-    let! (webPosts, nextPage) = loadPosts source None
-    return
-        match dbPosts.old with
-        | [||] -> { PostsWithLevels.empty with
-                        actual = webPosts |> List.toArray
-                        nextPage = nextPage }
-        | _ -> { PostsWithLevels.empty with
-                    actual = dbPosts.old
-                    preloaded = webPosts |> List.toArray
-                    nextPage = nextPage } }
-
 let syncPost id = async {
     let! x = 
-        ApiRequests.parseRequest (UrlBuilder.post id) (always None) "post"
+        ApiRequests.parseRequest (UrlBuilder.post id) None "post"
         >>- parseObj<Post>
     do! Storage.update ^ fun db -> { db with posts = Map.add id x db.posts }, () }
 
@@ -140,19 +92,18 @@ let syncMyProfile = async {
     let! x =
         ApiRequests.parseRequest
             UrlBuilder.domain
-            (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
+            (Some (Domain.extractName >> Option.get))
             "profile"
         >>- parseObj<Profile>
     do! Storage.update ^ fun db -> { db with profile = Some x }, () }
 
-let logout = async {
-    let x = Web.downloadString (sprintf "http://%s/logout" UrlBuilder.domain) []
-    let! _ = x
-    return () }
+let logout = 
+    Web.downloadString (sprintf "http://%s/logout" UrlBuilder.domain) []
+    |> Async.Ignore
 
 let syncMessages page = async {
     let! x = 
-        ApiRequests.parseRequest' (UrlBuilder.messages page) (always None) "messages"
+        ApiRequests.parseRequest (UrlBuilder.messages page) None "messages"
         >>- parseObj<MessagesWithNext>
     return!
         Storage.update ^ fun db ->
@@ -163,7 +114,7 @@ let syncTagsWithBackend = async {
     let! x = 
         ApiRequests.parseRequest
             UrlBuilder.domain
-            (Domain.extractName >> Option.get >> UrlBuilder.user >> Some)
+            (Some (Domain.extractName >> Option.get))
             "tags"
         >>- parseObj<Tag []>
     do! Storage.update ^ fun db -> { db with tags = x }, () }

@@ -2,7 +2,6 @@ module Tests
 
 open JoyReactor.Domain
 open JoyReactor.Types
-open JoyReactor.CommonUtils
 open Xunit
 
 let private def =

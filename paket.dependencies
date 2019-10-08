@@ -24,3 +24,6 @@ nuget Microsoft.NET.Test.Sdk
 nuget xunit
 nuget xunit.runner.visualstudio
 clitool dotnet-xunit
+
+source https://www.myget.org/F/y2k/api/v3/index.json
+nuget Prelude ~> 0.2.2

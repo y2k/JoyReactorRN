@@ -50,8 +50,8 @@ module Domain =
 
     let extractName html =
         let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
-        if m.Success then Some m.Groups.[1].Value
-        else None
+        if m.Success then Some m.Groups.[1].Value else None
+        |> Option.map UrlBuilder.user
 
     let sourceToString =
         function
