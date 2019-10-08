@@ -21,10 +21,6 @@ module P = JoyReactor.Parsers
 
 [<EntryPoint>]
 let main _ =
-
-    JoyReactor.TagResolver.tryGetImageId JoyReactor.TagResolver.userIcons "y2k"
-    |> printfn "icon = %O"
-
     choose [
         GET >=> path "/info" >=> OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
         POST >=> path "/messages" >=> Routers.callParser P.getMessages
