@@ -2,7 +2,6 @@
     open Suave
     open Suave.Successful
     open Newtonsoft.Json
-    open JoyReactor
 
     let callParser parser =
         request ^ fun r ->

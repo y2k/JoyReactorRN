@@ -80,7 +80,7 @@ module CofxStorage =
 module UrlBuilder =
     let domain = "joyreactor.cc"
 #if DEBUG
-    let apiBaseUri = "http://10.5.86.137:8080"
+    let apiBaseUri = "http://10.5.86.139:8080"
 #else
     let apiBaseUri = "https://jrs.y2k.work"
 #endif

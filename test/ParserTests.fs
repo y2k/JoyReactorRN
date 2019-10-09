@@ -3,15 +3,33 @@ module ParserTests
 open JoyReactor
 open JoyReactor.Types
 open Xunit
+type R = System.Text.RegularExpressions.Regex
 
 let getHtml name =
     sprintf "%s/Resources/%s" __SOURCE_DIRECTORY__ name
     |> System.IO.File.ReadAllText
 
 [<Fact>]
+let ``reading top tags``() =
+    let actual = getHtml "feed_with_top_comment.html" |> Parsers.parseTopTags
+    Assert.Equal(10, Seq.length actual)
+    actual
+    |> Seq.iter ^
+        fun tag ->
+            Assert.True(tag.name = tag.name.Trim(), tag.name)
+            Assert.Matches(R(@"^[\w &]{1,30}$"), tag.name)
+            Assert.Matches(R("^http://img\\d\\.joyreactor\\.cc/pics/avatar/tag/\\d+$"), tag.image)
+
+[<Fact>]
 let ``reading tags``() =
     let actual = getHtml "tags_test.html" |> Parsers.readTags
     Assert.Equal(36, Seq.length actual)
+    actual
+    |> Seq.iter ^
+        fun tag ->
+            Assert.True(tag.name = tag.name.Trim(), tag.name)
+            Assert.Matches(R(@"^[а-я\w \-&]{4,30}$"), tag.name)
+            Assert.Matches(R("^http://img\\d\\.joyreactor\\.cc/(images/default_avatar.jpeg|pics/avatar/tag/\\d+)$"), tag.image)
 
 [<Fact>]
 let ``parse small_favorite should success``() =

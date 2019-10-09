@@ -3,9 +3,9 @@ module TagsScreen
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-module S = JoyReactor.Services
-module UI = JoyReactor.CommonUi
-type LocalDb = JoyReactor.CofxStorage.LocalDb
+module S = Services
+module UI = CommonUi
+type LocalDb = CofxStorage.LocalDb
 
 type Model = { tags : Tag []; loaded : bool }
 
@@ -44,11 +44,11 @@ module Styles =
     let label =
         TextProperties.Style [ FontSize 18.; TextStyle.Color "#404040"; AlignSelf Alignment.Center ]
 
-let viewItem dispatch (x : Tag) =
-    touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse x)) ] [
+let viewItem dispatch (tag : Tag) =
+    touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse tag)) ] [
         view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding $ 8. ] ] [
-            image [ Styles.image; Source <| remoteImage [ Uri x.image ] ]
-            text [ Styles.label ] x.name ] ]
+            image [ Styles.image; Source <| remoteImage [ Uri tag.image ] ]
+            text [ Styles.label ] tag.name ] ]
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [

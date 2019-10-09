@@ -13,7 +13,7 @@ module TagResolver =
     let inline (!!) x = if isNull x then raise <| System.NullReferenceException() else x
 
     let private readInts path =
-        let input = !!(typeof<Storage>).Assembly.GetManifestResourceStream("parser.data." + path) 
+        let input = !!(typeof<Storage>).Assembly.GetManifestResourceStream("parser.data." + path)
         use out = new System.IO.MemoryStream()
         input.CopyTo(out)
         let bytes = out.ToArray()
@@ -42,12 +42,20 @@ module Parsers =
         |> Option.map ^ sprintf "http://img1.joyreactor.cc/pics/avatar/tag/%i"
         |> Option.defaultValue ^ sprintf "http://img0.%s/images/default_avatar.jpeg" domain
 
+    let parseTopTags html =
+        let doc = getDocument html
+        doc.QuerySelectorAll("#blogs_week_content img")
+        |> Seq.map (fun x -> { name = HtmlEntity.DeEntitize x.Attributes.["alt"].Value; image = x.Attributes.["src"].Value })
+        |> Seq.toArray
+
     let readTags html =
         let doc = getDocument html
         doc.QuerySelectorAll("h2.sideheader")
         |> Seq.filter (fun x -> x.InnerText = "Читает")
         |> Seq.collect (fun x -> x.NextSiblingElement().GetChildElements())
-        |> Seq.map (fun x -> { name = x.InnerText; image = resolveTagImage (x.InnerText) })
+        |> Seq.map (fun x -> {
+            name = Regex.Replace(x.InnerText, "[ \r\n\u00A0]+", " ") |> HtmlEntity.DeEntitize
+            image = resolveTagImage (x.InnerText) })
         |> Seq.toArray
 
     let private normalizeUrl link =
