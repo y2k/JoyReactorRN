@@ -12,6 +12,7 @@ type Model = { tags : Tag []; loaded : bool }
 type Msg =
     | Refresh
     | RefreshComplete of Result<unit, exn>
+    | TopTagsRefreshComplete of Result<unit, exn>
     | TagsLoaded of Tag []
     | OpenPosts of Source
 
@@ -32,7 +33,9 @@ let tagToSourse tag =
 let update (model : Model) = function
     | TagsLoaded tags -> { model with tags = addFavorite tags }, Cmd.none
     | Refresh -> { model with loaded = false }, S.syncTagsWithBackend |> Cmd.ofEffect RefreshComplete
-    | RefreshComplete _ -> { model with loaded = true }, Cmd.none
+    | RefreshComplete (Ok _) -> { model with loaded = true }, Cmd.none
+    | RefreshComplete (Error _) -> model, Cmd.ofEffect TopTagsRefreshComplete S.syncTopTags
+    | TopTagsRefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 
 open Fable.ReactNative.Helpers

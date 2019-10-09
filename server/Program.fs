@@ -24,6 +24,7 @@ let main _ =
         GET >=> path "/info" >=> OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
         POST >=> path "/messages" >=> Routers.callParser P.getMessages
         POST >=> path "/profile" >=> Routers.callParser P.profile
+        POST >=> path "/toptags" >=> Routers.callParser P.parseTopTags
         POST >=> path "/tags" >=> Routers.callParser P.readTags
         POST >=> path "/post" >=> Routers.callParser P.parsePost
         POST >=> path "/posts" >=> Routers.callParser (fun html -> { posts = P.parsePostsForTag html; nextPage = None })

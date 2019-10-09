@@ -18,7 +18,7 @@ let ``reading top tags``() =
         fun tag ->
             Assert.True(tag.name = tag.name.Trim(), tag.name)
             Assert.Matches(R(@"^[\w &]{1,30}$"), tag.name)
-            Assert.Matches(R("^http://img\\d\\.joyreactor\\.cc/pics/avatar/tag/\\d+$"), tag.image)
+            Assert.Matches(R(@"^http://img\d\.joyreactor\.cc/pics/avatar/tag/\d+$"), tag.image)
 
 [<Fact>]
 let ``reading tags``() =
@@ -29,7 +29,7 @@ let ``reading tags``() =
         fun tag ->
             Assert.True(tag.name = tag.name.Trim(), tag.name)
             Assert.Matches(R(@"^[а-я\w \-&]{4,30}$"), tag.name)
-            Assert.Matches(R("^http://img\\d\\.joyreactor\\.cc/(images/default_avatar.jpeg|pics/avatar/tag/\\d+)$"), tag.image)
+            Assert.Matches(R(@"^http://img\d\.joyreactor\.cc/(images/default_avatar.jpeg|pics/avatar/tag/\d+)$"), tag.image)
 
 [<Fact>]
 let ``parse small_favorite should success``() =

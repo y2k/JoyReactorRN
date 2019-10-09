@@ -64,6 +64,8 @@ module Storage =
         match !callback with Some f -> f db | _ -> ()
         return x }
 
+    let dispatch f = update (fun db -> f db, ())
+
 open JoyReactor.Types
 
 let inline parseObj<'a> = Fable.Core.JS.JSON.parse >> unbox<'a>
@@ -117,4 +119,9 @@ let syncTagsWithBackend = async {
             (Some (Domain.extractName >> Option.get))
             "tags"
         >>- parseObj<Tag []>
-    do! Storage.update ^ fun db -> { db with tags = x }, () }
+    do! Storage.dispatch ^ fun db -> { db with tags = x } }
+
+let syncTopTags = 
+    ApiRequests.parseRequest UrlBuilder.domain None "toptags"
+    >>- parseObj<Tag []>
+    >>= fun tags -> Storage.dispatch ^ fun db -> { db with tags = tags }
