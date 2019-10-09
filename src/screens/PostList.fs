@@ -76,7 +76,7 @@ module F =
 
     let mergeNextPage source (db : LocalDb) (posts, nextPage) =
         let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x = { x with 
+        let x = { x with
                     actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
                     old = filterNotIn posts x.old
                     nextPage = nextPage }
@@ -141,7 +141,7 @@ module private Styles =
 let viewItem dispatch post =
     let viewPostImage post =
         post.image
-        |> Option.map (Image.urlWithHeight (Fable.ReactNative.RN.Dimensions.get("screen").width))
+        |> Option.map ^ Image.urlWithHeight ((Fable.ReactNative.RN.Dimensions.get "screen").width)
         |> function
            | Some(img, h) ->
                image [ ImageProperties.Style [ Height $ h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
