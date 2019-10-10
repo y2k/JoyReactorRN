@@ -14,7 +14,7 @@ module Effects =
     type NextPosts = Post [] * int option
 
     let sync (s : Source) (p : int option) (f : LocalDb -> NextPosts -> LocalDb) : unit Async = async {
-        let! (x, y) = loadPosts s p
+        let! (x, y) = runSyncEffect ^ SyncDomain.loadPosts s p
         let x = Seq.toArray x
         do! Storage.update ^ fun db -> f db (x, y), () }
 

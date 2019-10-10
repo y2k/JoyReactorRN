@@ -4,8 +4,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Types.fs" />
-    <Compile Include="Services.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="Domain.fs" />
+    <Compile Include="Infrastructure.fs" />
     <Compile Include="CommonUi.fs" />
     <Compile Include="screens/PostList.fs" />
     <Compile Include="screens/Messages.fs" />

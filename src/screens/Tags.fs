@@ -32,9 +32,9 @@ let tagToSourse tag =
 
 let update (model : Model) = function
     | TagsLoaded tags -> { model with tags = addFavorite tags }, Cmd.none
-    | Refresh -> { model with loaded = false }, S.syncTagsWithBackend |> Cmd.ofEffect RefreshComplete
+    | Refresh -> { model with loaded = false }, (S.runSyncEffect SyncDomain.syncTagsWithBackend) |> Cmd.ofEffect RefreshComplete
     | RefreshComplete (Ok _) -> { model with loaded = true }, Cmd.none
-    | RefreshComplete (Error _) -> model, Cmd.ofEffect TopTagsRefreshComplete S.syncTopTags
+    | RefreshComplete (Error _) -> model, Cmd.ofEffect TopTagsRefreshComplete (S.runSyncEffect SyncDomain.syncTopTags)
     | TopTagsRefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 

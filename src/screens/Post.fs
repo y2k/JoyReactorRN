@@ -1,7 +1,6 @@
 module PostScreen
 
 open Elmish
-open Fable.Core
 open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
@@ -20,7 +19,7 @@ type Msg =
 
 let sub id (db : LocalDb) = PostLoaded <| Map.tryFind id db.posts 
 
-let init id = { post = None; error = None; id = id }, S.syncPost id |> Cmd.ofEffect RefreshComplete
+let init id = { post = None; error = None; id = id }, (S.runSyncEffect ^ SyncDomain.syncPost id) |> Cmd.ofEffect RefreshComplete
 
 let update model = function
     | PostLoaded x -> { model with post = x }, Cmd.none

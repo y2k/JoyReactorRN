@@ -25,7 +25,7 @@ let sub (db : LocalDb) = ProfileMsg db.profile
 
 let init : Model * Cmd<Msg> =
     { stage = LoadingModel; subModel = LoginScreen.init },
-    S.syncMyProfile |> Cmd.ofEffect0
+    (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect0
 
 let update model = function
     | ProfileMsg (Some p) -> 
@@ -34,7 +34,7 @@ let update model = function
         { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
     | Logout ->
         { model with stage = LoadingModel }, S.logout |> Cmd.ofEffect LogoutComplete
-    | LogoutComplete _ -> model, S.syncMyProfile |> Cmd.ofEffect0
+    | LogoutComplete _ -> model, (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect0
     | LoginMsg subMsg ->
         let loginModel, cmd = LoginScreen.update model.subModel subMsg
         { model with subModel = loginModel }, Cmd.map LoginMsg cmd

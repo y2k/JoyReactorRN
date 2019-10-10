@@ -1,15 +1,5 @@
 namespace JoyReactor
 
-type Log() =
-    static member log (message : string,
-                       [<System.Runtime.CompilerServices.CallerFilePath;
-                         System.Runtime.InteropServices.Optional;
-                         System.Runtime.InteropServices.DefaultParameterValue("")>] file : string,
-                       [<System.Runtime.CompilerServices.CallerLineNumber;
-                         System.Runtime.InteropServices.Optional;
-                         System.Runtime.InteropServices.DefaultParameterValue(0)>] line : int) =
-        printfn "LOG %s:%i :: %s" file line message
-
 module UrlBuilder =
     open Fable.Core.JS
     open Types
@@ -97,75 +87,54 @@ module Domain =
         let stop = isStop messages lastOffset nextPage newMessages
         newMessages, stop
 
-module Requests =
-    open Fable.Core.JsInterop
-    open Fetch
+module SyncDomain =
+    open JoyReactor.Types
 
-    let login (username : string) (password : string) (token : string) =
-        let form = Browser.Blob.FormData.Create()
-        form.append ("signin[username]", username)
-        form.append ("signin[password]", password)
-        form.append ("signin[_csrf_token]", token)
-        sprintf "http://%s/login" UrlBuilder.domain,
-        [ Method HttpMethod.POST
-          Credentials RequestCredentials.Sameorigin
-          Body !^ (string form) ]
+    type 'a SyncEffect =
+        { uri: string
+          api: string
+          mkUri: (string -> string option) option
+          f: string -> CofxStorage.LocalDb -> Result<CofxStorage.LocalDb * 'a, exn> }
 
-module Cmd =
-    open Elmish
-    let ofEffect f p = 
-        Cmd.OfAsync.either (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
-    let ofFiber f p = Cmd.OfAsync.either (fun () -> p) () f raise
-    let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
+    let inline fromJson<'a> json = try Ok ^ (Fable.Core.JS.JSON.parse >> unbox<'a>) json with e -> Error e
 
-module Array =
-    let tryMaxBy f xs =
-        try xs |> Array.maxBy f |> Some
-        with _ -> None
+    let syncPost id =
+        let syncPost id html (db: CofxStorage.LocalDb) =
+            fromJson<Post> html
+            |> Result.map ^ fun x -> { db with posts = Map.add id x db.posts }, ()
+        { uri = (UrlBuilder.post id); api = "post"; mkUri = None; f = syncPost id }
 
-[<AutoOpen>]
-module Utils =
-    open Fable.Core
-    open System
+    let syncTopTags =
+        let syncTopTags' html (db: CofxStorage.LocalDb) =
+            fromJson<Tag []> html
+            |> Result.map ^ fun tags -> { db with tags = tags }, ()
+        { uri = UrlBuilder.domain; api = "toptags"; mkUri = None; f = syncTopTags' }
 
-    let inline ($) f d = f (Fable.ReactNative.Helpers.dip d)
+    let syncMessages page =
+        let syncMessages' html (db: CofxStorage.LocalDb) =
+            fromJson<MessagesWithNext> html
+            |> Result.map ^ fun x ->
+                let newMessages, _ = Domain.mergeMessages db.messages x.messages x.nextPage
+                { db with messages = newMessages }, x.nextPage
+        { uri = UrlBuilder.messages page; api = "messages"; mkUri = None; f = syncMessages' }
 
-    [<Emit("require($0)")>]
-    let require (_ : string) = jsNative
+    let loadPosts source page =
+        let loadPosts' html (db: CofxStorage.LocalDb) =
+            fromJson<PostResponse> html
+            |> Result.map ^ fun x -> db, (x.posts, x.nextPage)
+        { uri = UrlBuilder.posts source "FIXME" page
+          api = sprintf "%s/%s" UrlBuilder.apiBaseUri "posts"
+          mkUri = None
+          f = loadPosts' }
 
-    let longToTimeDelay _ = "2 часа"
-    let mutable private startTime = DateTime.Now.Ticks / 10_000L
+    let syncMyProfile =
+        let syncMyProfile' html (db: CofxStorage.LocalDb) =
+            fromJson<Profile> html
+            |> Result.map ^ fun x -> { db with profile = Some x }, ()
+        { uri = UrlBuilder.domain; api = "profile"; mkUri = Some Domain.extractName; f = syncMyProfile' }
 
-    let log msg x =
-        let delay = DateTime.Now.Ticks / 10_000L - startTime
-        printfn "LOGX (%O) :: %O" delay msg
-        startTime <- DateTime.Now.Ticks / 10_000L
-        x
-
-    let trace msg x =
-        printfn msg x
-        x
-
-module String =
-    let toUpper (x : string) = x.ToUpper()
-
-module Image =
-    open Fable.Core.JS
-    open Types
-
-    let normilize url (w : float) (h : float) =
-        sprintf "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
-            (encodeURIComponent url)
-
-    let urlWithHeight limitWidth (attachment : Attachment) =
-        let aspect = max 1.2 attachment.aspect
-        let w = limitWidth
-        let h = w / aspect
-        normilize attachment.url w h, h
-
-module Platform =
-    open Fable.Core
-    open Fable.ReactNative
-
-    let openUrl url = async {
-        do! RN.Linking.openURL url |> Async.AwaitPromise |> Async.Ignore }
+    let syncTagsWithBackend =
+        let syncTagsWithBackend' html (db: CofxStorage.LocalDb) =
+            fromJson<Tag []> html
+            |> Result.map ^ fun x -> { db with tags = x }, ()
+        { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
