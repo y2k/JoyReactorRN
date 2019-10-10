@@ -5,9 +5,9 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-type LocalDb = JoyReactor.CofxStorage.LocalDb
-module UI = JoyReactor.CommonUi
-module Effects = JoyReactor.Services.Storage
+type LocalDb = CofxStorage.LocalDb
+module UI = CommonUi
+module Effects = Services.Storage
 
 module Effects =
     open JoyReactor.Services
@@ -15,18 +15,14 @@ module Effects =
 
     let sync (s : Source) (p : int option) (f : LocalDb -> NextPosts -> LocalDb) : unit Async = async {
         let! (x, y) = runSyncEffect ^ SyncDomain.loadPosts s p
-        let x = Seq.toArray x
-        do! Storage.update ^ fun db -> f db (x, y), () }
+        do! Storage.update ^ fun db -> f db (Seq.toArray x, y), () }
 
-type PostState = | Actual of Post | Divider | Old of Post
+type PostState = Actual of Post | Divider | Old of Post
 
 type Msg =
     | PostsMsg of PostsWithLevels
-    // | PostsPreloaded of Result<unit, exn>
     | SyncResultMsg of Result<unit, exn>
-    //
     | ApplyUpdate
-    //
     | Refresh
     | LoadNextPage
     | OpenPost of Post
@@ -35,74 +31,36 @@ type Model =
     { items : PostState []
       hasNew : bool
       loading : bool
-      // ---
       nextPage : int option
       source : Source }
 
 let init source =
     { source = source; items = [||]; hasNew = false; nextPage = None; loading = true },
-    Effects.sync source None ^ fun db (xs, np) ->
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x =
-            if Seq.isEmpty x.actual
-                then { x with actual = xs; nextPage = np }
-                else { x with preloaded = xs; nextPage = np }
-        let x = { db with feeds' = Map.add source x db.feeds' }
-        Log.log ^ sprintf "INIT %A" x
-        x
+    Effects.sync source None ^ fun db (xs, np) -> MergeDomain.premergeFirstPage source xs np db
     |> Cmd.ofEffect SyncResultMsg
 
 let sub source (db : LocalDb) =
     Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
 
-module F =
-    let mkItems (ps : PostsWithLevels) : PostState [] =
-        if Seq.isEmpty ps.preloaded
-            then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
-            else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
-
-    let filterNotIn target xs =
-        let ids =
-            target
-            |> Seq.map ^ fun x -> x.id
-            |> Set.ofSeq
-        xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
-
-    let mergeApply (db : LocalDb) source =
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x = { x with old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded }
-        let x = { x with actual = x.preloaded; preloaded = [||] }
-        { db with feeds' = Map.add source x db.feeds' }
-
-    let mergeNextPage source (db : LocalDb) (posts, nextPage) =
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x = { x with
-                    actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
-                    old = filterNotIn posts x.old
-                    nextPage = nextPage }
-        { db with feeds' = Map.add source x db.feeds' }
-
-    let mergeFirstPage source (db : LocalDb) posts =
-        { db with feeds' = Map.remove source db.feeds' }
-        |> fun db -> mergeNextPage source db posts
-
 let update model = function
     | PostsMsg x ->
+        let mkItems (ps : PostsWithLevels) : PostState [] =
+            if Seq.isEmpty ps.preloaded
+                then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
+                else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
         Log.log (sprintf "PostsMsg, X = %O" x)
-        { model with items = F.mkItems x; hasNew = not <| Array.isEmpty x.preloaded; nextPage = x.nextPage },
+        { model with items = mkItems x; hasNew = not <| Array.isEmpty x.preloaded; nextPage = x.nextPage },
         Cmd.none
     | SyncResultMsg(Ok _) -> { model with loading = false }, Cmd.none
-    //
     | ApplyUpdate ->
         model,
-        (Services.Storage.update ^ fun db -> F.mergeApply db model.source, ()) |> Cmd.ofEffect0
+        (Services.Storage.update ^ fun db -> MergeDomain.mergeApply model.source db, ()) |> Cmd.ofEffect0
     | LoadNextPage ->
         { model with loading = true },
-        Effects.sync model.source model.nextPage ^ F.mergeNextPage model.source |> Cmd.ofEffect SyncResultMsg
+        Effects.sync model.source model.nextPage ^ MergeDomain.mergeNextPage model.source |> Cmd.ofEffect SyncResultMsg
     | Refresh ->
         model,
-        Effects.sync model.source None ^ F.mergeFirstPage model.source |> Cmd.ofEffect SyncResultMsg
-    //
+        Effects.sync model.source None ^ MergeDomain.mergeFirstPage model.source |> Cmd.ofEffect SyncResultMsg
     | x -> failwithf "%O" x
 
 module private Styles =

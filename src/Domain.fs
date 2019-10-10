@@ -138,3 +138,42 @@ module SyncDomain =
             fromJson<Tag []> html
             |> Result.map ^ fun x -> { db with tags = x }, ()
         { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
+
+module MergeDomain =
+    open Types
+    open CofxStorage
+
+    let premergeFirstPage source xs np (db : LocalDb) =
+        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+        let x =
+            if Seq.isEmpty x.actual
+                then { x with actual = xs; nextPage = np }
+                else { x with preloaded = xs; nextPage = np }
+        let x = { db with feeds' = Map.add source x db.feeds' }
+        Log.log ^ sprintf "INIT %A" x
+        x
+
+    let filterNotIn target xs =
+        let ids =
+            target
+            |> Seq.map ^ fun x -> x.id
+            |> Set.ofSeq
+        xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
+
+    let mergeApply source (db : LocalDb) =
+        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+        let x = { x with old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded }
+        let x = { x with actual = x.preloaded; preloaded = [||] }
+        { db with feeds' = Map.add source x db.feeds' }
+
+    let mergeNextPage source (db : LocalDb) (posts, nextPage) =
+        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+        let x = { x with
+                    actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                    old = filterNotIn posts x.old
+                    nextPage = nextPage }
+        { db with feeds' = Map.add source x db.feeds' }
+
+    let mergeFirstPage source (db : LocalDb) posts =
+        { db with feeds' = Map.remove source db.feeds' }
+        |> fun db -> mergeNextPage source db posts
