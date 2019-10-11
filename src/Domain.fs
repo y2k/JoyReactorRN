@@ -153,8 +153,10 @@ module MergeDomain =
 
     let private genericMerge source page merge =
         let loadPosts' html (db: CofxStorage.LocalDb) =
+            Log.log ^ sprintf "JSON 2 = %O" html
             fromJson<PostResponse> html
-            |> Result.map ^ fun x -> merge (Seq.toArray x.posts) x.nextPage db, ()
+            |> Result.map ^ fun x -> 
+                merge (Seq.toArray x.posts) x.nextPage db, ()
         { uri = UrlBuilder.posts source "FIXME" page
           api = "posts"
           mkUri = None

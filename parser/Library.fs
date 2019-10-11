@@ -169,7 +169,7 @@ module Parsers =
           id = findNumber (element.Id)
           title = element.QuerySelectorAll("div.post_content > div > h3")
                   |> Seq.tryHead |> Option.map (fun x -> x.InnerText) |> Option.defaultValue ""
-          image = queryImage (element)
+          image = queryImage (element) |> Option.toArray
           attachments = parseAttachments()
           comments = parseComments() }
 

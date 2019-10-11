@@ -88,8 +88,10 @@ let viewTags post dispatch =
 
 let viewContent post dispatch =
     scrollView [] [
-         yield image [ ImageProperties.Style [ Height $ 300. ]
-                       Source <| remoteImage [ Uri post.image.Value.url ] ]
+         yield! 
+            post.image 
+            |> Array.map ^ fun x ->
+                image [ ImageProperties.Style [ Height $ 300. ]; Source ^ remoteImage [ Uri x.url ] ]
          yield button [ ButtonProperties.Title "Открыть в браузере"
                         ButtonProperties.OnPress(dispatch <! OpenInWeb) ] []
          yield text [ TextProperties.Style [ Padding $ 13. ] ] "Приложения:"

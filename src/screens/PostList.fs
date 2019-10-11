@@ -41,7 +41,6 @@ let update model = function
             if Seq.isEmpty ps.preloaded
                 then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
                 else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
-        Log.log (sprintf "PostsMsg, X = %O" x)
         { model with items = mkItems x; hasNew = not <| Array.isEmpty x.preloaded; nextPage = x.nextPage },
         Cmd.none
     | SyncResultMsg(Ok _) -> { model with loading = false }, Cmd.none
@@ -92,6 +91,7 @@ module private Styles =
 let viewItem dispatch post =
     let viewPostImage post =
         post.image
+        |> Array.tryHead
         |> Option.map ^ Image.urlWithHeight ((Fable.ReactNative.RN.Dimensions.get "screen").width)
         |> function
            | Some(img, h) ->

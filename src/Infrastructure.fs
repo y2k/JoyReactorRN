@@ -13,9 +13,7 @@ module private ApiRequests =
     open JsInterop
 
     let private downloadString url props = async {
-        Log.log ^ sprintf "download | url = %s" url
         let! r = async { return! fetch url props |> Async.AwaitPromise } |> Async.Catch
-        Log.log ^ sprintf "response = %O" r
         let response = match r with Choice1Of2 x -> x | Choice2Of2 e -> raise e
         return! response.text() |> Async.AwaitPromise }
 

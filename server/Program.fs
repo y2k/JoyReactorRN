@@ -20,7 +20,7 @@ open JoyReactor.Types
 module P = JoyReactor.Parsers
 
 type CustomLogger() =
-    interface Suave.Logging.Logger with
+    interface Logging.Logger with
         member __.logWithAck _ _ = async.Zero ()
         member __.name = [| "" |]
         member __.log level line = printfn "LOGS === %O | %O" level ^ line level
@@ -38,7 +38,5 @@ let main _ =
     ]
     |> startWebServer {
         defaultConfig with
-            logger = new CustomLogger()
-            bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8080us ]
-    }
+            bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8080us ] }
     0

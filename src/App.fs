@@ -177,7 +177,7 @@ Program.mkProgram App.init App.update App.view
 |> Program.withSubscription subscribe
 // #if RELEASE
 // #else
-|> Program.withConsoleTrace
+// |> Program.withConsoleTrace
 // |> Program.withHMR // FIXME:
 // #endif
 |> Program.withReactNative "joyreact"
