@@ -5,8 +5,9 @@ module UrlBuilder =
     open Types
 
     let domain = UrlBuilder.domain
-    let donate = "http://" + domain + "/donate"
-    let ads = "http://" + domain + "/ads"
+    let home = sprintf "http://%s/" domain
+    let donate = sprintf "http://%s/donate" domain
+    let ads = sprintf "http://%s/ads" domain
 
     let messages page =
         page
@@ -108,7 +109,7 @@ module SyncDomain =
         let syncTopTags' html (db: CofxStorage.LocalDb) =
             fromJson<Tag []> html
             |> Result.map ^ fun tags -> { db with tags = tags }, ()
-        { uri = UrlBuilder.domain; api = "toptags"; mkUri = None; f = syncTopTags' }
+        { uri = UrlBuilder.home; api = "toptags"; mkUri = None; f = syncTopTags' }
 
     let syncMessages page =
         let syncMessages' html (db: CofxStorage.LocalDb) =
@@ -117,16 +118,6 @@ module SyncDomain =
                 let newMessages, _ = Domain.mergeMessages db.messages x.messages x.nextPage
                 { db with messages = newMessages }, x.nextPage
         { uri = UrlBuilder.messages page; api = "messages"; mkUri = None; f = syncMessages' }
-
-    [<System.Obsolete>]
-    let loadPosts source page =
-        let loadPosts' html (db: CofxStorage.LocalDb) =
-            fromJson<PostResponse> html
-            |> Result.map ^ fun x -> db, (x.posts, x.nextPage)
-        { uri = UrlBuilder.posts source "FIXME" page
-          api = sprintf "%s/%s" UrlBuilder.apiBaseUri "posts"
-          mkUri = None
-          f = loadPosts' }
 
     let syncMyProfile =
         let syncMyProfile' html (db: CofxStorage.LocalDb) =
@@ -139,3 +130,62 @@ module SyncDomain =
             fromJson<Tag []> html
             |> Result.map ^ fun x -> { db with tags = x }, ()
         { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
+
+module MergeDomain =
+    open Types
+    open SyncDomain
+    open CofxStorage
+
+    let private filterNotIn target xs =
+        let ids =
+            target
+            |> Seq.map ^ fun x -> x.id
+            |> Set.ofSeq
+        xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
+
+    let mergeApply source (db : LocalDb) =
+        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+        let x = { x with
+                      old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded
+                      actual = x.preloaded
+                      preloaded = [||] }
+        { db with feeds' = Map.add source x db.feeds' }
+
+    let private genericMerge source page merge =
+        let loadPosts' html (db: CofxStorage.LocalDb) =
+            fromJson<PostResponse> html
+            |> Result.map ^ fun x -> merge (Seq.toArray x.posts) x.nextPage db, ()
+        { uri = UrlBuilder.posts source "FIXME" page
+          api = "posts"
+          mkUri = None
+          f = loadPosts' }
+
+    let premergeFirstPage source page =
+        let merge posts np (db : LocalDb) =
+            let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+            let x =
+                if Seq.isEmpty x.actual
+                    then { x with actual = posts; nextPage = np }
+                    else { x with preloaded = posts; nextPage = np }
+            { db with feeds' = Map.add source x db.feeds' }
+        genericMerge source page merge
+
+    let mergeNextPage source page =
+        let merge posts np (db : LocalDb) =
+            let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+            let x = { x with
+                        actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                        old = filterNotIn posts x.old
+                        nextPage = np }
+            { db with feeds' = Map.add source x db.feeds' }
+        genericMerge source page merge
+        
+    let mergeFirstPage source =
+        let merge posts np (db : LocalDb) =
+            let x = PostsWithLevels.empty
+            let x = { x with
+                        actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                        old = filterNotIn posts x.old
+                        nextPage = np }
+            { db with feeds' = Map.add source x db.feeds' }
+        genericMerge source None merge

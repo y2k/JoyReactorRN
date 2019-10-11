@@ -5,6 +5,7 @@
 
     let callParser parser =
         request ^ fun r ->
+            printfn "request = %O" r
             r.rawForm
             |> System.Text.Encoding.UTF8.GetString
             |> parser
@@ -18,6 +19,12 @@ open Suave.Successful
 open JoyReactor.Types
 module P = JoyReactor.Parsers
 
+type CustomLogger() =
+    interface Suave.Logging.Logger with
+        member __.logWithAck _ _ = async.Zero ()
+        member __.name = [| "" |]
+        member __.log level line = printfn "LOGS === %O | %O" level ^ line level
+
 [<EntryPoint>]
 let main _ =
     choose [
@@ -29,5 +36,9 @@ let main _ =
         POST >=> path "/post" >=> Routers.callParser P.parsePost
         POST >=> path "/posts" >=> Routers.callParser (fun html -> { posts = P.parsePostsForTag html; nextPage = None })
     ]
-    |> startWebServer { defaultConfig with bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8080us ] }
+    |> startWebServer {
+        defaultConfig with
+            logger = new CustomLogger()
+            bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8080us ]
+    }
     0

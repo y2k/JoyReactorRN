@@ -1,4 +1,6 @@
 module JoyReactor.Services
+open Browser
+open Fable.React.Props
 
 module Async =
     let unsafe a = async {
@@ -11,7 +13,10 @@ module private ApiRequests =
     open JsInterop
 
     let private downloadString url props = async {
-        let! response = fetch url props |> Async.AwaitPromise
+        Log.log ^ sprintf "download | url = %s" url
+        let! r = async { return! fetch url props |> Async.AwaitPromise } |> Async.Catch
+        Log.log ^ sprintf "response = %O" r
+        let response = match r with Choice1Of2 x -> x | Choice2Of2 e -> raise e
         return! response.text() |> Async.AwaitPromise }
 
     let private props = [ requestHeaders [ UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
@@ -59,7 +64,7 @@ module Storage =
     let dispatch f = update (fun db -> f db, ())
 
 let runSyncEffect (eff: _ SyncDomain.SyncEffect) =
-    ApiRequests.parseRequest eff.uri None eff.api
+    ApiRequests.parseRequest eff.uri None (sprintf "%s/%s" UrlBuilder.apiBaseUri eff.api)
     >>= fun html -> Storage.update ^ fun db ->
         match eff.f html db with
         | Ok (newDb, x) -> newDb, Ok x

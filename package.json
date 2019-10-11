@@ -8,7 +8,8 @@
     "compile-for-test": "fable-splitter -c splitter.config.js --define TEST",
     "cold-start": "fable-splitter -c splitter.config.js --define DEBUG",
     "start-dev": "node node_modules/react-native/local-cli/cli.js start",
-    "android": "node node_modules/react-native/local-cli/cli.js run-android"
+    "android": "node node_modules/react-native/local-cli/cli.js run-android",
+    "log": "node node_modules/react-native/local-cli/cli.js log-android"
   },
   "dependencies": {
     "buffer": "^5.2.1",

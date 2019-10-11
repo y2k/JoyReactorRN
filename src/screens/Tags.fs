@@ -25,7 +25,7 @@ let addFavorite tags =
         [| { name = "Избранное"; image = sprintf "http://img1.%s/pics/avatar/tag/1279" UrlBuilder.domain } |]
         tags ]
 
-let tagToSourse tag =
+let tagToSource tag =
     match tag.name with
     | "Избранное" -> FavoriteSource
     | _ -> TagSource tag.name
@@ -48,7 +48,7 @@ module Styles =
         TextProperties.Style [ FontSize 18.; TextStyle.Color "#404040"; AlignSelf Alignment.Center ]
 
 let viewItem dispatch (tag : Tag) =
-    touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSourse tag)) ] [
+    touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSource tag)) ] [
         view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding $ 8. ] ] [
             image [ Styles.image; Source <| remoteImage [ Uri tag.image ] ]
             text [ Styles.label ] tag.name ] ]
