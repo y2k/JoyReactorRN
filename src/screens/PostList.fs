@@ -7,15 +7,8 @@ open JoyReactor
 open JoyReactor.Types
 type LocalDb = CofxStorage.LocalDb
 module UI = CommonUi
-module Effects = Services.Storage
-
-module Effects =
-    open JoyReactor.Services
-    type NextPosts = Post [] * int option
-
-    let sync (s : Source) (p : int option) (f : LocalDb -> NextPosts -> LocalDb) : unit Async = async {
-        let! (x, y) = runSyncEffect ^ SyncDomain.loadPosts s p
-        do! Storage.update ^ fun db -> f db (Seq.toArray x, y), () }
+module E = Services.Storage
+module S = Services
 
 type PostState = Actual of Post | Divider | Old of Post
 
@@ -34,9 +27,79 @@ type Model =
       nextPage : int option
       source : Source }
 
+module Foo =
+    open SyncDomain
+    open CofxStorage
+
+    type NextPosts = Post [] * int option
+
+    let filterNotIn target xs =
+        let ids =
+            target
+            |> Seq.map ^ fun x -> x.id
+            |> Set.ofSeq
+        xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
+
+    let mergeApply source (db : LocalDb) =
+        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+        let x = { x with old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded }
+        let x = { x with actual = x.preloaded; preloaded = [||] }
+        { db with feeds' = Map.add source x db.feeds' }
+
+    let premergeFirstPage source page =
+        let loadPosts' html (db: CofxStorage.LocalDb) =
+            let premergeFirstPage' xs np (db : LocalDb) =
+                let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+                let x =
+                    if Seq.isEmpty x.actual
+                        then { x with actual = xs; nextPage = np }
+                        else { x with preloaded = xs; nextPage = np }
+                { db with feeds' = Map.add source x db.feeds' }
+            fromJson<PostResponse> html
+            |> Result.map ^ fun x -> (premergeFirstPage' (Seq.toArray x.posts) x.nextPage db), ()
+        { uri = UrlBuilder.posts source "FIXME" page
+          api = sprintf "%s/%s" UrlBuilder.apiBaseUri "posts"
+          mkUri = None
+          f = loadPosts' }
+
+    let mergeNextPage source page =
+        let loadPosts' html (db: CofxStorage.LocalDb) =
+            let mergeNextPage' posts np (db : LocalDb) =
+                let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+                let x = { x with
+                            actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                            old = filterNotIn posts x.old
+                            nextPage = np }
+                { db with feeds' = Map.add source x db.feeds' }
+            fromJson<PostResponse> html
+            |> Result.map ^ fun x -> mergeNextPage' (Seq.toArray x.posts) x.nextPage db, ()
+        { uri = UrlBuilder.posts source "FIXME" page
+          api = sprintf "%s/%s" UrlBuilder.apiBaseUri "posts"
+          mkUri = None
+          f = loadPosts' }
+
+    let mergeFirstPage source =
+        let loadPosts' html (db: CofxStorage.LocalDb) =
+            let mergeFirstPage' posts (db : LocalDb)  =
+                let mergeNextPage'' (posts, nextPage) (db : LocalDb) =
+                    let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+                    let x = { x with
+                                actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                                old = filterNotIn posts x.old
+                                nextPage = nextPage }
+                    { db with feeds' = Map.add source x db.feeds' }
+                { db with feeds' = Map.remove source db.feeds' }
+                |> mergeNextPage'' posts
+            fromJson<PostResponse> html
+            |> Result.map ^ fun x -> mergeFirstPage' (Seq.toArray x.posts, x.nextPage) db, ()
+        { uri = UrlBuilder.posts source "FIXME" None
+          api = sprintf "%s/%s" UrlBuilder.apiBaseUri "posts"
+          mkUri = None
+          f = loadPosts' }
+
 let init source =
     { source = source; items = [||]; hasNew = false; nextPage = None; loading = true },
-    Effects.sync source None ^ fun db (xs, np) -> MergeDomain.premergeFirstPage source xs np db
+    S.runSyncEffect ^ Foo.premergeFirstPage source None
     |> Cmd.ofEffect SyncResultMsg
 
 let sub source (db : LocalDb) =
@@ -54,13 +117,13 @@ let update model = function
     | SyncResultMsg(Ok _) -> { model with loading = false }, Cmd.none
     | ApplyUpdate ->
         model,
-        (Services.Storage.update ^ fun db -> MergeDomain.mergeApply model.source db, ()) |> Cmd.ofEffect0
+        (E.update ^ fun db -> Foo.mergeApply model.source db, ()) |> Cmd.ofEffect0
     | LoadNextPage ->
         { model with loading = true },
-        Effects.sync model.source model.nextPage ^ MergeDomain.mergeNextPage model.source |> Cmd.ofEffect SyncResultMsg
+        S.runSyncEffect ^ Foo.mergeNextPage model.source model.nextPage |> Cmd.ofEffect SyncResultMsg
     | Refresh ->
         model,
-        Effects.sync model.source None ^ MergeDomain.mergeFirstPage model.source |> Cmd.ofEffect SyncResultMsg
+        S.runSyncEffect ^ Foo.mergeFirstPage model.source |> Cmd.ofEffect SyncResultMsg
     | x -> failwithf "%O" x
 
 module private Styles =
