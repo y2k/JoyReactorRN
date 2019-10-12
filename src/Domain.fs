@@ -4,18 +4,18 @@ module UrlBuilder =
     open Fable.Core.JS
     open Types
 
-    let domain = UrlBuilder.domain
-    let home = sprintf "http://%s/" domain
-    let donate = sprintf "http://%s/donate" domain
-    let ads = sprintf "http://%s/ads" domain
+    let baseUrl = sprintf "http://%s" UrlBuilder.domain
+    let home = sprintf "%s/" baseUrl
+    let donate = sprintf "%s/donate" baseUrl
+    let ads = sprintf "%s/ads" baseUrl
 
     let messages page =
         page
         |> Option.defaultValue "/private/list"
-        |> (+) ("http://" + domain)
+        |> (+) baseUrl
 
-    let user userName = encodeURIComponent userName |> sprintf "http://%s/user/%s" domain
-    let post id = sprintf "http://%s/post/%i" domain id
+    let user userName = encodeURIComponent userName |> sprintf "%s/user/%s" baseUrl
+    let post id = sprintf "%s/post/%i" baseUrl id
 
     let posts source userName (page : int option) =
         match source with
@@ -23,17 +23,17 @@ module UrlBuilder =
             page
             |> Option.map string
             |> Option.defaultValue ""
-            |> (+) ("http://" + domain + "/")
+            |> (+) (baseUrl + "/")
         | TagSource name ->
             page
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
-            |> (+) (sprintf "http://%s/tag/%s" domain name)
+            |> (+) (sprintf "%s/tag/%s" baseUrl name)
         | FavoriteSource ->
             page
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
-            |> (+) (sprintf "http://%s/user/%s/favorite" domain userName)
+            |> (+) (sprintf "%s/user/%s/favorite" baseUrl userName)
 
 module Domain =
     open System.Text.RegularExpressions
@@ -68,15 +68,7 @@ module Domain =
     let filterNewMessages (messages : Message []) offset = messages |> Array.filter (fun x -> x.date > offset)
     let checkMessagesIsOld (messages : Message []) offset = messages |> Array.exists (fun x -> x.date <= offset)
 
-    let getLastOffsetOrDefault xs =
-        let tryMaxBy f xs =
-            try xs |> Array.maxBy f |> Some
-            with _ -> None
-
-        xs
-        |> tryMaxBy (fun x -> x.date)
-        |> Option.map (fun x -> x.date)
-        |> Option.defaultValue 0.
+    let getLastOffsetOrDefault = Array.fold (fun a x -> max a x.date) 0.
 
     let private isStop messages lastOffset nextPage newMessages =
         let flagIsStop = checkMessagesIsOld messages lastOffset
@@ -153,7 +145,6 @@ module MergeDomain =
 
     let private genericMerge source page merge =
         let loadPosts' html (db: CofxStorage.LocalDb) =
-            Log.log ^ sprintf "JSON 2 = %O" html
             fromJson<PostResponse> html
             |> Result.map ^ fun x -> 
                 merge (Seq.toArray x.posts) x.nextPage db, ()

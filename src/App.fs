@@ -104,7 +104,7 @@ module App =
           history : SubModel list
           subHistory : (LocalDb -> Msg) list }
 
-    let sub = JoyReactor.Services.Storage.sub |> Cmd.map LocalDbMsg
+    let sub = JoyReactor.SyncStore.sub |> Cmd.map LocalDbMsg
 
     let init _ =
         TabsScreen.init

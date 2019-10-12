@@ -4,9 +4,9 @@ open Elmish
 open JoyReactor
 open JoyReactor.CommonUi
 open JoyReactor.Types
-module UI = JoyReactor.CommonUi
-module S = JoyReactor.Services
-type LocalDb = JoyReactor.CofxStorage.LocalDb
+module UI = CommonUi
+module S = Services
+type LocalDb = CofxStorage.LocalDb
 
 type Msg =
     | ProfileMsg of Profile option

@@ -189,6 +189,10 @@ module Parsers =
         element.QuerySelectorAll("a.next")
         |> Seq.tryPick ^ fun x -> Some ^ extractPageFromHref x
 
+    let parsePostsWithNext html =
+        { posts = parsePostsForTag html
+          nextPage = parseNewPageNumber html }
+
     let parsePost html =
         let element = getDocument html
         element.QuerySelector("div.postContainer")

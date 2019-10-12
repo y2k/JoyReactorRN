@@ -5,8 +5,8 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 
-module S = JoyReactor.Services
-module UI = JoyReactor.CommonUi
+module S = Services
+module UI = CommonUi
 
 type Model =
     { username : string

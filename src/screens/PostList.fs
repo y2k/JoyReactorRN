@@ -7,7 +7,7 @@ open JoyReactor
 open JoyReactor.Types
 type LocalDb = CofxStorage.LocalDb
 module UI = CommonUi
-module E = Services.Storage
+module E = SyncStore
 module S = Services
 
 type PostState = Actual of Post | Divider | Old of Post

@@ -66,17 +66,6 @@ module Types =
         { messages : Message []
           nextPage : string option }
 
-module CofxStorage =
-  open Types
-
-  type LocalDb =
-      { feeds : Map<Source, Post []>
-        feeds' : Map<Source, PostsWithLevels>
-        posts : Map<int, Post>
-        tags : Tag []
-        messages : Message []
-        profile : Profile option }
-
 module UrlBuilder =
     let domain = "joyreactor.cc"
 #if DEBUG

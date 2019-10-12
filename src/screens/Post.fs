@@ -5,9 +5,9 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-module UI = JoyReactor.CommonUi
-module S = JoyReactor.Services
-type LocalDb = JoyReactor.CofxStorage.LocalDb
+module UI = CommonUi
+module S = Services
+type LocalDb = CofxStorage.LocalDb
 
 type Model = { post : Post option; error : string option; id : int }
 
@@ -19,7 +19,12 @@ type Msg =
 
 let sub id (db : LocalDb) = PostLoaded <| Map.tryFind id db.posts 
 
-let init id = { post = None; error = None; id = id }, (S.runSyncEffect ^ SyncDomain.syncPost id) |> Cmd.ofEffect RefreshComplete
+let init id = 
+    { post = None; error = None; id = id }, 
+    // (S.runSyncEffect ^ SyncDomain.syncPost id) |> Cmd.ofEffect RefreshComplete
+    S.ApiRequests.downloadString (UrlBuilder.post id) []
+    >>= fun html -> SyncStore.dispatch (fun db -> { db with parseRequests = Array.append [| html |] db.parseRequests })
+    |> Cmd.ofEffect RefreshComplete
 
 let update model = function
     | PostLoaded x -> { model with post = x }, Cmd.none
