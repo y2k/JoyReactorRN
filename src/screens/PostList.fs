@@ -33,7 +33,7 @@ let init source =
     |> Cmd.ofEffect SyncResultMsg
 
 let sub source (db : LocalDb) =
-    Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
+    Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
 
 let update model = function
     | PostsMsg x ->

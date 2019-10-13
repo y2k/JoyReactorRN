@@ -21,9 +21,8 @@ let sub id (db : LocalDb) = PostLoaded <| Map.tryFind id db.posts
 
 let init id = 
     { post = None; error = None; id = id }, 
-    // (S.runSyncEffect ^ SyncDomain.syncPost id) |> Cmd.ofEffect RefreshComplete
     S.ApiRequests.downloadString (UrlBuilder.post id) []
-    >>= fun html -> SyncStore.dispatch (fun db -> { db with parseRequests = Array.append [| html |] db.parseRequests })
+    >>= fun html -> SyncStore.dispatch (fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests })
     |> Cmd.ofEffect RefreshComplete
 
 let update model = function

@@ -9,7 +9,7 @@
     let sync = 
         S.listenUpdates ^ fun db -> 
             db.parseRequests 
-            |> Array.fold (fun db html -> parse html db) db
+            |> Set.fold (fun db html -> parse html db) db
 
 module Routers =
     open Suave
@@ -26,9 +26,10 @@ module Routers =
             |> OK
 
     let sync =
-        request ^ fun r -> 
-            r.rawForm
-            |> (D.Diff >> ParseDomain.sync)
+        request ^ fun r ->
+            r.form
+            |> List.choose (fun (k, v) -> v |> Option.map (fun x -> k, x))
+            |> fun x -> ParseDomain.sync x
             |> fun (D.Diff bytes) -> ok bytes
 
 open Suave

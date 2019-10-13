@@ -136,12 +136,12 @@ module MergeDomain =
         xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
 
     let mergeApply source (db : LocalDb) =
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+        let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
         let x = { x with
                       old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded
                       actual = x.preloaded
                       preloaded = [||] }
-        { db with feeds' = Map.add source x db.feeds' }
+        { db with feeds = Map.add source x db.feeds }
 
     let private genericMerge source page merge =
         let loadPosts' html (db: CofxStorage.LocalDb) =
@@ -155,22 +155,22 @@ module MergeDomain =
 
     let premergeFirstPage source page =
         let merge posts np (db : LocalDb) =
-            let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+            let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
             let x =
                 if Seq.isEmpty x.actual
                     then { x with actual = posts; nextPage = np }
                     else { x with preloaded = posts; nextPage = np }
-            { db with feeds' = Map.add source x db.feeds' }
+            { db with feeds = Map.add source x db.feeds }
         genericMerge source page merge
 
     let mergeNextPage source page =
         let merge posts np (db : LocalDb) =
-            let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
+            let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
             let x = { x with
                         actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
                         old = filterNotIn posts x.old
                         nextPage = np }
-            { db with feeds' = Map.add source x db.feeds' }
+            { db with feeds = Map.add source x db.feeds }
         genericMerge source page merge
         
     let mergeFirstPage source =
@@ -180,5 +180,5 @@ module MergeDomain =
                         actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
                         old = filterNotIn posts x.old
                         nextPage = np }
-            { db with feeds' = Map.add source x db.feeds' }
+            { db with feeds = Map.add source x db.feeds }
         genericMerge source None merge
