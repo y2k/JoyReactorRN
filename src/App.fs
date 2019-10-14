@@ -5,6 +5,8 @@ open Elmish.HMR
 open Elmish.React
 open Elmish.ReactNative
 open Fable.ReactNative.Helpers
+open JoyReactor
+
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
 
@@ -168,17 +170,50 @@ let setupBackHandler dispatch =
         true
     setOnHardwareBackPressHandler backHandler
 
-let subscribe _ =
-    Cmd.batch [
-        Cmd.ofSub setupBackHandler
-        App.sub ]
+let subscribe _ = Cmd.batch [ Cmd.ofSub setupBackHandler; App.sub ]
+
+module InitSyncStore =
+    open JoyReactor.Services
+    open Browser.Blob
+    open Fetch
+    open Fable.Core
+    open Fable.Core.JsInterop
+    module S = JoyReactor.SyncStore
+    let init _ =
+        S.sendToServer :=
+            fun keyValues -> async {
+                let form = FormData.Create()
+                keyValues |> List.iter form.append                    
+                
+                let apiUrl = (sprintf "%s/sync" UrlBuilder.apiBaseUri)
+                printfn "LOGX (2.1) | %O | %O" apiUrl keyValues 
+                
+                let! response =
+                    fetch
+                        apiUrl
+                        [ Method HttpMethod.POST
+                          Credentials RequestCredentials.Sameorigin
+                          Body !^ (string form) ]
+                    |> Async.AwaitPromise
+
+                printfn "LOGX (2.2)"
+                
+                let! respForm = response.formData() |> Async.AwaitPromise
+
+                printfn "LOGX (2.3)"
+                
+                return
+                    respForm.entries()
+                    |> Seq.map (fun (k, v) -> k, string v)
+                    |> Seq.toList
+            }
+
+InitSyncStore.init()
+
+module App = TestSyncStore
 
 Program.mkProgram App.init App.update App.view
-|> Program.withSubscription subscribe
-// #if RELEASE
-// #else
-// |> Program.withConsoleTrace
-// |> Program.withHMR // FIXME:
-// #endif
+|> Program.withSubscription App.subscribe
+//|> Program.withSubscription subscribe
 |> Program.withReactNative "joyreact"
 |> Program.run

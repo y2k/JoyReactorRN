@@ -1,4 +1,5 @@
 namespace JoyReactor
+open Types
 
 module CofxStorage =
     open Types
@@ -29,9 +30,11 @@ module DiffActions =
 module SyncStore =
     open DiffActions
     open CofxStorage
+    type Enc = System.Text.Encoding
+    type Uri = System.Uri
 
     let toJsonString : (obj -> string) ref = ref (fun _ -> failwith "not implemented")
-    // let fromJsonString : (string ->)
+    let fromJsonString : (string -> obj) ref = ref (fun _ -> failwith "not implemented")
 
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
@@ -44,19 +47,19 @@ module SyncStore =
         actions
         |> List.map (
             function
-            | Posts (PostsActions.Add (id, post)) -> "p.add", post |> box |> !toJsonString
-            | Posts (PostsActions.Remove id) -> "p.remove", string id
-            | ParseRequests (Add x) -> "pr.add", x
-            | ParseRequests (Remove x) -> "pr.remove", string x)
+            | Posts (PostsActions.Add (id, post)) -> "p_add", post |> box |> !toJsonString
+            | Posts (PostsActions.Remove id) -> "p_remove", string id
+            | ParseRequests (Add x) -> "pr_add", x
+            | ParseRequests (Remove x) -> "pr_remove", string x)
 
     let deserialize (form : KVDiff) : AllDiffActions list =
         form
         |> List.map (
             function
-            | "p.add", _ -> failwith "???"
-            | "p.remove", id -> int id |> PostsActions.Remove |> Posts
-            | "pr.add", x -> x |> ParseRequestsActions.Add |> ParseRequests
-            | "pr.remove", x -> int x |> ParseRequestsActions.Remove |> ParseRequests
+            | "p_add", x -> x |> !fromJsonString |> unbox<Post> |> (fun p -> PostsActions.Add(p.id, p)) |> Posts
+            | "p_remove", id -> int id |> PostsActions.Remove |> Posts
+            | "pr_add", x -> x |> ParseRequestsActions.Add |> ParseRequests
+            | "pr_remove", x -> int x |> ParseRequestsActions.Remove |> ParseRequests
             | k, _ -> failwith k)
 
     let getDiff (old : LocalDb) (newDb : LocalDb) = 
@@ -90,29 +93,58 @@ module SyncStore =
             |> List.map (fun x -> x.GetHashCode() |> ParseRequestsActions.Remove |> AllDiffActions.ParseRequests)
         ] |> serialize
 
-    let applyDiff (db : LocalDb) (_ : KVDiff) : LocalDb = failwith "???"
-    let sendToServer (_ : KVDiff) : KVDiff Async = failwith "???"
+    let applyDiff (db : LocalDb) (kv : KVDiff) : LocalDb =
+        deserialize kv
+        |> List.fold
+               (fun db action ->
+                    match action with
+                    | Posts (PostsActions.Add (id, p)) ->
+                        { db with posts = Map.add id p db.posts }
+                    | Posts (PostsActions.Remove id) ->
+                        { db with posts = Map.remove id db.posts }
+                    | ParseRequests (ParseRequestsActions.Add x) ->
+                        { db with parseRequests = Set.add x db.parseRequests }
+                    | ParseRequests (ParseRequestsActions.Remove hash) ->
+                        { db with parseRequests = db.parseRequests |> Set.filter (fun x -> x.GetHashCode() <> hash) })
+               db
 
     let private callback : (LocalDb -> unit) option ref = ref None
+
+    let sendToServer : (KVDiff -> KVDiff Async) ref = ref (fun _ -> failwith "Not implemented")
 
     let update (f : LocalDb -> LocalDb * 'a) : 'a Async = async {
         let oldDb = !shared
         let (newDb, x) = f oldDb
+        printfn "LOGX (1.1)"
         if newDb <> oldDb then
+            printfn "LOGX (1.2)"
             if newDb.parseRequests <> oldDb.parseRequests then
+                printfn "LOGX (1.3)"
                 let diff = getDiff oldDb newDb
-                let! serverResponseDiff = sendToServer(diff)
+                let! serverResponseDiff = !sendToServer diff
+                printfn "LOGX (1.3.1) | %O" serverResponseDiff
                 let newDb2 = applyDiff newDb serverResponseDiff
                 shared := newDb2
             else
+                printfn "LOGX (1.4)"
                 shared := newDb 
+            printfn "LOGX (1.5)"
             match !callback with Some f -> f !shared | _ -> () 
+        printfn "LOGX (1.6)"
         return x }
 
     let listenUpdates (f : LocalDb -> LocalDb) (diffFromClient : KVDiff) = 
         let db = applyDiff emptyDb diffFromClient
         let updatedDb = f db
-        getDiffForAll db updatedDb
+        let responseKv = getDiffForAll db updatedDb
+        responseKv
+        |> List.map (fun (k, v) -> sprintf "%s=%s" (Uri.EscapeDataString k) (Uri.EscapeDataString v))
+        |> function
+           | [] -> ""
+           | x :: [] -> x
+           | xs -> xs |> List.reduce (sprintf "%s&%s")
+        |> Enc.UTF8.GetBytes
+        |> Diff
 
     let sub =
         [ fun dispatch ->

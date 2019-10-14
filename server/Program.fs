@@ -8,8 +8,10 @@
 
     let sync = 
         S.listenUpdates ^ fun db -> 
+            printfn "LOGX (2.1) %O" db
             db.parseRequests 
             |> Set.fold (fun db html -> parse html db) db
+            |> fun db -> printfn "LOGX (2.2) %O" db; db
 
 module Routers =
     open Suave
@@ -27,10 +29,12 @@ module Routers =
 
     let sync =
         request ^ fun r ->
+            printfn "LOGX (1.1) :: %O" r
             r.form
             |> List.choose (fun (k, v) -> v |> Option.map (fun x -> k, x))
             |> fun x -> ParseDomain.sync x
             |> fun (D.Diff bytes) -> ok bytes
+            |> fun r -> printfn "LOGX (1.2) :: %O" r; r
 
 open Suave
 open Suave.Filters
