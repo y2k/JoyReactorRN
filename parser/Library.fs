@@ -132,7 +132,7 @@ module Parsers =
                 |> Seq.toArray
         let parseComments() =
             let parseCommentAttachments (node : HtmlNode) =
-                node.QuerySelectorAll("div.image img")
+                node.QuerySelectorAll("div.image img[width]")
                 |> Seq.map ^ fun x ->
                     { image =
                         { aspect = (float x.Attributes.["width"].Value) / (float x.Attributes.["height"].Value)

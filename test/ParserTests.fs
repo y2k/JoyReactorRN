@@ -10,6 +10,10 @@ let getHtml name =
     |> System.IO.File.ReadAllText
 
 [<Fact>]
+let ``parse post``() =
+    getHtml "post_4111388.html" |> Parsers.parsePost
+
+[<Fact>]
 let ``reading top tags``() =
     let actual = getHtml "feed_with_top_comment.html" |> Parsers.parseTopTags
     Assert.Equal(10, Seq.length actual)

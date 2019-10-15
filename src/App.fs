@@ -186,21 +186,27 @@ module InitSyncStore =
                 keyValues |> List.iter form.append                    
                 
                 let apiUrl = (sprintf "%s/sync" UrlBuilder.apiBaseUri)
-                printfn "LOGX (2.1) | %O | %O" apiUrl keyValues 
+                printfn "LOGX (2.1) | %O | %O" apiUrl (keyValues |> List.map fst)
                 
                 let! response =
                     fetch
                         apiUrl
                         [ Method HttpMethod.POST
                           Credentials RequestCredentials.Sameorigin
-                          Body !^ (string form) ]
+                          Body !^ form ]
                     |> Async.AwaitPromise
 
                 printfn "LOGX (2.2)"
                 
                 let! respForm = response.formData() |> Async.AwaitPromise
 
-                printfn "LOGX (2.3)"
+                printfn "LOGX (2.3) | %O" (respForm.values())
+                // printfn "LOGX (2.3) | %O" respForm
+                // printfn "LOGX (2.3) | %O" (respForm.get "p_add")
+                // respForm.append("111", "222")
+                // printfn "LOGX (2.3) | %O" (Fable.Core.JS.JSON.stringify respForm)
+
+                // printfn "LOGX (2.3) | %A" <| Fable.Core.JS.Object.keys(respForm)
                 
                 return
                     respForm.entries()

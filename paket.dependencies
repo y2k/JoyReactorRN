@@ -2,7 +2,7 @@ source https://nuget.org/api/v2
 
 storage:none
 
-nuget FSharp.Core redirects: force
+nuget FSharp.Core ~> 4.7 redirects: force
 nuget Fable.Core
 
 nuget Fable.PowerPack
