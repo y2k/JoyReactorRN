@@ -4,7 +4,10 @@
 
     let parse html (db : JoyReactor.CofxStorage.LocalDb) =
         let p = P.parsePost html
-        { db with posts = Map.add p.id p db.posts }
+        let tags = P.parseTopTags html
+        { db with
+             topTags = if (Seq.isEmpty tags) then db.topTags else tags
+             posts = Map.add p.id p db.posts }
 
     let sync = 
         S.listenUpdates ^ fun db -> 
@@ -34,6 +37,8 @@ module Routers =
             |> ParseDomain.sync
             |> fun (D.Diff bytes) -> ok bytes
             |> fun r -> printfn "LOGX (1.2) :: %O" r; r
+
+open JoyReactor
 
 open Suave
 open Suave.Filters

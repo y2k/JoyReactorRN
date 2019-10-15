@@ -19,14 +19,18 @@ type Msg =
 
 let sub id (db : LocalDb) = PostLoaded <| Map.tryFind id db.posts 
 
-let init id = 
-    { post = None; error = None; id = id }, 
+let private syncPost id =
     S.ApiRequests.downloadString (UrlBuilder.post id) []
     >>= fun html -> SyncStore.dispatch (fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests })
-    |> Cmd.ofEffect RefreshComplete
+
+let init id = 
+    { post = None; error = None; id = id }, 
+    syncPost id |> Cmd.ofEffect RefreshComplete
 
 let update model = function
-    | PostLoaded x -> { model with post = x }, Cmd.none
+    | PostLoaded x ->
+        printfn "LOGX :: Post :: PostLoaded"
+        { model with post = x }, Cmd.none
     | RefreshComplete(Ok _) -> { model with error = None }, Cmd.none
     | RefreshComplete(Error x) -> { model with error = Some <| string x }, Cmd.none
     | OpenInWeb ->

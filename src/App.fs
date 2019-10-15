@@ -7,6 +7,8 @@ open Elmish.ReactNative
 open Fable.ReactNative.Helpers
 open JoyReactor
 
+open Fetch
+
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
 
@@ -40,6 +42,7 @@ module TabsScreen =
     let update model msg : Model * Cmd<Msg> =
         match msg, model with
         | SubMsg db, _ ->
+            printfn "LOGX :: Tabs :: SubMsg"
             match model with
             | HomeModel (_,sub) -> model, Cmd.ofMsg ^ HomeMsg ^ sub db
             | TagsModel _ -> model, Cmd.ofMsg ^ TagsMsg ^ TagsScreen.sub db
@@ -119,6 +122,7 @@ module App =
         let wrap ctor msgCtor model (subModel, cmd) = { model with subModel = ctor subModel }, Cmd.map msgCtor cmd
         match msg, model.subModel with
         | LocalDbMsg db, _ ->
+            printfn "LOGX :: App :: LocalDbMsg | %A" model.subHistory
             model,
             match model.subHistory with
             | f :: _ -> Cmd.ofMsg <| f db
@@ -130,7 +134,11 @@ module App =
                 exitApp()
                 model, Cmd.none
         | TabsMsg(TabsScreen.HomeMsg(PostsComponent.OpenPost p)), _ ->
-            PostScreen.init p.id |> wrap PostModel PostMsg { model with history = model.subModel :: model.history }
+            PostScreen.init p.id
+            |> wrap PostModel PostMsg
+                    { model with
+                        subHistory = (fun db -> PostScreen.sub p.id db |> PostMsg) :: model.subHistory
+                        history = model.subModel :: model.history }
         | HomeMsg(PostsComponent.OpenPost p), _ ->
             PostScreen.init p.id
             |> wrap PostModel PostMsg
@@ -164,25 +172,24 @@ module App =
         | TabsModel subModel -> TabsScreen.view subModel (TabsMsg >> dispatch)
         | MessagesModel subModel -> MessagesScreen.view subModel (MessagesMsg >> dispatch)
 
-let setupBackHandler dispatch =
-    let backHandler() =
-        dispatch App.Msg.NavigateBack
-        true
-    setOnHardwareBackPressHandler backHandler
+    let setupBackHandler dispatch =
+        let backHandler() =
+            dispatch Msg.NavigateBack
+            true
+        setOnHardwareBackPressHandler backHandler
 
-let subscribe _ = Cmd.batch [ Cmd.ofSub setupBackHandler; App.sub ]
+    let subscribe _ = Cmd.batch [ Cmd.ofSub setupBackHandler; sub ]
 
 module InitSyncStore =
     open JoyReactor.Services
     open Browser.Blob
-    open Fetch
     open Fable.Core
     open Fable.Core.JsInterop
     module S = JoyReactor.SyncStore
 
     let init _ =
 
-        S.fromJsonString := (fun json -> Fable.Core.JS.JSON.parse json)
+        S.fromJsonString := (fun json -> JS.JSON.parse json)
 
         S.sendToServer :=
             fun keyValues -> async {
@@ -199,14 +206,10 @@ module InitSyncStore =
                           Credentials RequestCredentials.Sameorigin
                           Body !^ form ]
                     |> Async.AwaitPromise
-
-                printfn "LOGX (2.2)"
                 
                 let! respForm = response.formData() |> Async.AwaitPromise
 
-                let parts : (string * Types.Post) [] = respForm?_parts
-
-                printfn "LOGX (2.3) | %O" (snd parts.[0]).userName
+                let parts : (string * obj) [] = respForm?_parts
 
                 return
                     parts
@@ -216,10 +219,10 @@ module InitSyncStore =
 
 InitSyncStore.init()
 
-module App = TestSyncStore
+//module App = TestSyncStore
 
 Program.mkProgram App.init App.update App.view
 |> Program.withSubscription App.subscribe
-//|> Program.withSubscription subscribe
+//|> Program.withConsoleTrace
 |> Program.withReactNative "joyreact"
 |> Program.run

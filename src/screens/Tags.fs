@@ -12,11 +12,14 @@ type Model = { tags : Tag []; loaded : bool }
 type Msg =
     | Refresh
     | RefreshComplete of Result<unit, exn>
-    | TopTagsRefreshComplete of Result<unit, exn>
     | TagsLoaded of Tag []
     | OpenPosts of Source
 
-let sub (db : LocalDb) = TagsLoaded db.tags
+let sub (db : LocalDb) = [ db.topTags; db.userTags ] |> Array.concat |> TagsLoaded
+
+let private syncTopTags =
+    S.ApiRequests.downloadString UrlBuilder.home []
+    >>= fun html -> SyncStore.dispatch (fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests })
 
 let init = { tags = [||]; loaded = false }, Cmd.ofMsg Refresh
 
@@ -32,10 +35,10 @@ let tagToSource tag =
 
 let update (model : Model) = function
     | TagsLoaded tags -> { model with tags = addFavorite tags }, Cmd.none
-    | Refresh -> { model with loaded = false }, (S.runSyncEffect SyncDomain.syncTagsWithBackend) |> Cmd.ofEffect RefreshComplete
-    | RefreshComplete (Ok _) -> { model with loaded = true }, Cmd.none
-    | RefreshComplete (Error _) -> model, Cmd.ofEffect TopTagsRefreshComplete (S.runSyncEffect SyncDomain.syncTopTags)
-    | TopTagsRefreshComplete _ -> { model with loaded = true }, Cmd.none
+    | Refresh ->
+        { model with loaded = false },
+        syncTopTags |> Cmd.ofEffect RefreshComplete
+    | RefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 
 open Fable.ReactNative.Helpers

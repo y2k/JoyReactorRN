@@ -1,5 +1,5 @@
 namespace JoyReactor
-open Types
+open System
 
 module CofxStorage =
     open Types
@@ -7,7 +7,9 @@ module CofxStorage =
     type LocalDb =
         { feeds : Map<Source, PostsWithLevels>
           posts : Map<int, Post>
-          tags : Tag []
+          userName : string option
+          userTags : Tag []
+          topTags : Tag []
           messages : Message []
           profile : Profile option
           parseRequests : string Set }
@@ -39,7 +41,7 @@ module SyncStore =
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
 
-    let emptyDb = { feeds = Map.empty; posts = Map.empty; tags = [||]; messages = [||]; profile = None; parseRequests = Set.empty }
+    let emptyDb = { feeds = Map.empty; posts = Map.empty; userName = None; userTags = [||]; topTags = [||]; messages = [||]; profile = None; parseRequests = Set.empty }
 
     let shared = ref emptyDb
 
@@ -52,6 +54,8 @@ module SyncStore =
             | ParseRequests (Add x) -> "pr_add", x
             | ParseRequests (Remove x) -> "pr_remove", string x)
 
+    open Types
+    
     let deserialize (form : KVDiff) : AllDiffActions list =
         form
         |> List.map (
@@ -62,6 +66,16 @@ module SyncStore =
             | "pr_remove", x -> int x |> ParseRequestsActions.Remove |> ParseRequests
             | k, _ -> failwith k)
 
+    let private makeStringHashId (s : string) =
+        let mutable i = 0
+        let mutable h = 5381
+        let len = s.Length
+        while (i < len) do
+            let a = int <| s.Chars i
+            h <- h * 33 ^^^ a
+            i <- i + 1
+        h
+    
     let getDiff (old : LocalDb) (newDb : LocalDb) = 
         let added = 
             Set.difference newDb.parseRequests old.parseRequests 
@@ -70,7 +84,7 @@ module SyncStore =
         let removed = 
             Set.difference old.parseRequests newDb.parseRequests
             |> Set.toList
-            |> List.map (fun x -> ParseRequestsActions.Remove <| x.GetHashCode())
+            |> List.map (fun x -> ParseRequestsActions.Remove <| (makeStringHashId x))
         let prActions = List.concat [ added; removed ]
         let actions = prActions |> List.map (fun x -> AllDiffActions.ParseRequests x)
         serialize actions
@@ -90,7 +104,7 @@ module SyncStore =
             Set.difference newDb.parseRequests old.parseRequests |> Set.toList
             |> List.map (fun x -> ParseRequestsActions.Add x |> AllDiffActions.ParseRequests);
             Set.difference old.parseRequests newDb.parseRequests |> Set.toList
-            |> List.map (fun x -> x.GetHashCode() |> ParseRequestsActions.Remove |> AllDiffActions.ParseRequests)
+            |> List.map (fun x -> (makeStringHashId x) |> ParseRequestsActions.Remove |> AllDiffActions.ParseRequests)
         ] |> serialize
 
     let applyDiff (db : LocalDb) (kv : KVDiff) : LocalDb =
@@ -122,13 +136,15 @@ module SyncStore =
                 printfn "LOGX (1.3)"
                 let diff = getDiff oldDb newDb
                 let! serverResponseDiff = !sendToServer diff
-                printfn "LOGX (1.3.1) | %O" serverResponseDiff
+//                printfn "LOGX (1.3.1) | %O" serverResponseDiff
                 let newDb2 = applyDiff newDb serverResponseDiff
+                printfn "LOGX (1.3.2) | %O" newDb2
+//                printfn "LOGX (1.3.3) = %O" ("xxx".GetHashCode())
                 shared := newDb2
             else
                 printfn "LOGX (1.4)"
                 shared := newDb 
-            printfn "LOGX (1.5)"
+            printfn "LOGX (1.5) | %O" callback
             match !callback with Some f -> f !shared | _ -> () 
         printfn "LOGX (1.6)"
         return x }
