@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "buffer": "^5.2.1",
-    "react": "^16.8.3",
-    "react-native": "^0.59.8"
+    "react": "16.9.0",
+    "react-native": "0.61.2"
   },
   "devDependencies": {
     "@babel/core": "^7.4.4",

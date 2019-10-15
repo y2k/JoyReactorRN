@@ -179,7 +179,11 @@ module InitSyncStore =
     open Fable.Core
     open Fable.Core.JsInterop
     module S = JoyReactor.SyncStore
+
     let init _ =
+
+        S.fromJsonString := (fun json -> Fable.Core.JS.JSON.parse json)
+
         S.sendToServer :=
             fun keyValues -> async {
                 let form = FormData.Create()
@@ -200,16 +204,12 @@ module InitSyncStore =
                 
                 let! respForm = response.formData() |> Async.AwaitPromise
 
-                printfn "LOGX (2.3) | %O" (respForm.values())
-                // printfn "LOGX (2.3) | %O" respForm
-                // printfn "LOGX (2.3) | %O" (respForm.get "p_add")
-                // respForm.append("111", "222")
-                // printfn "LOGX (2.3) | %O" (Fable.Core.JS.JSON.stringify respForm)
+                let parts : (string * Types.Post) [] = respForm?_parts
 
-                // printfn "LOGX (2.3) | %A" <| Fable.Core.JS.Object.keys(respForm)
-                
+                printfn "LOGX (2.3) | %O" (snd parts.[0]).userName
+
                 return
-                    respForm.entries()
+                    parts
                     |> Seq.map (fun (k, v) -> k, string v)
                     |> Seq.toList
             }

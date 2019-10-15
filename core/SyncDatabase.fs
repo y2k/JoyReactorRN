@@ -33,8 +33,8 @@ module SyncStore =
     type Enc = System.Text.Encoding
     type Uri = System.Uri
 
-    let toJsonString : (obj -> string) ref = ref (fun _ -> failwith "not implemented")
-    let fromJsonString : (string -> obj) ref = ref (fun _ -> failwith "not implemented")
+    let toJsonString : (obj -> string) ref = ref (fun _ -> failwith "toJsonString not implemented")
+    let fromJsonString : (string -> obj) ref = ref (fun _ -> failwith "fromJsonString not implemented")
 
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
