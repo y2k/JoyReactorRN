@@ -97,11 +97,11 @@ module SyncDomain =
             |> Result.map ^ fun x -> { db with posts = Map.add id x db.posts }, ()
         { uri = (UrlBuilder.post id); api = "post"; mkUri = None; f = syncPost id }
 
-    let syncTopTags =
-        let syncTopTags' html (db: CofxStorage.LocalDb) =
-            fromJson<Tag []> html
-            |> Result.map ^ fun tags -> { db with tags = tags }, ()
-        { uri = UrlBuilder.home; api = "toptags"; mkUri = None; f = syncTopTags' }
+    // let syncTopTags =
+    //     let syncTopTags' html (db: CofxStorage.LocalDb) =
+    //         fromJson<Tag []> html
+    //         |> Result.map ^ fun tags -> { db with tags = tags }, ()
+    //     { uri = UrlBuilder.home; api = "toptags"; mkUri = None; f = syncTopTags' }
 
     let syncMessages page =
         let syncMessages' html (db: CofxStorage.LocalDb) =
@@ -117,11 +117,11 @@ module SyncDomain =
             |> Result.map ^ fun x -> { db with profile = Some x }, ()
         { uri = UrlBuilder.domain; api = "profile"; mkUri = Some Domain.extractName; f = syncMyProfile' }
 
-    let syncTagsWithBackend =
-        let syncTagsWithBackend' html (db: CofxStorage.LocalDb) =
-            fromJson<Tag []> html
-            |> Result.map ^ fun x -> { db with tags = x }, ()
-        { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
+    // let syncTagsWithBackend =
+    //     let syncTagsWithBackend' html (db: CofxStorage.LocalDb) =
+    //         fromJson<Tag []> html
+    //         |> Result.map ^ fun x -> { db with tags = x }, ()
+    //     { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
 
 module MergeDomain =
     open Types

@@ -15,7 +15,10 @@ type Msg =
     | TagsLoaded of Tag []
     | OpenPosts of Source
 
-let sub (db : LocalDb) = [ db.topTags; db.userTags ] |> Array.concat |> TagsLoaded
+let sub (db : LocalDb) = 
+    [ db.topTags |> Map.toSeq |> Seq.map snd |> Seq.toArray
+      db.userTags  |> Map.toSeq |> Seq.map snd |> Seq.toArray ] 
+    |> Array.concat |> TagsLoaded
 
 let private syncTopTags =
     S.ApiRequests.downloadString UrlBuilder.home []

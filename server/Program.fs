@@ -6,7 +6,10 @@
         let p = P.parsePost html
         let tags = P.parseTopTags html
         { db with
-             topTags = if (Seq.isEmpty tags) then db.topTags else tags
+             topTags = 
+                if (Seq.isEmpty tags) 
+                    then db.topTags 
+                    else tags |> Array.toSeq |> Seq.map (fun x -> x.name, x) |> Map.ofSeq
              posts = Map.add p.id p db.posts }
 
     let sync = 

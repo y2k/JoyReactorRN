@@ -1,5 +1,4 @@
 namespace JoyReactor
-open System
 
 module CofxStorage =
     open Types
@@ -8,14 +7,22 @@ module CofxStorage =
         { feeds : Map<Source, PostsWithLevels>
           posts : Map<int, Post>
           userName : string option
-          userTags : Tag []
-          topTags : Tag []
+          userTags : Map<string, Tag>
+          topTags : Map<string, Tag>
           messages : Message []
           profile : Profile option
           parseRequests : string Set }
 
 module DiffActions =
     open Types
+
+    type UserTagsActions =
+        | Add of string * Tag
+        | Remove of string
+
+    type TopTagsActions =
+        | Add of string * Tag
+        | Remove of string
 
     type PostsActions =
         | Add of int * Post
@@ -26,10 +33,13 @@ module DiffActions =
         | Remove of int
 
     type AllDiffActions =
+        | UserTags of UserTagsActions
+        | TopTags of TopTagsActions
         | Posts of PostsActions
         | ParseRequests of ParseRequestsActions
 
 module SyncStore =
+    open Types
     open DiffActions
     open CofxStorage
     type Enc = System.Text.Encoding
@@ -41,7 +51,7 @@ module SyncStore =
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
 
-    let emptyDb = { feeds = Map.empty; posts = Map.empty; userName = None; userTags = [||]; topTags = [||]; messages = [||]; profile = None; parseRequests = Set.empty }
+    let emptyDb = { feeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = [||]; profile = None; parseRequests = Set.empty }
 
     let shared = ref emptyDb
 
@@ -49,17 +59,23 @@ module SyncStore =
         actions
         |> List.map (
             function
+            | TopTags (TopTagsActions.Add (pos, tag)) -> "tt_add", tag |> box |> !toJsonString
+            | TopTags (TopTagsActions.Remove pos) -> "tt_remove", string pos
+            | UserTags (UserTagsActions.Add (pos, tag)) -> "ut_add", tag |> box |> !toJsonString
+            | UserTags (UserTagsActions.Remove pos) -> "ut_remove", string pos
             | Posts (PostsActions.Add (id, post)) -> "p_add", post |> box |> !toJsonString
             | Posts (PostsActions.Remove id) -> "p_remove", string id
             | ParseRequests (Add x) -> "pr_add", x
             | ParseRequests (Remove x) -> "pr_remove", string x)
 
-    open Types
-    
     let deserialize (form : KVDiff) : AllDiffActions list =
         form
         |> List.map (
             function
+            | "tt_add", x -> x |> !fromJsonString |> unbox<Tag> |> (fun p -> TopTagsActions.Add(p.name, p)) |> TopTags
+            | "tt_remove", id -> id |> TopTagsActions.Remove |> TopTags
+            | "ut_add", x -> x |> !fromJsonString |> unbox<Tag> |> (fun p -> UserTagsActions.Add(p.name, p)) |> UserTags
+            | "ut_remove", id -> id |> UserTagsActions.Remove |> UserTags
             | "p_add", x -> x |> !fromJsonString |> unbox<Post> |> (fun p -> PostsActions.Add(p.id, p)) |> Posts
             | "p_remove", id -> int id |> PostsActions.Remove |> Posts
             | "pr_add", x -> x |> ParseRequestsActions.Add |> ParseRequests
@@ -90,7 +106,30 @@ module SyncStore =
         serialize actions
     
     let getDiffForAll (old : LocalDb) (newDb : LocalDb) = 
-        List.concat [ 
+        List.concat [
+
+            Set.difference 
+                (old.topTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+                (newDb.topTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+            |> Seq.map (fun id -> TopTagsActions.Remove id |> AllDiffActions.TopTags)
+            |> Seq.toList;
+            Set.difference 
+                (newDb.topTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+                (old.topTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+            |> Seq.map (fun id -> TopTagsActions.Add (id, newDb.topTags.[id]) |> AllDiffActions.TopTags)
+            |> Seq.toList;
+
+            Set.difference 
+                (old.userTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+                (newDb.userTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+            |> Seq.map (fun id -> UserTagsActions.Remove id |> AllDiffActions.UserTags)
+            |> Seq.toList;
+            Set.difference 
+                (newDb.userTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+                (old.userTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+            |> Seq.map (fun id -> UserTagsActions.Add (id, newDb.topTags.[id]) |> AllDiffActions.UserTags)
+            |> Seq.toList;
+
             Set.difference 
                 (old.posts |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
                 (newDb.posts |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
@@ -101,6 +140,7 @@ module SyncStore =
                 (old.posts |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
             |> Seq.map (fun id -> PostsActions.Add (id, newDb.posts.[id]) |> AllDiffActions.Posts)
             |> Seq.toList;
+
             Set.difference newDb.parseRequests old.parseRequests |> Set.toList
             |> List.map (fun x -> ParseRequestsActions.Add x |> AllDiffActions.ParseRequests);
             Set.difference old.parseRequests newDb.parseRequests |> Set.toList
@@ -112,10 +152,12 @@ module SyncStore =
         |> List.fold
                (fun db action ->
                     match action with
-                    | Posts (PostsActions.Add (id, p)) ->
-                        { db with posts = Map.add id p db.posts }
-                    | Posts (PostsActions.Remove id) ->
-                        { db with posts = Map.remove id db.posts }
+                    | UserTags (UserTagsActions.Add (id, p)) -> { db with userTags = Map.add id p db.userTags }
+                    | UserTags (UserTagsActions.Remove id) -> { db with userTags = Map.remove id db.userTags }
+                    | TopTags (TopTagsActions.Add (id, p)) -> { db with topTags = Map.add id p db.topTags }
+                    | TopTags (TopTagsActions.Remove id) -> { db with topTags = Map.remove id db.topTags }
+                    | Posts (PostsActions.Add (id, p)) -> { db with posts = Map.add id p db.posts }
+                    | Posts (PostsActions.Remove id) -> { db with posts = Map.remove id db.posts }
                     | ParseRequests (ParseRequestsActions.Add x) ->
                         { db with parseRequests = Set.add x db.parseRequests }
                     | ParseRequests (ParseRequestsActions.Remove hash) ->
