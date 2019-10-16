@@ -69,7 +69,7 @@ module Types =
 module UrlBuilder =
     let domain = "joyreactor.cc"
 #if DEBUG
-    let apiBaseUri = "http://10.5.86.16:8080"
+    let apiBaseUri = "http://192.168.1.59:8080"
 #else
     let apiBaseUri = "https://jrs.y2k.work"
 #endif
