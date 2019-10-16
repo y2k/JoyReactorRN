@@ -12,17 +12,13 @@ type Model = { tags : Tag []; loaded : bool }
 type Msg =
     | Refresh
     | RefreshComplete of Result<unit, exn>
-    | TagsLoaded of Tag []
+    | TagsChanged of Tag []
     | OpenPosts of Source
 
 let sub (db : LocalDb) = 
     [ db.topTags |> Map.toSeq |> Seq.map snd |> Seq.toArray
       db.userTags  |> Map.toSeq |> Seq.map snd |> Seq.toArray ] 
-    |> Array.concat |> TagsLoaded
-
-let private syncTopTags =
-    S.ApiRequests.downloadString UrlBuilder.home []
-    >>= fun html -> SyncStore.dispatch (fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests })
+    |> Array.concat |> TagsChanged
 
 let init = { tags = [||]; loaded = false }, Cmd.ofMsg Refresh
 
@@ -36,11 +32,13 @@ let tagToSource tag =
     | "Избранное" -> FavoriteSource
     | _ -> TagSource tag.name
 
+let private syncTopTags =
+    S.ApiRequests.downloadString UrlBuilder.home []
+    >>= fun html -> SyncStore.dispatch ^ fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests }
+
 let update (model : Model) = function
-    | TagsLoaded tags -> { model with tags = addFavorite tags }, Cmd.none
-    | Refresh ->
-        { model with loaded = false },
-        syncTopTags |> Cmd.ofEffect RefreshComplete
+    | TagsChanged tags -> { model with tags = addFavorite tags }, Cmd.none
+    | Refresh -> { model with loaded = false }, syncTopTags |> Cmd.ofEffect RefreshComplete
     | RefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 

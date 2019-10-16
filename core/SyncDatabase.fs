@@ -15,6 +15,8 @@ module CofxStorage =
 
 module DiffActions =
     open Types
+    
+    type UserNameActions = Changed of string option
 
     type UserTagsActions =
         | Add of string * Tag
@@ -33,6 +35,7 @@ module DiffActions =
         | Remove of int
 
     type AllDiffActions =
+        | UserName of UserNameActions
         | UserTags of UserTagsActions
         | TopTags of TopTagsActions
         | Posts of PostsActions
@@ -59,6 +62,7 @@ module SyncStore =
         actions
         |> List.map (
             function
+            | UserName (UserNameActions.Changed userName) -> "un_ch", userName |> Option.defaultValue ""
             | TopTags (TopTagsActions.Add (pos, tag)) -> "tt_add", tag |> box |> !toJsonString
             | TopTags (TopTagsActions.Remove pos) -> "tt_remove", string pos
             | UserTags (UserTagsActions.Add (pos, tag)) -> "ut_add", tag |> box |> !toJsonString
@@ -72,6 +76,7 @@ module SyncStore =
         form
         |> List.map (
             function
+            | "un_ch", x -> (if String.length x = 0 then Some x else None) |> UserNameActions.Changed |> UserName
             | "tt_add", x -> x |> !fromJsonString |> unbox<Tag> |> (fun p -> TopTagsActions.Add(p.name, p)) |> TopTags
             | "tt_remove", id -> id |> TopTagsActions.Remove |> TopTags
             | "ut_add", x -> x |> !fromJsonString |> unbox<Tag> |> (fun p -> UserTagsActions.Add(p.name, p)) |> UserTags
@@ -107,6 +112,9 @@ module SyncStore =
     
     let getDiffForAll (old : LocalDb) (newDb : LocalDb) = 
         List.concat [
+            (if newDb.userName <> old.userName
+                then [ newDb.userName |> UserNameActions.Changed |> AllDiffActions.UserName ] 
+                else [])
 
             Set.difference 
                 (old.topTags |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
@@ -152,6 +160,7 @@ module SyncStore =
         |> List.fold
                (fun db action ->
                     match action with
+                    | UserName (UserNameActions.Changed userName) -> { db with userName = userName }
                     | UserTags (UserTagsActions.Add (id, p)) -> { db with userTags = Map.add id p db.userTags }
                     | UserTags (UserTagsActions.Remove id) -> { db with userTags = Map.remove id db.userTags }
                     | TopTags (TopTagsActions.Add (id, p)) -> { db with topTags = Map.add id p db.topTags }

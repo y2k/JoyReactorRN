@@ -42,6 +42,10 @@ module Parsers =
         |> Option.map ^ sprintf "http://img1.joyreactor.cc/pics/avatar/tag/%i"
         |> Option.defaultValue ^ sprintf "http://img0.%s/images/default_avatar.jpeg" domain
 
+    let parseUserName html =
+        let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
+        if m.Success then Some m.Groups.[1].Value else None
+    
     let parseTopTags html =
         let doc = getDocument html
         doc.QuerySelectorAll("#blogs_week_content img")

@@ -9,35 +9,26 @@ module S = Services
 type LocalDb = CofxStorage.LocalDb
 
 type Msg =
-    | ProfileMsg of Profile option
-    | LoginMsg of LoginScreen.Msg
+    | ProfileChanged of Profile option
+    | SyncComplete of Result<unit, exn>
     | Logout
     | LogoutComplete of Result<unit, exn>
+    | Login
 
-type ModelStage =
-    | ProfileModel of Profile
-    | LoadingModel
-    | LoginModel
+type Model = { profile : Profile option; userName : string option }
 
-type Model = { stage : ModelStage; subModel : LoginScreen.Model }
-
-let sub (db : LocalDb) = ProfileMsg db.profile
+let sub (db : LocalDb) = ProfileChanged db.profile
 
 let init : Model * Cmd<Msg> =
-    { stage = LoadingModel; subModel = LoginScreen.init },
-    (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect0
+    { profile = None; userName = None },
+    (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect SyncComplete
 
 let update model = function
-    | ProfileMsg (Some p) -> 
-        { model with stage = ProfileModel p }, Cmd.none
-    | ProfileMsg None -> 
-        { model with stage = LoginModel; subModel = LoginScreen.init }, Cmd.none
-    | Logout ->
-        { model with stage = LoadingModel }, S.logout |> Cmd.ofEffect LogoutComplete
+    | ProfileChanged p -> { model with profile = p }, Cmd.none
+    | SyncComplete _ -> model, Cmd.none
+    | Logout -> { profile = None; userName = None }, S.logout |> Cmd.ofEffect LogoutComplete
     | LogoutComplete _ -> model, (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect0
-    | LoginMsg subMsg ->
-        let loginModel, cmd = LoginScreen.update model.subModel subMsg
-        { model with subModel = loginModel }, Cmd.map LoginMsg cmd
+    | _ -> model, Cmd.none
 
 open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
@@ -122,12 +113,10 @@ let private viewProfile (profile : Profile) dispatch =
 
 let view model dispatch =
     let content =
-        match model.stage with
-        | LoadingModel ->
-            activityIndicator [ ViewProperties.Style [ Flex 1. ]
-                                ActivityIndicator.Size Size.Large
-                                ActivityIndicator.Color UI.Colors.orange ]
-        | LoginModel -> LoginScreen.view model.subModel (LoginMsg >> dispatch)
-        | ProfileModel p -> viewProfile p dispatch
+        match model.profile with
+        | Some p -> viewProfile p dispatch
+        | None ->
+            view [ ViewProperties.Style [ Flex 1.; JustifyContent JustifyContent.Center ] ] [
+                viewButton "Login" (dip 20.) (dispatch <! Login) ]
     view [ ViewProperties.Style [ BackgroundColor "#fafafa"; Flex 1. ] ] [
         content ]

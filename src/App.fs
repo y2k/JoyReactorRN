@@ -14,7 +14,6 @@ type LocalDb = JoyReactor.CofxStorage.LocalDb
 
 module TabsScreen =
     open Fable.ReactNative.Props
-    open JoyReactor
     open JoyReactor.Types
 
     type Msg =
@@ -122,7 +121,7 @@ module App =
         let wrap ctor msgCtor model (subModel, cmd) = { model with subModel = ctor subModel }, Cmd.map msgCtor cmd
         match msg, model.subModel with
         | LocalDbMsg db, _ ->
-            printfn "LOGX :: App :: LocalDbMsg | %A" model.subHistory
+            printfn "LOGX :: App :: LocalDbMsg | %O" db
             model,
             match model.subHistory with
             | f :: _ -> Cmd.ofMsg <| f db
@@ -138,6 +137,12 @@ module App =
             |> wrap PostModel PostMsg
                     { model with
                         subHistory = (fun db -> PostScreen.sub p.id db |> PostMsg) :: model.subHistory
+                        history = model.subModel :: model.history }
+        | TabsMsg(TabsScreen.ProfileMsg(ProfileScreen.Login)), _ ->
+            LoginScreen.init
+            |> wrap LoginModel LoginMsg
+                    { model with
+                        subHistory = (fun db -> LoginScreen.sub db |> LoginMsg) :: model.subHistory
                         history = model.subModel :: model.history }
         | HomeMsg(PostsComponent.OpenPost p), _ ->
             PostScreen.init p.id
@@ -156,10 +161,12 @@ module App =
         | PostMsg(PostScreen.OpenTag source), _ ->
             PostsComponent.init source |> wrap HomeModel HomeMsg { model with history = model.subModel :: model.history }
         | PostMsg subMsg, PostModel subModel -> PostScreen.update subModel subMsg |> wrap PostModel PostMsg model
-        | MessagesMsg subMsg, MessagesModel subModel ->
+        | MessagesMsg subMsg, MessagesModel subModel -> 
             MessagesScreen.update subModel subMsg |> wrap MessagesModel MessagesMsg model
         | TabsMsg subMsg, TabsModel subModel -> TabsScreen.update subModel subMsg |> wrap TabsModel TabsMsg model
         | HomeMsg subMsg, HomeModel subModel -> PostsComponent.update subModel subMsg |> wrap HomeModel HomeMsg model
+        | LoginMsg(LoginScreen.ClosePage), LoginModel _ -> model, Cmd.ofMsg NavigateBack
+        | LoginMsg subMsg, LoginModel subModel -> LoginScreen.update subModel subMsg |>  wrap LoginModel LoginMsg model
         | _ -> model, Cmd.none
 
     let view model dispatch =
@@ -174,7 +181,7 @@ module App =
 
     let setupBackHandler dispatch =
         let backHandler() =
-            dispatch Msg.NavigateBack
+            dispatch NavigateBack
             true
         setOnHardwareBackPressHandler backHandler
 
@@ -218,8 +225,6 @@ module InitSyncStore =
             }
 
 InitSyncStore.init()
-
-//module App = TestSyncStore
 
 Program.mkProgram App.init App.update App.view
 |> Program.withSubscription App.subscribe

@@ -9,27 +9,31 @@ module ApiRequests =
     open Fable.Core
     open Fetch
     open JsInterop
+    
+    let userAgent = UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15"
+    let defHeaders = requestHeaders [ userAgent ]
 
     let downloadString url props = async {
-        let defProps = [ requestHeaders [ UserAgent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.1 Safari/605.1.15" ] ]
-        let! r = async { return! fetch url (defProps @ props) |> Async.AwaitPromise } |> Async.Catch
+        let! r = async { return! fetch url props |> Async.AwaitPromise } |> Async.Catch
         let response = match r with Choice1Of2 x -> x | Choice2Of2 e -> raise e
         return! response.text() |> Async.AwaitPromise }
 
     type ParseRequest = ParseRequest of url : string * mkUrl : (string -> string option) * parseUrl : string * f : (string -> unit)
     let parseRequest url mkUrl parseUrl = async {
-        let! html = downloadString url []
+        let! html = downloadString url [ defHeaders ]
         let! html' = match mkUrl with
-                     | Some f -> downloadString (f html) []
+                     | Some f -> downloadString (f html) [ defHeaders ]
                      | None -> async.Return html
-        return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html' ] }
+        return! downloadString parseUrl [ Method HttpMethod.POST; Body !^ html'; defHeaders ] }
 
     type SendForm = SendForm of csrfUrl : string * mkRequest : (string -> (string * RequestProperties list)) * f : (unit -> unit)
-    let sendForm csrfUrl mkRequest =
-        async {
-            let! html = downloadString csrfUrl []
-            let! _ = mkRequest html ||> downloadString
-            () }
+    let sendForm csrfUrl mkRequest = async {
+        Log.log "login 1"
+        let! html = downloadString csrfUrl [ defHeaders ]
+        Log.log ^ sprintf "login 2 | %O" (mkRequest html)
+        let! _ = mkRequest html ||> downloadString
+        Log.log "login 3"
+        () }
 
 module Storage = SyncStore
 
@@ -52,6 +56,7 @@ module private Requests =
         form.append ("signin[_csrf_token]", token)
         sprintf "%s/login" UrlBuilder.baseUrl,
         [ Method HttpMethod.POST
+          requestHeaders [ ContentType "application/x-www-form-urlencoded" ]
           Credentials RequestCredentials.Sameorigin
           Body !^ (string form) ]
 

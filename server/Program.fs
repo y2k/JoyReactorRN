@@ -4,8 +4,11 @@
 
     let parse html (db : JoyReactor.CofxStorage.LocalDb) =
         let p = P.parsePost html
+        let userName = P.parseUserName html
+        printfn "LOGX :: userName = %O" userName
         let tags = P.parseTopTags html
         { db with
+             userName = userName |> Option.orElse db.userName 
              topTags = 
                 if (Seq.isEmpty tags) 
                     then db.topTags 

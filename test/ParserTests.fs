@@ -9,6 +9,10 @@ let getHtml name =
     sprintf "%s/Resources/%s" __SOURCE_DIRECTORY__ name
     |> System.IO.File.ReadAllText
 
+let ``get username``() =
+    let actual = getHtml "messages_first.html" |> Parsers.parseUserName
+    Assert.Equal(Some "user500", actual)
+
 [<Fact>]
 let ``parse post``() =
     getHtml "post_4111388.html" |> Parsers.parsePost

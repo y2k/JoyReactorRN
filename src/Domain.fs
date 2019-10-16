@@ -91,18 +91,6 @@ module SyncDomain =
 
     let inline fromJson<'a> json = try Ok ^ (Fable.Core.JS.JSON.parse >> unbox<'a>) json with e -> Error e
 
-    let syncPost id =
-        let syncPost id html (db: CofxStorage.LocalDb) =
-            fromJson<Post> html
-            |> Result.map ^ fun x -> { db with posts = Map.add id x db.posts }, ()
-        { uri = (UrlBuilder.post id); api = "post"; mkUri = None; f = syncPost id }
-
-    // let syncTopTags =
-    //     let syncTopTags' html (db: CofxStorage.LocalDb) =
-    //         fromJson<Tag []> html
-    //         |> Result.map ^ fun tags -> { db with tags = tags }, ()
-    //     { uri = UrlBuilder.home; api = "toptags"; mkUri = None; f = syncTopTags' }
-
     let syncMessages page =
         let syncMessages' html (db: CofxStorage.LocalDb) =
             fromJson<MessagesWithNext> html
