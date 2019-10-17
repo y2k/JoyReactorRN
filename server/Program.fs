@@ -3,17 +3,15 @@
     module P = JoyReactor.Parsers
 
     let parse html (db : JoyReactor.CofxStorage.LocalDb) =
-        let p = P.parsePost html
-        let userName = P.parseUserName html
-        printfn "LOGX :: userName = %O" userName
-        let tags = P.parseTopTags html
+        printfn "LOGX :: userName = %O" (P.parseUserName html)
+
+        let messages = P.getMessages html
         { db with
-             userName = userName |> Option.orElse db.userName 
-             topTags = 
-                if (Seq.isEmpty tags) 
-                    then db.topTags 
-                    else tags |> Array.toSeq |> Seq.map (fun x -> x.name, x) |> Map.ofSeq
-             posts = Map.add p.id p db.posts }
+             nextMessagesPage = messages |> Option.bind ^ fun x -> x.nextPage
+             userName = P.parseUserName html 
+             userTags = html |> P.readUserTags |> Seq.map (fun x -> x.name, x) |> Map.ofSeq
+             topTags = html |> P.parseTopTags |> Seq.map (fun x -> x.name, x) |> Map.ofSeq
+             posts = P.parsePost html |> Option.fold (fun ps p -> Map.add p.id p ps) db.posts }
 
     let sync = 
         S.listenUpdates ^ fun db -> 
@@ -65,11 +63,6 @@ let main _ =
     choose [
         GET >=> path "/info" >=> OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
         POST >=> path "/sync" >=> Routers.sync
-        POST >=> path "/messages" >=> Routers.callParser P.getMessages
-        POST >=> path "/profile" >=> Routers.callParser P.profile
-        POST >=> path "/toptags" >=> Routers.callParser P.parseTopTags
-        POST >=> path "/tags" >=> Routers.callParser P.readTags
-        POST >=> path "/post" >=> Routers.callParser P.parsePost
         POST >=> path "/posts" >=> Routers.callParser P.parsePostsWithNext ]
     |> startWebServer {
         defaultConfig with

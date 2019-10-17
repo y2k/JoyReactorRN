@@ -6,14 +6,16 @@ open JoyReactor.CommonUi
 open JoyReactor.Types
 module UI = CommonUi
 module S = Services
+module R = JoyReactor.Services.EffRuntime
+module D = JoyReactor.SyncDomain
 type LocalDb = CofxStorage.LocalDb
 
 type Msg =
     | ProfileChanged of Profile option
     | SyncComplete of Result<unit, exn>
+    | Login
     | Logout
     | LogoutComplete of Result<unit, exn>
-    | Login
 
 type Model = { profile : Profile option; userName : string option }
 
@@ -21,13 +23,14 @@ let sub (db : LocalDb) = ProfileChanged db.profile
 
 let init : Model * Cmd<Msg> =
     { profile = None; userName = None },
-    (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect SyncComplete
+    D.profile |> R.run |> Cmd.map SyncComplete
 
 let update model = function
     | ProfileChanged p -> { model with profile = p }, Cmd.none
     | SyncComplete _ -> model, Cmd.none
-    | Logout -> { profile = None; userName = None }, S.logout |> Cmd.ofEffect LogoutComplete
-    | LogoutComplete _ -> model, (S.runSyncEffect SyncDomain.syncMyProfile) |> Cmd.ofEffect0
+    | Logout ->
+        { profile = None; userName = None },
+        D.logout |> R.run |> Cmd.map LogoutComplete
     | _ -> model, Cmd.none
 
 open Fable.ReactNative.Helpers

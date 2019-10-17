@@ -35,9 +35,26 @@ module ApiRequests =
         Log.log "login 3"
         () }
 
+module EffRuntime =
+    open JoyReactor
+    open SyncDomain
+    module Store = JoyReactor.SyncStore
+    
+    let private runEffect eff = async {
+        let! optUrl = Store.update ^ fun db -> db, eff.url db
+        match optUrl with
+        | Some url ->
+            let! html = ApiRequests.downloadString url []
+            do! Store.update ^ fun db -> { db with parseRequests = db.parseRequests |> Set.add html }, ()
+            return! Store.update ^ fun db -> db, eff.callback db
+        | None -> 
+            return failwith "???" }
+
+    let run eff = runEffect eff |> Cmd.ofEffect id
+
 module Storage = SyncStore
 
-let runSyncEffect (eff: _ SyncDomain.SyncEffect) =
+let runSyncEffect (eff: _ MergeDomain.SyncEffect) =
     ApiRequests.parseRequest eff.uri None (sprintf "%s/%s" UrlBuilder.apiBaseUri eff.api)
     >>= fun html -> Storage.update ^ fun db ->
         match eff.f html db with
@@ -64,16 +81,3 @@ let login username password =
     ApiRequests.sendForm
         UrlBuilder.ads
         (Domain.getCsrfToken >> Option.get >> Requests.login username password)
-
-module private Web =
-     open Fable.Core
-     open Fetch
-
-     type DownloadString = DownloadString of url : string * props : RequestProperties list * f : (string -> unit)
-     let downloadString url props = async {
-         let! response = (fetch url props) |> Async.AwaitPromise
-         return! response.text() |> Async.AwaitPromise }
-
-let logout = 
-    Web.downloadString (sprintf "%s/logout" UrlBuilder.baseUrl) []
-    |> Async.Ignore

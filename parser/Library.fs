@@ -52,7 +52,7 @@ module Parsers =
         |> Seq.map (fun x -> { name = HtmlEntity.DeEntitize x.Attributes.["alt"].Value; image = x.Attributes.["src"].Value })
         |> Seq.toArray
 
-    let readTags html =
+    let readUserTags html =
         let doc = getDocument html
         doc.QuerySelectorAll("h2.sideheader")
         |> Seq.filter (fun x -> x.InnerText = "Читает")
@@ -200,16 +200,8 @@ module Parsers =
     let parsePost html =
         let element = getDocument html
         element.QuerySelector("div.postContainer")
-        |> parserSinglePost
-
-    let parseCommentAttachments html =
-        let node = getDocument html
-        node.QuerySelectorAll("div.image img")
-        |> Seq.map ^ fun x ->
-            { image =
-                { aspect = (float x.Attributes.["width"].Value) / (float x.Attributes.["height"].Value)
-                  url = normalizeUrl (x.Attributes.["src"].Value) } }
-        |> Seq.toList
+        |> Option.ofObj
+        |> Option.map parserSinglePost
 
     let getMessages html =
         let getUserImage (name : String) : String =
@@ -222,7 +214,7 @@ module Parsers =
             document.QuerySelectorAll("div.messages_wr > div.article")
             |> Seq.map ^ fun x ->
                 let username = x.QuerySelector("div.mess_from > a").InnerText
-                { text = x.QuerySelector("div.mess_text").InnerText
+                { text = x.QuerySelector("div.mess_text").InnerText.Trim()
                   date = 1000.0 * (double ^ x.QuerySelector("span[data-time]").Attributes.["data-time"].Value)
                   isMine = Seq.isEmpty ^ x.QuerySelectorAll("div.mess_reply")
                   userName = username
@@ -233,19 +225,25 @@ module Parsers =
             document.QuerySelectorAll("a.next")
             |> Seq.tryPick ^ fun x -> Some x.Attributes.["href"].Value
 
-        { messages = messages; nextPage = nextPage }
+        if Seq.isEmpty messages
+            then None 
+            else Some { messages = messages; nextPage = nextPage }
 
     let profile html =
-        let document = getDocument html
+        try
+            let document = getDocument html
 
-        let getProgressToNewStar =
-            let style = document.QuerySelector("div.stars div.poll_res_bg_active").Attributes.["style"].Value
-            let m = Regex("width:(\\d+)%;").Match(style)
-            if not m.Success then failwith ""
-            float ^ m.Groups.[1].Value
+            let getProgressToNewStar =
+                let style = document.QuerySelector("div.stars div.poll_res_bg_active").Attributes.["style"].Value
+                let m = Regex("width:(\\d+)%;").Match(style)
+                if not m.Success then failwith ""
+                float ^ m.Groups.[1].Value
 
-        { userName = document.QuerySelector("div.sidebarContent > div.user > span").InnerText.Trim()
-          userImage = { aspect = 1.0; url = document.QuerySelector("div.sidebarContent > div.user > img").Attributes.["src"].Value }
-          rating = float ^ document.QuerySelector("#rating-text > b").InnerText.Replace(" ", "")
-          stars = Seq.length ^ document.QuerySelectorAll(".star-row-0 > .star-0")
-          progressToNewStar = getProgressToNewStar }
+            { userName = document.QuerySelector("div.sidebarContent > div.user > span").InnerText.Trim()
+              userImage = { aspect = 1.0; url = document.QuerySelector("div.sidebarContent > div.user > img").Attributes.["src"].Value }
+              rating = float ^ document.QuerySelector("#rating-text > b").InnerText.Replace(" ", "")
+              stars = Seq.length ^ document.QuerySelectorAll(".star-row-0 > .star-0")
+              progressToNewStar = getProgressToNewStar }
+            |> Some
+        with
+        | _ -> None

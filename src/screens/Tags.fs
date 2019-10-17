@@ -3,8 +3,9 @@ module TagsScreen
 open Elmish
 open JoyReactor
 open JoyReactor.Types
-module S = Services
 module UI = CommonUi
+module R = JoyReactor.Services.EffRuntime
+module D = JoyReactor.SyncDomain
 type LocalDb = CofxStorage.LocalDb
 
 type Model = { tags : Tag []; loaded : bool }
@@ -32,13 +33,13 @@ let tagToSource tag =
     | "Избранное" -> FavoriteSource
     | _ -> TagSource tag.name
 
-let private syncTopTags =
-    S.ApiRequests.downloadString UrlBuilder.home []
-    >>= fun html -> SyncStore.dispatch ^ fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests }
-
 let update (model : Model) = function
     | TagsChanged tags -> { model with tags = addFavorite tags }, Cmd.none
-    | Refresh -> { model with loaded = false }, syncTopTags |> Cmd.ofEffect RefreshComplete
+    | Refresh -> 
+        { model with loaded = false }, 
+        Cmd.batch [
+            D.topTags |> R.run |> Cmd.map RefreshComplete
+            D.userTags |> R.run |> Cmd.map RefreshComplete ]
     | RefreshComplete _ -> { model with loaded = true }, Cmd.none
     | _ -> model, Cmd.none
 

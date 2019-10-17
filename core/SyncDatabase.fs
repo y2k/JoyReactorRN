@@ -10,6 +10,7 @@ module CofxStorage =
           userTags : Map<string, Tag>
           topTags : Map<string, Tag>
           messages : Message []
+          nextMessagesPage : string option
           profile : Profile option
           parseRequests : string Set }
 
@@ -33,8 +34,11 @@ module DiffActions =
     type ParseRequestsActions =
         | Add of string
         | Remove of int
+        
+    type NextMessagesPageActions = Changed of string option
 
     type AllDiffActions =
+        | NextMessagesPage of NextMessagesPageActions
         | UserName of UserNameActions
         | UserTags of UserTagsActions
         | TopTags of TopTagsActions
@@ -54,7 +58,7 @@ module SyncStore =
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
 
-    let emptyDb = { feeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = [||]; profile = None; parseRequests = Set.empty }
+    let emptyDb = { feeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = [||]; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
 
     let shared = ref emptyDb
 
@@ -62,6 +66,7 @@ module SyncStore =
         actions
         |> List.map (
             function
+            | NextMessagesPage (NextMessagesPageActions.Changed page) -> "mp_ch", page |> Option.defaultValue ""
             | UserName (UserNameActions.Changed userName) -> "un_ch", userName |> Option.defaultValue ""
             | TopTags (TopTagsActions.Add (pos, tag)) -> "tt_add", tag |> box |> !toJsonString
             | TopTags (TopTagsActions.Remove pos) -> "tt_remove", string pos
@@ -76,6 +81,7 @@ module SyncStore =
         form
         |> List.map (
             function
+            | "mp_ch", x -> (if String.length x = 0 then Some x else None) |> NextMessagesPageActions.Changed |> NextMessagesPage
             | "un_ch", x -> (if String.length x = 0 then Some x else None) |> UserNameActions.Changed |> UserName
             | "tt_add", x -> x |> !fromJsonString |> unbox<Tag> |> (fun p -> TopTagsActions.Add(p.name, p)) |> TopTags
             | "tt_remove", id -> id |> TopTagsActions.Remove |> TopTags
@@ -112,6 +118,10 @@ module SyncStore =
     
     let getDiffForAll (old : LocalDb) (newDb : LocalDb) = 
         List.concat [
+            (if newDb.nextMessagesPage <> old.nextMessagesPage
+                then [ newDb.nextMessagesPage |> NextMessagesPageActions.Changed |> AllDiffActions.NextMessagesPage ] 
+                else [])
+
             (if newDb.userName <> old.userName
                 then [ newDb.userName |> UserNameActions.Changed |> AllDiffActions.UserName ] 
                 else [])
@@ -160,6 +170,7 @@ module SyncStore =
         |> List.fold
                (fun db action ->
                     match action with
+                    | NextMessagesPage (NextMessagesPageActions.Changed page) -> { db with nextMessagesPage = page }
                     | UserName (UserNameActions.Changed userName) -> { db with userName = userName }
                     | UserTags (UserTagsActions.Add (id, p)) -> { db with userTags = Map.add id p db.userTags }
                     | UserTags (UserTagsActions.Remove id) -> { db with userTags = Map.remove id db.userTags }
@@ -167,8 +178,7 @@ module SyncStore =
                     | TopTags (TopTagsActions.Remove id) -> { db with topTags = Map.remove id db.topTags }
                     | Posts (PostsActions.Add (id, p)) -> { db with posts = Map.add id p db.posts }
                     | Posts (PostsActions.Remove id) -> { db with posts = Map.remove id db.posts }
-                    | ParseRequests (ParseRequestsActions.Add x) ->
-                        { db with parseRequests = Set.add x db.parseRequests }
+                    | ParseRequests (ParseRequestsActions.Add x) -> { db with parseRequests = Set.add x db.parseRequests }
                     | ParseRequests (ParseRequestsActions.Remove hash) ->
                         { db with parseRequests = db.parseRequests |> Set.filter (fun x -> x.GetHashCode() <> hash) })
                db

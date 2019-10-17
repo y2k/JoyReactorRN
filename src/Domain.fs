@@ -1,4 +1,5 @@
 namespace JoyReactor
+open CofxStorage
 
 module UrlBuilder =
     open Fable.Core.JS
@@ -81,7 +82,38 @@ module Domain =
         newMessages, stop
 
 module SyncDomain =
-    open JoyReactor.Types
+    type LocalDb = JoyReactor.CofxStorage.LocalDb
+
+    type Eff<'a> =    
+        { url: LocalDb -> string option
+          callback: LocalDb -> 'a }
+
+    let messages page =
+        { url = fun _ -> UrlBuilder.messages page |> Some
+          callback = fun db -> db.nextMessagesPage }
+
+    let logout =
+        { url = fun _ -> sprintf "%s/logout" UrlBuilder.baseUrl |> Some
+          callback = ignore }
+
+    let profile =
+        { url = fun db -> db.userName |> Option.map ^ UrlBuilder.user
+          callback = ignore }
+
+    let userTags =
+        { url = fun db -> db.userName |> Option.map ^ UrlBuilder.user
+          callback = ignore }
+
+    let topTags =
+        { url = fun _ -> UrlBuilder.home |> Some 
+          callback = ignore }
+
+    let post id =
+        { url = fun _ -> UrlBuilder.post id |> Some
+          callback = ignore }
+
+module MergeDomain =
+    open Types
 
     type 'a SyncEffect =
         { uri: string
@@ -90,31 +122,6 @@ module SyncDomain =
           f: string -> CofxStorage.LocalDb -> Result<CofxStorage.LocalDb * 'a, exn> }
 
     let inline fromJson<'a> json = try Ok ^ (Fable.Core.JS.JSON.parse >> unbox<'a>) json with e -> Error e
-
-    let syncMessages page =
-        let syncMessages' html (db: CofxStorage.LocalDb) =
-            fromJson<MessagesWithNext> html
-            |> Result.map ^ fun x ->
-                let newMessages, _ = Domain.mergeMessages db.messages x.messages x.nextPage
-                { db with messages = newMessages }, x.nextPage
-        { uri = UrlBuilder.messages page; api = "messages"; mkUri = None; f = syncMessages' }
-
-    let syncMyProfile =
-        let syncMyProfile' html (db: CofxStorage.LocalDb) =
-            fromJson<Profile> html
-            |> Result.map ^ fun x -> { db with profile = Some x }, ()
-        { uri = UrlBuilder.domain; api = "profile"; mkUri = Some Domain.extractName; f = syncMyProfile' }
-
-    // let syncTagsWithBackend =
-    //     let syncTagsWithBackend' html (db: CofxStorage.LocalDb) =
-    //         fromJson<Tag []> html
-    //         |> Result.map ^ fun x -> { db with tags = x }, ()
-    //     { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
-
-module MergeDomain =
-    open Types
-    open SyncDomain
-    open CofxStorage
 
     let private filterNotIn target xs =
         let ids =
