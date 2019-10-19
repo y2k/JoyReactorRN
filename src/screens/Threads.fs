@@ -31,7 +31,7 @@ let update model msg =
         D.messages None |> R.run |> Cmd.map RefreshComplete
     | RefreshComplete (Ok (Some next)) ->
         model,
-        Some next |> D.messages |> R.run |> Cmd.map RefreshComplete
+        D.messages ^ Some next |> R.run |> Cmd.map RefreshComplete
     | RefreshComplete (Ok None) -> { model with status = Some <| Ok () }, Cmd.none
     | RefreshComplete (Error x) -> log x { model with status = Some <| Error x }, Cmd.none
     | _ -> model, Cmd.none

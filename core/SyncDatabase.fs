@@ -5,11 +5,13 @@ module CofxStorage =
 
     type LocalDb =
         { feeds : Map<Source, PostsWithLevels>
+          sharedFeeds : Map<Source, Post [] * int option>
           posts : Map<int, Post>
           userName : string option
           userTags : Map<string, Tag>
           topTags : Map<string, Tag>
-          messages : Message []
+          messages : Message Set
+          sharedMessages : Message Set
           nextMessagesPage : string option
           profile : Profile option
           parseRequests : string Set }
@@ -37,6 +39,10 @@ module DiffActions =
         
     type NextMessagesPageActions = Changed of string option
 
+    type SharedMessagesActions =
+        | Add of Message
+        | Remove of Message
+
     type AllDiffActions =
         | NextMessagesPage of NextMessagesPageActions
         | UserName of UserNameActions
@@ -44,6 +50,7 @@ module DiffActions =
         | TopTags of TopTagsActions
         | Posts of PostsActions
         | ParseRequests of ParseRequestsActions
+        | SharedMessages of SharedMessagesActions
 
 module SyncStore =
     open Types
@@ -58,7 +65,7 @@ module SyncStore =
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
 
-    let emptyDb = { feeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = [||]; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
+    let emptyDb = { feeds = Map.empty; sharedFeeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
 
     let shared = ref emptyDb
 
@@ -66,6 +73,8 @@ module SyncStore =
         actions
         |> List.map (
             function
+            | SharedMessages (SharedMessagesActions.Add m) -> "sm_a", m |> box |> !toJsonString
+            | SharedMessages (SharedMessagesActions.Remove m) -> "sm_r", m |> box |> !toJsonString
             | NextMessagesPage (NextMessagesPageActions.Changed page) -> "mp_ch", page |> Option.defaultValue ""
             | UserName (UserNameActions.Changed userName) -> "un_ch", userName |> Option.defaultValue ""
             | TopTags (TopTagsActions.Add (pos, tag)) -> "tt_add", tag |> box |> !toJsonString
@@ -74,13 +83,15 @@ module SyncStore =
             | UserTags (UserTagsActions.Remove pos) -> "ut_remove", string pos
             | Posts (PostsActions.Add (id, post)) -> "p_add", post |> box |> !toJsonString
             | Posts (PostsActions.Remove id) -> "p_remove", string id
-            | ParseRequests (Add x) -> "pr_add", x
-            | ParseRequests (Remove x) -> "pr_remove", string x)
+            | ParseRequests (ParseRequestsActions.Add x) -> "pr_add", x
+            | ParseRequests (ParseRequestsActions.Remove x) -> "pr_remove", string x)
 
     let deserialize (form : KVDiff) : AllDiffActions list =
         form
         |> List.map (
             function
+            | "sm_a", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Add |> SharedMessages
+            | "sm_r", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Remove |> SharedMessages
             | "mp_ch", x -> (if String.length x = 0 then Some x else None) |> NextMessagesPageActions.Changed |> NextMessagesPage
             | "un_ch", x -> (if String.length x = 0 then Some x else None) |> UserNameActions.Changed |> UserName
             | "tt_add", x -> x |> !fromJsonString |> unbox<Tag> |> (fun p -> TopTagsActions.Add(p.name, p)) |> TopTags
@@ -118,6 +129,11 @@ module SyncStore =
     
     let getDiffForAll (old : LocalDb) (newDb : LocalDb) = 
         List.concat [
+            Set.difference newDb.sharedMessages old.sharedMessages |> Set.toList
+            |> List.map (fun x -> SharedMessagesActions.Add x |> AllDiffActions.SharedMessages)
+            Set.difference old.sharedMessages newDb.sharedMessages |> Set.toList
+            |> List.map (fun x -> SharedMessagesActions.Remove x |> AllDiffActions.SharedMessages)
+
             (if newDb.nextMessagesPage <> old.nextMessagesPage
                 then [ newDb.nextMessagesPage |> NextMessagesPageActions.Changed |> AllDiffActions.NextMessagesPage ] 
                 else [])
@@ -170,6 +186,8 @@ module SyncStore =
         |> List.fold
                (fun db action ->
                     match action with
+                    | SharedMessages (SharedMessagesActions.Add x) -> { db with sharedMessages = db.sharedMessages |> Set.add x }
+                    | SharedMessages (SharedMessagesActions.Remove x) -> { db with sharedMessages = db.sharedMessages |> Set.remove x }
                     | NextMessagesPage (NextMessagesPageActions.Changed page) -> { db with nextMessagesPage = page }
                     | UserName (UserNameActions.Changed userName) -> { db with userName = userName }
                     | UserTags (UserTagsActions.Add (id, p)) -> { db with userTags = Map.add id p db.userTags }

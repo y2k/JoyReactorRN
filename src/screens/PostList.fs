@@ -7,8 +7,8 @@ open JoyReactor
 open JoyReactor.Types
 type LocalDb = CofxStorage.LocalDb
 module UI = CommonUi
-module E = SyncStore
-module S = Services
+module R = Services.EffRuntime
+module D = MergeDomain
 
 type PostState = Actual of Post | Divider | Old of Post
 
@@ -16,6 +16,7 @@ type Msg =
     | PostsMsg of PostsWithLevels
     | SyncResultMsg of Result<unit, exn>
     | ApplyUpdate
+    | ApplyUpdateEnd of Result<unit, exn>
     | Refresh
     | LoadNextPage
     | OpenPost of Post
@@ -29,8 +30,8 @@ type Model =
 
 let init source =
     { source = source; items = [||]; hasNew = false; nextPage = None; loading = true },
-    S.runSyncEffect ^ MergeDomain.premergeFirstPage source None
-    |> Cmd.ofEffect SyncResultMsg
+    R.run ^ MergeDomain.premergeFirstPage source None
+    |> Cmd.map SyncResultMsg
 
 let sub source (db : LocalDb) =
     Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
@@ -44,15 +45,14 @@ let update model = function
         { model with items = mkItems x; hasNew = not <| Array.isEmpty x.preloaded; nextPage = x.nextPage },
         Cmd.none
     | SyncResultMsg(Ok _) -> { model with loading = false }, Cmd.none
-    | ApplyUpdate ->
-        model,
-        (E.update ^ fun db -> MergeDomain.mergeApply model.source db, ()) |> Cmd.ofEffect0
+    | ApplyUpdate -> model, D.mergeApply model.source |> R.run |> Cmd.map ApplyUpdateEnd
     | LoadNextPage ->
         { model with loading = true },
-        S.runSyncEffect ^ MergeDomain.mergeNextPage model.source model.nextPage |> Cmd.ofEffect SyncResultMsg
+        R.run ^ MergeDomain.mergeNextPage model.source model.nextPage |> Cmd.map SyncResultMsg
     | Refresh ->
         model,
-        S.runSyncEffect ^ MergeDomain.mergeFirstPage model.source |> Cmd.ofEffect SyncResultMsg
+        R.run ^ MergeDomain.mergeFirstPage model.source |> Cmd.map SyncResultMsg
+    | ApplyUpdateEnd (Ok _) -> model, Cmd.none
     | x -> failwithf "%O" x
 
 module private Styles =

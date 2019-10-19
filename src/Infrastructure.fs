@@ -1,10 +1,5 @@
 module JoyReactor.Services
 
-module Async =
-    let unsafe a = async {
-        let! x = a
-        return match x with Ok x -> x | Error e -> raise e }
-
 module ApiRequests =
     open Fable.Core
     open Fetch
@@ -41,26 +36,16 @@ module EffRuntime =
     module Store = JoyReactor.SyncStore
     
     let private runEffect eff = async {
-        let! optUrl = Store.update ^ fun db -> db, eff.url db
+        let! optUrl = Store.update ^ fun db -> eff.url db
         match optUrl with
         | Some url ->
             let! html = ApiRequests.downloadString url []
             do! Store.update ^ fun db -> { db with parseRequests = db.parseRequests |> Set.add html }, ()
-            return! Store.update ^ fun db -> db, eff.callback db
+            return! Store.update ^ fun db -> eff.callback db
         | None -> 
             return failwith "???" }
 
     let run eff = runEffect eff |> Cmd.ofEffect id
-
-module Storage = SyncStore
-
-let runSyncEffect (eff: _ MergeDomain.SyncEffect) =
-    ApiRequests.parseRequest eff.uri None (sprintf "%s/%s" UrlBuilder.apiBaseUri eff.api)
-    >>= fun html -> Storage.update ^ fun db ->
-        match eff.f html db with
-        | Ok (newDb, x) -> newDb, Ok x
-        | Error e -> db, Error e
-    |> Async.unsafe
 
 module private Requests =
     open Fable.Core.JsInterop

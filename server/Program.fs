@@ -4,9 +4,9 @@
 
     let parse html (db : JoyReactor.CofxStorage.LocalDb) =
         printfn "LOGX :: userName = %O" (P.parseUserName html)
-
         let messages = P.getMessages html
         { db with
+             sharedMessages = messages |> (Option.map ^ fun x -> x.messages |> Set.ofSeq) |> Option.defaultValue Set.empty
              nextMessagesPage = messages |> Option.bind ^ fun x -> x.nextPage
              userName = P.parseUserName html 
              userTags = html |> P.readUserTags |> Seq.map (fun x -> x.name, x) |> Map.ofSeq
