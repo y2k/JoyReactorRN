@@ -37,9 +37,10 @@ module Types =
           comments : Comment [] }
 
     type PostResponse =
-        { posts : Post list
+        { posts : Post []
           nextPage : int option }
-
+        static member empty : PostResponse = { posts = [||]; nextPage = None }
+    
     type PostsWithLevels =
         { actual : Post []
           old : Post []

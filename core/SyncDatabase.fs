@@ -5,7 +5,7 @@ module CofxStorage =
 
     type LocalDb =
         { feeds : Map<Source, PostsWithLevels>
-          sharedFeeds : Map<Source, Post [] * int option>
+          sharedFeeds : Map<Source, PostResponse>
           posts : Map<int, Post>
           userName : string option
           userTags : Map<string, Tag>
@@ -43,6 +43,10 @@ module DiffActions =
         | Add of Message
         | Remove of Message
 
+    type SharedFeedsActions =
+        | Add of Source * PostResponse
+        | Remove of Source
+    
     type AllDiffActions =
         | NextMessagesPage of NextMessagesPageActions
         | UserName of UserNameActions
@@ -51,6 +55,7 @@ module DiffActions =
         | Posts of PostsActions
         | ParseRequests of ParseRequestsActions
         | SharedMessages of SharedMessagesActions
+        | SharedFeeds of SharedFeedsActions
 
 module SyncStore =
     open Types
@@ -73,6 +78,8 @@ module SyncStore =
         actions
         |> List.map (
             function
+            | SharedFeeds (SharedFeedsActions.Add (k, v)) -> "sf_a", sprintf "%s|%s" (k |> box |> !toJsonString) (v |> box |> !toJsonString) 
+            | SharedFeeds (SharedFeedsActions.Remove k) -> "sf_r", k |> box |> !toJsonString 
             | SharedMessages (SharedMessagesActions.Add m) -> "sm_a", m |> box |> !toJsonString
             | SharedMessages (SharedMessagesActions.Remove m) -> "sm_r", m |> box |> !toJsonString
             | NextMessagesPage (NextMessagesPageActions.Changed page) -> "mp_ch", page |> Option.defaultValue ""
@@ -90,6 +97,10 @@ module SyncStore =
         form
         |> List.map (
             function
+            | "sf_a", kv ->
+                let parts = kv.Split([| '|' |], 2)
+                (parts.[0] |> !fromJsonString |> unbox, parts.[1] |> !fromJsonString |> unbox) |> SharedFeedsActions.Add |> SharedFeeds
+            | "sf_r", k -> k |> !fromJsonString |> unbox |> SharedFeedsActions.Remove |> SharedFeeds
             | "sm_a", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Add |> SharedMessages
             | "sm_r", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Remove |> SharedMessages
             | "mp_ch", x -> (if String.length x = 0 then Some x else None) |> NextMessagesPageActions.Changed |> NextMessagesPage
@@ -129,6 +140,17 @@ module SyncStore =
     
     let getDiffForAll (old : LocalDb) (newDb : LocalDb) = 
         List.concat [
+            Set.difference 
+                (old.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+                (newDb.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+            |> Seq.map (fun id -> SharedFeedsActions.Remove id |> AllDiffActions.SharedFeeds)
+            |> Seq.toList
+            Set.difference 
+                (newDb.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+                (old.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
+            |> Seq.map (fun id -> SharedFeedsActions.Add (id, newDb.sharedFeeds.[id]) |> AllDiffActions.SharedFeeds)
+            |> Seq.toList
+
             Set.difference newDb.sharedMessages old.sharedMessages |> Set.toList
             |> List.map (fun x -> SharedMessagesActions.Add x |> AllDiffActions.SharedMessages)
             Set.difference old.sharedMessages newDb.sharedMessages |> Set.toList
@@ -186,6 +208,8 @@ module SyncStore =
         |> List.fold
                (fun db action ->
                     match action with
+                    | SharedFeeds (SharedFeedsActions.Add (k, v)) -> { db with sharedFeeds = db.sharedFeeds |> Map.add k v }
+                    | SharedFeeds (SharedFeedsActions.Remove k) -> { db with sharedFeeds = db.sharedFeeds |> Map.remove k }
                     | SharedMessages (SharedMessagesActions.Add x) -> { db with sharedMessages = db.sharedMessages |> Set.add x }
                     | SharedMessages (SharedMessagesActions.Remove x) -> { db with sharedMessages = db.sharedMessages |> Set.remove x }
                     | NextMessagesPage (NextMessagesPageActions.Changed page) -> { db with nextMessagesPage = page }
@@ -215,10 +239,8 @@ module SyncStore =
                 printfn "LOGX (1.3)"
                 let diff = getDiff oldDb newDb
                 let! serverResponseDiff = !sendToServer diff
-//                printfn "LOGX (1.3.1) | %O" serverResponseDiff
                 let newDb2 = applyDiff newDb serverResponseDiff
                 printfn "LOGX (1.3.2) | %O" newDb2
-//                printfn "LOGX (1.3.3) = %O" ("xxx".GetHashCode())
                 shared := newDb2
             else
                 printfn "LOGX (1.4)"

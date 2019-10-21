@@ -188,7 +188,6 @@ module App =
     let subscribe _ = Cmd.batch [ Cmd.ofSub setupBackHandler; sub ]
 
 module InitSyncStore =
-    open JoyReactor.Services
     open Browser.Blob
     open Fable.Core
     open Fable.Core.JsInterop

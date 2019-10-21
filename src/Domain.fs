@@ -143,7 +143,7 @@ module MergeDomain =
     let premergeFirstPage source page =
         let merge (db : LocalDb) =
             Map.tryFind source db.sharedFeeds
-            |> Option.map ^ fun (posts, nextPage) ->
+            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
                 let x =
                     if Seq.isEmpty x.actual
@@ -159,7 +159,7 @@ module MergeDomain =
     let mergeFirstPage source =
         let merge (db : LocalDb) =
             Map.tryFind source db.sharedFeeds
-            |> Option.map ^ fun (posts, nextPage) ->
+            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = PostsWithLevels.empty
                 let x = { x with
                             actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
@@ -175,7 +175,7 @@ module MergeDomain =
     let mergeNextPage source page =
         let merge (db : LocalDb) =
             Map.tryFind source db.sharedFeeds
-            |> Option.map ^ fun (posts, nextPage) ->
+            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
                 let x = { x with
                             actual = Array.concat [ x.actual; filterNotIn x.actual posts ]

@@ -104,23 +104,23 @@ let ``parse small_favorite should success``() =
     let element = getHtml "small_favorite.html"
 
     let actual = Parsers.parsePostsForTag (element)
-    Assert.Equal(1, List.length actual)
+    Assert.Equal(1, Seq.length actual)
     Assert.Equal(None, Parsers.parseNewPageNumber element)
 
 [<Fact>]
 let ``parse feed``() =
     let actual = Parsers.parsePostsForTag (getHtml "feed.html")
-    let images = actual |> List.choose ^ fun post -> post.image |> Array.tryHead |> Option.map (fun x -> x.url)
-    Assert.Equal(9, List.length images)
+    let images = actual |> Seq.choose ^ fun post -> post.image |> Seq.tryHead |> Option.map (fun x -> x.url)
+    Assert.Equal(9, Seq.length images)
     images 
-    |> List.iter ^ fun image ->
+    |> Seq.iter ^ fun image ->
         Assert.Matches(R(@"http://img\d\.joyreactor\.cc/pics/post/-\d+\.(gif|jpeg|png)"), image)
 
 [<Fact>]
 let ``parse feed with top comment``() =
     let actual = Parsers.parsePostsForTag (getHtml "feed_with_top_comment.html")
     actual
-    |> List.iter ^ fun post ->
+    |> Seq.iter ^ fun post ->
         Assert.Matches(
             R(@"http://img\d\.joyreactor\.cc/pics/post/-\d+\.(gif|jpeg|png)"), 
             post.image |> Array.tryHead |> Option.map (fun x -> x.url) |> Option.defaultValue "")

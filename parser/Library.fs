@@ -181,7 +181,7 @@ module Parsers =
         let element = getDocument html
         element.QuerySelectorAll("div.postContainer")
         |> Seq.map parserSinglePost
-        |> Seq.toList
+        |> Seq.toArray
 
     let parseNewPageNumber html =
         let extractPageFromHref (x : HtmlNode) =
