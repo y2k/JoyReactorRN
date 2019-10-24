@@ -3,7 +3,6 @@
     module P = JoyReactor.Parsers
 
     let parse html (db : JoyReactor.CofxStorage.LocalDb) =
-        printfn "LOGX :: userName = %O" (P.parseUserName html)
         let messages = P.getMessages html
         { db with
              sharedMessages = messages |> (Option.map ^ fun x -> x.messages |> Set.ofSeq) |> Option.defaultValue Set.empty
@@ -15,10 +14,8 @@
 
     let sync = 
         S.listenUpdates ^ fun db -> 
-            printfn "LOGX (2.1)"
             db.parseRequests 
             |> Set.fold (fun db html -> parse html db) { db with parseRequests = Set.empty }
-            |> fun db -> printfn "LOGX (2.2) %O" db; db
 
 module Routers =
     open Suave
@@ -27,11 +24,9 @@ module Routers =
 
     let sync =
         request ^ fun r ->
-            printfn "LOGX (1.1) | %A" (r.multiPartFields |> List.map fst)
             r.multiPartFields
             |> ParseDomain.sync
             |> fun (D.Diff bytes) -> ok bytes
-            |> fun r -> printfn "LOGX (1.2) :: %O" r; r
 
 open Suave
 open Suave.Filters

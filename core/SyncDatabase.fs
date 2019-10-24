@@ -15,6 +15,8 @@ module CofxStorage =
           nextMessagesPage : string option
           profile : Profile option
           parseRequests : string Set }
+    with
+        static member empty = { feeds = Map.empty; sharedFeeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
 
 module DiffActions =
     open Types
@@ -70,7 +72,7 @@ module SyncStore =
     type Diff = Diff of byte []
     type KVDiff = (string * string) list
 
-    let emptyDb = { feeds = Map.empty; sharedFeeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
+    let emptyDb = LocalDb.empty
 
     let shared = ref emptyDb
 
@@ -84,11 +86,11 @@ module SyncStore =
             | SharedMessages (SharedMessagesActions.Remove m) -> "sm_r", m |> box |> !toJsonString
             | NextMessagesPage (NextMessagesPageActions.Changed page) -> "mp_ch", page |> Option.defaultValue ""
             | UserName (UserNameActions.Changed userName) -> "un_ch", userName |> Option.defaultValue ""
-            | TopTags (TopTagsActions.Add (pos, tag)) -> "tt_add", tag |> box |> !toJsonString
+            | TopTags (TopTagsActions.Add (_, tag)) -> "tt_add", tag |> box |> !toJsonString
             | TopTags (TopTagsActions.Remove pos) -> "tt_remove", string pos
-            | UserTags (UserTagsActions.Add (pos, tag)) -> "ut_add", tag |> box |> !toJsonString
+            | UserTags (UserTagsActions.Add (_, tag)) -> "ut_add", tag |> box |> !toJsonString
             | UserTags (UserTagsActions.Remove pos) -> "ut_remove", string pos
-            | Posts (PostsActions.Add (id, post)) -> "p_add", post |> box |> !toJsonString
+            | Posts (PostsActions.Add (_, post)) -> "p_add", post |> box |> !toJsonString
             | Posts (PostsActions.Remove id) -> "p_remove", string id
             | ParseRequests (ParseRequestsActions.Add x) -> "pr_add", x
             | ParseRequests (ParseRequestsActions.Remove x) -> "pr_remove", string x)

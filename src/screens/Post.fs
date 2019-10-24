@@ -59,7 +59,7 @@ let viewAttachments (comment : Comment) =
          |> Array.toList
          |> List.map (fun a ->
                 image [ ImageProperties.Style [ Width $ 80.; Height $ 80. ]
-                        Source <| remoteImage [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
+                        Source <| remoteImage [ Uri <| Image.normalize a.image.url 80. 80. ] ]))
 
 let viewItem (comment : Comment) =
     view [ Styles.home ] [
@@ -81,7 +81,7 @@ let viewPostAttachments (post : Post) _ =
          |> Array.toList
          |> List.map (fun a ->
                 image [ ImageProperties.Style [ Width $ 80.; Height $ 80.; Margin $ 2. ]
-                        Source <| remoteImage [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
+                        Source <| remoteImage [ Uri <| Image.normalize a.image.url 80. 80. ] ]))
 
 let viewTags post dispatch =
     post.tags

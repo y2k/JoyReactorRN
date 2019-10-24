@@ -5,6 +5,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ComponentTests.fs" />
     <Compile Include="ParserTests.fs" />
     <Compile Include="Tests.fs" />
   </ItemGroup>
