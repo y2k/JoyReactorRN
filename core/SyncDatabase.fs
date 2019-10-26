@@ -230,26 +230,22 @@ module SyncStore =
     let private callback : (LocalDb -> unit) option ref = ref None
 
     let sendToServer : (KVDiff -> KVDiff Async) ref = ref (fun _ -> failwith "Not implemented")
+    
+    type a = unit
+    let update' () : ((LocalDb -> LocalDb * 'a) -> 'a Async) ref = failwith "???"
 
     let update (f : LocalDb -> LocalDb * 'a) : 'a Async = async {
         let oldDb = !shared
         let (newDb, x) = f oldDb
-        printfn "LOGX (1.1)"
         if newDb <> oldDb then
-            printfn "LOGX (1.2)"
             if newDb.parseRequests <> oldDb.parseRequests then
-                printfn "LOGX (1.3)"
                 let diff = getDiff oldDb newDb
                 let! serverResponseDiff = !sendToServer diff
                 let newDb2 = applyDiff newDb serverResponseDiff
-                printfn "LOGX (1.3.2) | %O" newDb2
                 shared := newDb2
             else
-                printfn "LOGX (1.4)"
                 shared := newDb 
-            printfn "LOGX (1.5) | %O" callback
             match !callback with Some f -> f !shared | _ -> () 
-        printfn "LOGX (1.6)"
         return x }
 
     let listenUpdates (f : LocalDb -> LocalDb) (diffFromClient : KVDiff) = 

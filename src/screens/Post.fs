@@ -10,7 +10,9 @@ module R = Services.EffRuntime
 module D = SyncDomain
 type LocalDb = CofxStorage.LocalDb
 
-type Model = { post : Post option; error : string option; id : int }
+type Model =
+    { post : Post option; error : string option; id : int }
+    with static member empty = { post = None; error = None; id = 0 }
 
 type Msg =
     | PostLoaded of Post option
@@ -25,9 +27,7 @@ let init id =
     D.post id |> R.run |> Cmd.map RefreshComplete
 
 let update model = function
-    | PostLoaded x ->
-        printfn "LOGX :: Post :: PostLoaded"
-        { model with post = x }, Cmd.none
+    | PostLoaded x -> { model with post = x }, Cmd.none
     | RefreshComplete(Ok _) -> { model with error = None }, Cmd.none
     | RefreshComplete(Error x) -> { model with error = Some <| string x }, Cmd.none
     | OpenInWeb ->

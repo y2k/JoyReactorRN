@@ -16,7 +16,7 @@ let init _ = { db = None; isBusy = false }, Cmd.none
 let private id = 4111388
 
 let downloadPost =
-    S.ApiRequests.downloadString (UrlBuilder.post id) []
+    !S.ApiRequests.downloadString (UrlBuilder.post id) [] []
     >>= fun html -> 
         Log.log ^ sprintf "1.2"
         D.dispatch (fun db -> { db with parseRequests = Set.union (Set.ofSeq [html]) db.parseRequests })

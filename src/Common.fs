@@ -12,8 +12,8 @@ type Log() =
 
 module Cmd =
     open Elmish
-    let ofEffect f p = 
-        Cmd.OfAsync.either (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofEffect f p =
+        Cmd.OfAsyncImmediate.either (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
     let ofFiber f p = Cmd.OfAsync.either (fun () -> p) () f raise
     let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 

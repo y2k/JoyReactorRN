@@ -8,7 +8,9 @@ module R = JoyReactor.Services.EffRuntime
 module D = JoyReactor.SyncDomain
 type LocalDb = CofxStorage.LocalDb
 
-type Model = { tags : Tag []; loaded : bool }
+type Model =
+    { tags : Tag []; loaded : bool }
+    with static member empty = { tags = [||]; loaded = false }
 
 type Msg =
     | Refresh
@@ -47,16 +49,16 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 
 module Styles =
-    let image =
+    let image () =
         ImageProperties.Style [ Width $ 48.; Height $ 48.; BorderRadius 24.; MarginRight $ 8. ]
-    let label =
+    let label () =
         TextProperties.Style [ FontSize 18.; TextStyle.Color "#404040"; AlignSelf Alignment.Center ]
 
 let viewItem dispatch (tag : Tag) =
     touchableOpacity [ ActiveOpacity 0.4; OnPress(dispatch <! OpenPosts(tagToSource tag)) ] [
         view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Padding $ 8. ] ] [
-            image [ Styles.image; Source <| remoteImage [ Uri tag.image ] ]
-            text [ Styles.label ] tag.name ] ]
+            image [ Styles.image (); Source <| remoteImage [ Uri tag.image ] ]
+            text [ Styles.label () ] tag.name ] ]
 
 let view model dispatch =
     view [ ViewProperties.Style [ Flex 1. ] ] [
