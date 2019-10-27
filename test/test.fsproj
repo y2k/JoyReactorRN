@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ComponentTests.fs" />
     <Compile Include="ParserTests.fs" />
     <Compile Include="Tests.fs" />
   </ItemGroup>
@@ -12,6 +13,7 @@
     <ProjectReference Include="..\src\joyreact.fsproj" />
     <ProjectReference Include="..\core\core.fsproj" />
     <ProjectReference Include="..\parser\parser.fsproj" />
+    <ProjectReference Include="..\server\server.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

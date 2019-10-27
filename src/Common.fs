@@ -12,8 +12,8 @@ type Log() =
 
 module Cmd =
     open Elmish
-    let ofEffect f p = 
-        Cmd.OfAsync.either (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
+    let ofEffect f p =
+        Cmd.OfAsyncImmediate.either (fun () -> p) () (Result.Ok >> f) (Result.Error >> f)
     let ofFiber f p = Cmd.OfAsync.either (fun () -> p) () f raise
     let ofEffect0 p = Cmd.ofSub (fun _ -> p |> Async.StartImmediate)
 
@@ -39,7 +39,7 @@ module Image =
     open Fable.Core.JS
     open Types
 
-    let normilize url (w : float) (h : float) =
+    let normalize url (w : float) (h : float) =
         sprintf "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
             (encodeURIComponent url)
 
@@ -47,7 +47,7 @@ module Image =
         let aspect = max 1.2 attachment.aspect
         let w = limitWidth
         let h = w / aspect
-        normilize attachment.url w h, h
+        normalize attachment.url w h, h
 
 module Platform =
     open Fable.Core

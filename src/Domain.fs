@@ -1,20 +1,22 @@
 namespace JoyReactor
+open CofxStorage
 
 module UrlBuilder =
     open Fable.Core.JS
     open Types
 
-    let domain = UrlBuilder.domain
-    let donate = "http://" + domain + "/donate"
-    let ads = "http://" + domain + "/ads"
+    let baseUrl = sprintf "http://%s" UrlBuilder.domain
+    let home = sprintf "%s/" baseUrl
+    let donate = sprintf "%s/donate" baseUrl
+    let ads = sprintf "%s/ads" baseUrl
 
     let messages page =
         page
         |> Option.defaultValue "/private/list"
-        |> (+) ("http://" + domain)
+        |> (+) baseUrl
 
-    let user userName = encodeURIComponent userName |> sprintf "http://%s/user/%s" domain
-    let post id = sprintf "http://%s/post/%i" domain id
+    let user userName = encodeURIComponent userName |> sprintf "%s/user/%s" baseUrl
+    let post id = sprintf "%s/post/%i" baseUrl id
 
     let posts source userName (page : int option) =
         match source with
@@ -22,17 +24,17 @@ module UrlBuilder =
             page
             |> Option.map string
             |> Option.defaultValue ""
-            |> (+) ("http://" + domain + "/")
+            |> (+) (baseUrl + "/")
         | TagSource name ->
             page
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
-            |> (+) (sprintf "http://%s/tag/%s" domain name)
+            |> (+) (sprintf "%s/tag/%s" baseUrl name)
         | FavoriteSource ->
             page
             |> Option.map (sprintf "/%i")
             |> Option.defaultValue ""
-            |> (+) (sprintf "http://%s/user/%s/favorite" domain userName)
+            |> (+) (sprintf "%s/user/%s/favorite" baseUrl userName)
 
 module Domain =
     open System.Text.RegularExpressions
@@ -56,26 +58,20 @@ module Domain =
 
     let selectThreads messages =
         messages
+        |> Seq.toArray
         |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
 
     let selectMessageForUser userName messages =
         messages
-        |> Array.filter (fun x -> x.userName = userName)
+        |> Seq.filter (fun x -> x.userName = userName)
+        |> Seq.toArray
         |> Array.sortByDescending (fun x -> x.date)
 
     let filterNewMessages (messages : Message []) offset = messages |> Array.filter (fun x -> x.date > offset)
     let checkMessagesIsOld (messages : Message []) offset = messages |> Array.exists (fun x -> x.date <= offset)
 
-    let getLastOffsetOrDefault xs =
-        let tryMaxBy f xs =
-            try xs |> Array.maxBy f |> Some
-            with _ -> None
-
-        xs
-        |> tryMaxBy (fun x -> x.date)
-        |> Option.map (fun x -> x.date)
-        |> Option.defaultValue 0.
+    let getLastOffsetOrDefault = Array.fold (fun a x -> max a x.date) 0.
 
     let private isStop messages lastOffset nextPage newMessages =
         let flagIsStop = checkMessagesIsOld messages lastOffset
@@ -88,92 +84,106 @@ module Domain =
         newMessages, stop
 
 module SyncDomain =
-    open JoyReactor.Types
+    type LocalDb = JoyReactor.CofxStorage.LocalDb
 
-    type 'a SyncEffect =
-        { uri: string
-          api: string
-          mkUri: (string -> string option) option
-          f: string -> CofxStorage.LocalDb -> Result<CofxStorage.LocalDb * 'a, exn> }
+    type Eff<'a> =    
+        { url: LocalDb -> LocalDb * string option
+          callback: LocalDb -> LocalDb * 'a }
 
-    let inline fromJson<'a> json = try Ok ^ (Fable.Core.JS.JSON.parse >> unbox<'a>) json with e -> Error e
+    let messages page =
+        { url = fun db -> 
+              { db with sharedMessages = Set.empty },
+              UrlBuilder.messages page |> Some
+          callback = fun db -> 
+              { db with messages = Set.union db.messages db.sharedMessages },
+              db.nextMessagesPage }
 
-    let syncPost id =
-        let syncPost id html (db: CofxStorage.LocalDb) =
-            fromJson<Post> html
-            |> Result.map ^ fun x -> { db with posts = Map.add id x db.posts }, ()
-        { uri = (UrlBuilder.post id); api = "post"; mkUri = None; f = syncPost id }
+    let logout =
+        { url = fun db -> db, sprintf "%s/logout" UrlBuilder.baseUrl |> Some
+          callback = fun db -> db, () }
 
-    let syncTopTags =
-        let syncTopTags' html (db: CofxStorage.LocalDb) =
-            fromJson<Tag []> html
-            |> Result.map ^ fun tags -> { db with tags = tags }, ()
-        { uri = UrlBuilder.domain; api = "toptags"; mkUri = None; f = syncTopTags' }
+    let profile =
+        { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
+          callback = fun db -> db, () }
 
-    let syncMessages page =
-        let syncMessages' html (db: CofxStorage.LocalDb) =
-            fromJson<MessagesWithNext> html
-            |> Result.map ^ fun x ->
-                let newMessages, _ = Domain.mergeMessages db.messages x.messages x.nextPage
-                { db with messages = newMessages }, x.nextPage
-        { uri = UrlBuilder.messages page; api = "messages"; mkUri = None; f = syncMessages' }
+    let userTags =
+        { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
+          callback = fun db -> db, () }
 
-    let loadPosts source page =
-        let loadPosts' html (db: CofxStorage.LocalDb) =
-            fromJson<PostResponse> html
-            |> Result.map ^ fun x -> db, (x.posts, x.nextPage)
-        { uri = UrlBuilder.posts source "FIXME" page
-          api = sprintf "%s/%s" UrlBuilder.apiBaseUri "posts"
-          mkUri = None
-          f = loadPosts' }
+    let topTags =
+        { url = fun db -> db, UrlBuilder.home |> Some 
+          callback = fun db -> db, () }
 
-    let syncMyProfile =
-        let syncMyProfile' html (db: CofxStorage.LocalDb) =
-            fromJson<Profile> html
-            |> Result.map ^ fun x -> { db with profile = Some x }, ()
-        { uri = UrlBuilder.domain; api = "profile"; mkUri = Some Domain.extractName; f = syncMyProfile' }
-
-    let syncTagsWithBackend =
-        let syncTagsWithBackend' html (db: CofxStorage.LocalDb) =
-            fromJson<Tag []> html
-            |> Result.map ^ fun x -> { db with tags = x }, ()
-        { uri = UrlBuilder.domain; api = "tags"; mkUri = Some Domain.extractName; f = syncTagsWithBackend' }
+    let post id =
+        { url = fun db -> db, UrlBuilder.post id |> Some
+          callback = fun db -> db, () }
 
 module MergeDomain =
     open Types
-    open CofxStorage
+    open SyncDomain
 
-    let premergeFirstPage source xs np (db : LocalDb) =
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x =
-            if Seq.isEmpty x.actual
-                then { x with actual = xs; nextPage = np }
-                else { x with preloaded = xs; nextPage = np }
-        let x = { db with feeds' = Map.add source x db.feeds' }
-        Log.log ^ sprintf "INIT %A" x
-        x
-
-    let filterNotIn target xs =
+    let private filterNotIn target xs =
         let ids =
             target
             |> Seq.map ^ fun x -> x.id
             |> Set.ofSeq
         xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
 
-    let mergeApply source (db : LocalDb) =
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x = { x with old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded }
-        let x = { x with actual = x.preloaded; preloaded = [||] }
-        { db with feeds' = Map.add source x db.feeds' }
+    let mergeApply source =
+        let merge (db : LocalDb) =
+            let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
+            let x = { x with
+                        old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded
+                        actual = x.preloaded
+                        preloaded = [||] }
+            { db with feeds = Map.add source x db.feeds }
+        { url = fun db -> merge db, None
+          callback = fun db -> db, () }
 
-    let mergeNextPage source (db : LocalDb) (posts, nextPage) =
-        let x = Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty
-        let x = { x with
-                    actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
-                    old = filterNotIn posts x.old
-                    nextPage = nextPage }
-        { db with feeds' = Map.add source x db.feeds' }
+    let premergeFirstPage source page =
+        let merge (db : LocalDb) =
+            Map.tryFind source db.sharedFeeds
+            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
+                let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
+                let x =
+                    if Seq.isEmpty x.actual
+                        then { x with actual = posts; nextPage = nextPage }
+                        else { x with preloaded = posts; nextPage = nextPage }
+                { db with feeds = Map.add source x db.feeds }
+            |> Option.defaultValue db
+        { url = fun db -> 
+                    { db with sharedFeeds = db.sharedFeeds |> Map.remove source },
+                    UrlBuilder.posts source "FIXME" page |> Some
+          callback = fun db -> merge db, () }
 
-    let mergeFirstPage source (db : LocalDb) posts =
-        { db with feeds' = Map.remove source db.feeds' }
-        |> fun db -> mergeNextPage source db posts
+    let mergeFirstPage source =
+        let merge (db : LocalDb) =
+            Map.tryFind source db.sharedFeeds
+            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
+                let x = PostsWithLevels.empty
+                let x = { x with
+                            actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                            old = filterNotIn posts x.old
+                            nextPage = nextPage }
+                { db with feeds = Map.add source x db.feeds }
+            |> Option.defaultValue db
+        { url = fun db -> 
+                    { db with sharedFeeds = db.sharedFeeds |> Map.remove source },
+                    UrlBuilder.posts source "FIXME" None |> Some
+          callback = fun db -> merge db, () }
+
+    let mergeNextPage source page =
+        let merge (db : LocalDb) =
+            Map.tryFind source db.sharedFeeds
+            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
+                let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
+                let x = { x with
+                            actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                            old = filterNotIn posts x.old
+                            nextPage = nextPage }
+                { db with feeds = Map.add source x db.feeds }
+            |> Option.defaultValue db
+        { url = fun db -> 
+                    { db with sharedFeeds = db.sharedFeeds |> Map.remove source },
+                    UrlBuilder.posts source "FIXME" page |> Some
+          callback = fun db -> merge db, () }

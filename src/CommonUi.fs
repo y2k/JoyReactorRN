@@ -52,15 +52,6 @@ let indicatorView =
                         ActivityIndicator.Size Size.Large
                         ActivityIndicator.Color Colors.orange ]
 
-let viewNavigationBar selected onSelect =
-    let button title index =
-        touchableOpacity [ Styles.tabButtonOuter (selected = index)
-                           OnPress(fun _ -> onSelect index) ] [ text [ Styles.tabButtonInner ] title ]
-    view [ ViewProperties.Style [ FlexDirection FlexDirection.Row ] ] [ button "Home" 0
-                                                                        button "Tags" 1
-                                                                        button "Messages" 2
-                                                                        button "Profile" 3 ]
-
 let statusView status =
     match status with
     | Some(Ok _) -> view [] []

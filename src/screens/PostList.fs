@@ -7,15 +7,8 @@ open JoyReactor
 open JoyReactor.Types
 type LocalDb = CofxStorage.LocalDb
 module UI = CommonUi
-module Effects = Services.Storage
-
-module Effects =
-    open JoyReactor.Services
-    type NextPosts = Post [] * int option
-
-    let sync (s : Source) (p : int option) (f : LocalDb -> NextPosts -> LocalDb) : unit Async = async {
-        let! (x, y) = runSyncEffect ^ SyncDomain.loadPosts s p
-        do! Storage.update ^ fun db -> f db (Seq.toArray x, y), () }
+module R = Services.EffRuntime
+module D = MergeDomain
 
 type PostState = Actual of Post | Divider | Old of Post
 
@@ -23,6 +16,7 @@ type Msg =
     | PostsMsg of PostsWithLevels
     | SyncResultMsg of Result<unit, exn>
     | ApplyUpdate
+    | ApplyUpdateEnd of Result<unit, exn>
     | Refresh
     | LoadNextPage
     | OpenPost of Post
@@ -36,11 +30,11 @@ type Model =
 
 let init source =
     { source = source; items = [||]; hasNew = false; nextPage = None; loading = true },
-    Effects.sync source None ^ fun db (xs, np) -> MergeDomain.premergeFirstPage source xs np db
-    |> Cmd.ofEffect SyncResultMsg
+    R.run ^ MergeDomain.premergeFirstPage source None
+    |> Cmd.map SyncResultMsg
 
 let sub source (db : LocalDb) =
-    Map.tryFind source db.feeds' |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
+    Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
 
 let update model = function
     | PostsMsg x ->
@@ -48,19 +42,17 @@ let update model = function
             if Seq.isEmpty ps.preloaded
                 then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
                 else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
-        Log.log (sprintf "PostsMsg, X = %O" x)
         { model with items = mkItems x; hasNew = not <| Array.isEmpty x.preloaded; nextPage = x.nextPage },
         Cmd.none
     | SyncResultMsg(Ok _) -> { model with loading = false }, Cmd.none
-    | ApplyUpdate ->
-        model,
-        (Services.Storage.update ^ fun db -> MergeDomain.mergeApply model.source db, ()) |> Cmd.ofEffect0
+    | ApplyUpdate -> model, D.mergeApply model.source |> R.run |> Cmd.map ApplyUpdateEnd
     | LoadNextPage ->
         { model with loading = true },
-        Effects.sync model.source model.nextPage ^ MergeDomain.mergeNextPage model.source |> Cmd.ofEffect SyncResultMsg
+        R.run ^ MergeDomain.mergeNextPage model.source model.nextPage |> Cmd.map SyncResultMsg
     | Refresh ->
         model,
-        Effects.sync model.source None ^ MergeDomain.mergeFirstPage model.source |> Cmd.ofEffect SyncResultMsg
+        R.run ^ MergeDomain.mergeFirstPage model.source |> Cmd.map SyncResultMsg
+    | ApplyUpdateEnd (Ok _) -> model, Cmd.none
     | x -> failwithf "%O" x
 
 module private Styles =
@@ -99,6 +91,7 @@ module private Styles =
 let viewItem dispatch post =
     let viewPostImage post =
         post.image
+        |> Array.tryHead
         |> Option.map ^ Image.urlWithHeight ((Fable.ReactNative.RN.Dimensions.get "screen").width)
         |> function
            | Some(img, h) ->

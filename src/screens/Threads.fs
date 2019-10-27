@@ -5,9 +5,11 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-module UI = JoyReactor.CommonUi
-module S = JoyReactor.Services
-type LocalDb = JoyReactor.CofxStorage.LocalDb
+module UI = CommonUi
+module S = Services
+module R = JoyReactor.Services.EffRuntime
+module D = JoyReactor.SyncDomain
+type LocalDb = CofxStorage.LocalDb
 
 type Model = { items : Message []; status : Result<unit, exn> option }
 
@@ -17,15 +19,19 @@ type Msg =
     | ThreadsLoaded of Message []
     | ThreadSelected of string
 
-let sub (db : LocalDb) = ThreadsLoaded ^ Domain.selectThreads db.messages
+let sub (db : LocalDb) = Domain.selectThreads db.messages |> ThreadsLoaded
 
 let init : Model * Cmd<Msg> = { items = [||]; status = None }, Cmd.ofMsg Refresh
 
 let update model msg =
     match msg with
     | ThreadsLoaded x -> { model with items = x }, Cmd.none
-    | Refresh -> { model with status = None }, (S.runSyncEffect ^ SyncDomain.syncMessages None) |> Cmd.ofEffect RefreshComplete
-    | RefreshComplete (Ok (Some next)) -> model, Some next |> SyncDomain.syncMessages |> S.runSyncEffect |> Cmd.ofEffect RefreshComplete
+    | Refresh ->
+        { model with status = None },
+        D.messages None |> R.run |> Cmd.map RefreshComplete
+    | RefreshComplete (Ok (Some next)) ->
+        model,
+        D.messages ^ Some next |> R.run |> Cmd.map RefreshComplete
     | RefreshComplete (Ok None) -> { model with status = Some <| Ok () }, Cmd.none
     | RefreshComplete (Error x) -> log x { model with status = Some <| Error x }, Cmd.none
     | _ -> model, Cmd.none

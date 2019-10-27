@@ -30,16 +30,17 @@ module Types =
           userImage : Attachment
           rating : double
           created : System.DateTime
-          image : Attachment option
+          image : Attachment []
           attachments : AttachmentResource []
           title : string
           tags : string []
           comments : Comment [] }
 
     type PostResponse =
-        { posts : Post list
+        { posts : Post []
           nextPage : int option }
-
+        static member empty : PostResponse = { posts = [||]; nextPage = None }
+    
     type PostsWithLevels =
         { actual : Post []
           old : Post []
@@ -66,21 +67,10 @@ module Types =
         { messages : Message []
           nextPage : string option }
 
-module CofxStorage =
-  open Types
-
-  type LocalDb =
-      { feeds : Map<Source, Post []>
-        feeds' : Map<Source, PostsWithLevels>
-        posts : Map<int, Post>
-        tags : Tag []
-        messages : Message []
-        profile : Profile option }
-
 module UrlBuilder =
     let domain = "joyreactor.cc"
 #if DEBUG
-    let apiBaseUri = "http://10.5.86.139:8080"
+    let apiBaseUri = "http://192.168.1.59:8080"
 #else
     let apiBaseUri = "https://jrs.y2k.work"
 #endif

@@ -5,9 +5,9 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-module UI = JoyReactor.CommonUi
-module S = JoyReactor.Services
-type LocalDb = JoyReactor.CofxStorage.LocalDb
+module UI = CommonUi
+module S = Services
+type LocalDb = CofxStorage.LocalDb
 
 type Model = { messages : Message []; isBusy : bool; username : string }
 
@@ -16,7 +16,7 @@ type Msg =
     | SendMessage
     | SendMessageResult of Result<Unit, exn>
 
-let sub username (db : LocalDb) = MessagesLoaded <| Domain.selectMessageForUser username db.messages
+let sub username (db : LocalDb) = Domain.selectMessageForUser username db.messages |> MessagesLoaded
 
 let init username = { messages = [||]; isBusy = false; username = username }, Cmd.none
 

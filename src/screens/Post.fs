@@ -5,11 +5,14 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 open JoyReactor.Types
-module UI = JoyReactor.CommonUi
-module S = JoyReactor.Services
-type LocalDb = JoyReactor.CofxStorage.LocalDb
+module UI = CommonUi
+module R = Services.EffRuntime
+module D = SyncDomain
+type LocalDb = CofxStorage.LocalDb
 
-type Model = { post : Post option; error : string option; id : int }
+type Model =
+    { post : Post option; error : string option; id : int }
+    with static member empty = { post = None; error = None; id = 0 }
 
 type Msg =
     | PostLoaded of Post option
@@ -19,7 +22,9 @@ type Msg =
 
 let sub id (db : LocalDb) = PostLoaded <| Map.tryFind id db.posts 
 
-let init id = { post = None; error = None; id = id }, (S.runSyncEffect ^ SyncDomain.syncPost id) |> Cmd.ofEffect RefreshComplete
+let init id = 
+    { post = None; error = None; id = id }, 
+    D.post id |> R.run |> Cmd.map RefreshComplete
 
 let update model = function
     | PostLoaded x -> { model with post = x }, Cmd.none
@@ -54,7 +59,7 @@ let viewAttachments (comment : Comment) =
          |> Array.toList
          |> List.map (fun a ->
                 image [ ImageProperties.Style [ Width $ 80.; Height $ 80. ]
-                        Source <| remoteImage [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
+                        Source <| remoteImage [ Uri <| Image.normalize a.image.url 80. 80. ] ]))
 
 let viewItem (comment : Comment) =
     view [ Styles.home ] [
@@ -76,7 +81,7 @@ let viewPostAttachments (post : Post) _ =
          |> Array.toList
          |> List.map (fun a ->
                 image [ ImageProperties.Style [ Width $ 80.; Height $ 80.; Margin $ 2. ]
-                        Source <| remoteImage [ Uri <| Image.normilize a.image.url 80. 80. ] ]))
+                        Source <| remoteImage [ Uri <| Image.normalize a.image.url 80. 80. ] ]))
 
 let viewTags post dispatch =
     post.tags
@@ -88,8 +93,10 @@ let viewTags post dispatch =
 
 let viewContent post dispatch =
     scrollView [] [
-         yield image [ ImageProperties.Style [ Height $ 300. ]
-                       Source <| remoteImage [ Uri post.image.Value.url ] ]
+         yield! 
+            post.image 
+            |> Array.map ^ fun x ->
+                image [ ImageProperties.Style [ Height $ 300. ]; Source ^ remoteImage [ Uri x.url ] ]
          yield button [ ButtonProperties.Title "Открыть в браузере"
                         ButtonProperties.OnPress(dispatch <! OpenInWeb) ] []
          yield text [ TextProperties.Style [ Padding $ 13. ] ] "Приложения:"

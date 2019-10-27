@@ -5,8 +5,8 @@ open Fable.ReactNative.Helpers
 open Fable.ReactNative.Props
 open JoyReactor
 
-module S = JoyReactor.Services
-module UI = JoyReactor.CommonUi
+module S = Services
+module UI = CommonUi
 
 type Model =
     { username : string
@@ -19,6 +19,8 @@ type Msg =
     | LoginResultMsg of Result<unit, exn>
     | UsernameMsg of string
     | PasswordMsg of string
+    | IgnoreMsg
+    | ClosePage
 
 module private Styles =
     let edit =
@@ -55,23 +57,21 @@ module private Styles =
                TextInput.TextInputProperties.OnChangeText f ] @ ps)
             text
 
+let sub _ = IgnoreMsg
+
 let init =
-    { username = ""
-      password = ""
-      isBusy = false
-      error = None }
+    { username = ""; password = ""; isBusy = false; error = None }, Cmd.none
 
 let update model msg : Model * Cmd<Msg> =
     match msg with
     | LoginMsg ->
         { model with isBusy = true; error = None }, 
         S.login model.username model.password |> Cmd.ofEffect LoginResultMsg
-    | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.none
-    | LoginResultMsg(Error e) ->
-        { model with isBusy = false; error = Some <| string e }, 
-        Cmd.none
+    | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.ofMsg ClosePage
+    | LoginResultMsg(Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
     | UsernameMsg x -> { model with username = x }, Cmd.none
     | PasswordMsg x -> { model with password = x }, Cmd.none
+    | _ -> model, Cmd.none
 
 let private viewButton dispatch title margin =
     touchableOpacity [ Styles.button margin; OnPress(dispatch <! LoginMsg) ] [ 
@@ -88,7 +88,7 @@ let view model dispatch =
             Styles.textInput model.username "Логин" (UsernameMsg >> dispatch)
                 [ TextInput.AutoCapitalize AutoCapitalize.None ]
             view [ ViewProperties.Style [ Height $ 12. ] ] []
-            Styles.textInput model.password "Пароль" (PasswordMsg >> dispatch) [ TextInput.SecureTextEntry true ]
+            Styles.textInput model.password "Пароль" (PasswordMsg >> dispatch) [ TextInput.SecureTextEntry false ]
             view [ ViewProperties.Style [ Height $ 12. ] ] []
             viewButton dispatch "Войти" $ 0.
             text [ TextProperties.Style [ TextStyle.Color "red"; Padding $ 10.; FontSize 20. ] ] 
