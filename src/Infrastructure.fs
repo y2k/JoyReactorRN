@@ -43,7 +43,7 @@ module EffRuntime =
             do! Store.update ^ fun db -> { db with parseRequests = db.parseRequests |> Set.add html }, ()
             return! Store.update ^ fun db -> eff.callback db
         | None -> 
-            return failwith "???" }
+            return failwith "No url" }
 
     let run eff = runEffect eff |> Cmd.ofEffect id
 

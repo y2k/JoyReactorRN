@@ -230,9 +230,6 @@ module SyncStore =
     let private callback : (LocalDb -> unit) option ref = ref None
 
     let sendToServer : (KVDiff -> KVDiff Async) ref = ref (fun _ -> failwith "Not implemented")
-    
-    type a = unit
-    let update' () : ((LocalDb -> LocalDb * 'a) -> 'a Async) ref = failwith "???"
 
     let update (f : LocalDb -> LocalDb * 'a) : 'a Async = async {
         let oldDb = !shared
