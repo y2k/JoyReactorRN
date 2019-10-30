@@ -27,11 +27,12 @@ type Model =
       loading : bool
       nextPage : int option
       source : Source }
+with
+    static member empty = { source = FeedSource; items = [||]; hasNew = false; nextPage = None; loading = true }
 
 let init source =
-    { source = source; items = [||]; hasNew = false; nextPage = None; loading = true },
-    R.run ^ MergeDomain.premergeFirstPage source None
-    |> Cmd.map SyncResultMsg
+    { Model.empty with source = source },
+    MergeDomain.premergeFirstPage source None |> R.run |> Cmd.map SyncResultMsg
 
 let sub source (db : LocalDb) =
     Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty |> PostsMsg
