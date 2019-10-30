@@ -10,6 +10,7 @@
     <Compile Include="Domain.fs" />
     <Compile Include="Infrastructure.fs" />
     <Compile Include="CommonUi.fs" />
+    <Compile Include="screens/FeedScreen.fs" />
     <Compile Include="screens/PostList.fs" />
     <Compile Include="screens/Messages.fs" />
     <Compile Include="screens/Threads.fs" />
@@ -17,7 +18,7 @@
     <Compile Include="screens/Login.fs" />
     <Compile Include="screens/Tags.fs" />
     <Compile Include="screens/Profile.fs" />
-    <Compile Include="screens\TestSyncStore.fs" />
+    <Compile Include="screens/TestSyncStore.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
