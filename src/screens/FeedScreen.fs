@@ -14,7 +14,11 @@ module Domain =
           callback = fun db -> db, getPostsWithLevels source db }
 
     let preloadFirstPage source =
-        let mergeFirstPage db source = failwith "TODO"
+        let mergeFirstPage db source =
+            let old = getPostsWithLevels source db
+            let preloaded = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage }
+            { db with feeds = Map.add source a db.feeds; sharedFeeds = Map.remove source db.sharedFeeds }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db -> mergeFirstPage db source, () }
