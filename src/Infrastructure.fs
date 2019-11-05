@@ -41,9 +41,8 @@ module EffRuntime =
         | Some url ->
             let! html = !ApiRequests.downloadString url [] []
             do! Store.update ^ fun db -> { db with parseRequests = db.parseRequests |> Set.add html }, ()
-            return! Store.update ^ fun db -> eff.callback db
-        | None -> 
-            return failwith "No url" }
+        | None -> ()
+        return! Store.update ^ fun db -> eff.callback db }
 
     let run eff = runEffect eff |> Cmd.ofEffect id
 

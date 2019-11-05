@@ -5,7 +5,7 @@ module Domain =
     open JoyReactor.Types
     open JoyReactor.SyncDomain
 
-    let getPostsWithLevels source (db: LocalDb) =
+    let private getPostsWithLevels source (db : LocalDb) =
         Map.tryFind source db.feeds
         |> Option.defaultValue PostsWithLevels.empty
 
@@ -14,39 +14,66 @@ module Domain =
           callback = fun db -> db, getPostsWithLevels source db }
 
     let preloadFirstPage source =
-        let mergeFirstPage db source =
+        let mergeFirstPage db =
             let old = getPostsWithLevels source db
             let preloaded = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
             let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage }
             { db with feeds = Map.add source a db.feeds; sharedFeeds = Map.remove source db.sharedFeeds }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
-          callback = fun db -> mergeFirstPage db source, () }
+          callback = fun db -> mergeFirstPage db, () }
 
     let applyPreloaded source = 
-        let mergePreloaded db source = failwith "TODO"
+        let mergePreloaded db =
+            let old = getPostsWithLevels source db
+            let a = { old with actual = old.preloaded }
+            { db with feeds = Map.add source a db.feeds }
 
         { url = fun db -> db, None
           callback = fun db -> 
-            let db = mergePreloaded db source
+            let db = mergePreloaded db
             db, getPostsWithLevels source db }
 
     let loadNextPage source = 
-        let mergeSecondPage db source = failwith "TODO"
+        let mergeSecondPage db =
+            let merge old posts =
+                Array.concat [ old.actual; posts ]
+                |> Array.distinctBy ^ fun x -> x.id
+            let mergeOld old posts =
+                let keys = posts |> (Array.map ^ fun x -> x.id) |> Set.ofArray
+                old.old |> Array.filter ^ fun x -> Set.contains x.id keys
+
+            let old = getPostsWithLevels source db
+            let response = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let a = { old with 
+                        actual = merge old response.posts
+                        old = mergeOld old response.posts
+                        nextPage = response.nextPage }
+            { db with 
+                feeds = Map.add source a db.feeds
+                sharedFeeds = Map.remove source db.sharedFeeds }
     
         { url = fun db ->
             let a = getPostsWithLevels source db
             db, UrlBuilder.posts source "FIXME" a.nextPage |> Some
           callback = fun db -> 
-            let db = mergeSecondPage db source
+            let db = mergeSecondPage db
             db, getPostsWithLevels source db }
 
     let refresh source = 
-        let replacePosts db source = failwith "TODO"
+        let replacePosts (db : LocalDb) =
+            let response = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let a = { actual = response.posts
+                      old = [||]
+                      preloaded = [||]
+                      nextPage = response.nextPage }
+            { db with 
+                feeds = Map.add source a db.feeds
+                sharedFeeds = Map.remove source db.sharedFeeds }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db ->
-            let db = replacePosts db source
+            let db = replacePosts db
             db, getPostsWithLevels source db }
 
 open Elmish
@@ -72,9 +99,9 @@ let init source =
 
 let update model msg =
     let toItems (ps: PostsWithLevels): PostState [] =
-        if Seq.isEmpty ps.preloaded
-            then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
-            else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
+        if Seq.isEmpty ps.old
+            then ps.actual |> Array.map Actual
+            else Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
 
     match msg with
     | PostsLoadedFromCache(Ok xs) ->

@@ -2,6 +2,7 @@ module ComponentTests
 
 open JoyReactor.Types
 open Xunit
+open JR.Screens
 module A = JoyReactor.Services.ApiRequests
 module S = JoyReactor.SyncStore
 
@@ -50,10 +51,23 @@ module Utils =
 let ``feed test`` () =
     Utils.init()
     
-    let (model, msgs) =
-        Utils.runInitCmd (PostsComponent.init FeedSource)
+    let (model, msgs) = Utils.runInitCmd (FeedScreen.init FeedSource)
+    let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
+    Assert.Equal(0, Seq.length model.items)
+    Assert.Equal(false, model.hasNew)
 
-    ()
+    let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
+    Assert.Equal(0, Seq.length model.items)
+    Assert.Equal(true, model.hasNew)
+    Assert.StrictEqual([], msgs)
+
+    let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.ApplyPreloaded ]
+    Assert.StrictEqual(0, Seq.length model.items)
+    Assert.Equal(false, model.hasNew)
+
+    let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
+    Assert.Equal(-1, Seq.length model.items)
+    Assert.StrictEqual([], msgs)
 
 [<Fact>]
 let ``tags test``() =
