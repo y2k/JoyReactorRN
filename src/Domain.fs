@@ -142,7 +142,7 @@ module MergeDomain =
 
     let premergeFirstPage source page =
         let merge (db : LocalDb) =
-            Map.tryFind source db.sharedFeeds
+            db.sharedFeeds
             |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
                 let x =
@@ -152,13 +152,13 @@ module MergeDomain =
                 { db with feeds = Map.add source x db.feeds }
             |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = db.sharedFeeds |> Map.remove source },
+                    { db with sharedFeeds = None },
                     UrlBuilder.posts source "FIXME" page |> Some
           callback = fun db -> merge db, () }
 
     let mergeFirstPage source =
         let merge (db : LocalDb) =
-            Map.tryFind source db.sharedFeeds
+            db.sharedFeeds
             |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = PostsWithLevels.empty
                 let x = { x with
@@ -168,13 +168,13 @@ module MergeDomain =
                 { db with feeds = Map.add source x db.feeds }
             |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = db.sharedFeeds |> Map.remove source },
+                    { db with sharedFeeds = None },
                     UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db -> merge db, () }
 
     let mergeNextPage source page =
         let merge (db : LocalDb) =
-            Map.tryFind source db.sharedFeeds
+            db.sharedFeeds
             |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
                 let x = { x with
@@ -184,6 +184,6 @@ module MergeDomain =
                 { db with feeds = Map.add source x db.feeds }
             |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = db.sharedFeeds |> Map.remove source },
+                    { db with sharedFeeds = None },
                     UrlBuilder.posts source "FIXME" page |> Some
           callback = fun db -> merge db, () }

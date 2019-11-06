@@ -8,6 +8,7 @@ let parse html (db: Store) =
     let messages = P.getMessages html
     { db with
          sharedMessages = messages |> (Option.map ^ fun x -> x.messages |> Set.ofSeq) |> Option.defaultValue Set.empty
+         sharedFeeds = P.parsePostsWithNext html |> Some
          nextMessagesPage = messages |> Option.bind ^ fun x -> x.nextPage
          userName = P.parseUserName html
          userTags = html |> P.readUserTags |> Seq.map (fun x -> x.name, x) |> Map.ofSeq

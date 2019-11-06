@@ -16,9 +16,9 @@ module Domain =
     let preloadFirstPage source =
         let mergeFirstPage db =
             let old = getPostsWithLevels source db
-            let preloaded = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let preloaded = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
             let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage }
-            { db with feeds = Map.add source a db.feeds; sharedFeeds = Map.remove source db.sharedFeeds }
+            { db with feeds = Map.add source a db.feeds; sharedFeeds = None }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db -> mergeFirstPage db, () }
@@ -44,14 +44,14 @@ module Domain =
                 old.old |> Array.filter ^ fun x -> Set.contains x.id keys
 
             let old = getPostsWithLevels source db
-            let response = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let response = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
             let a = { old with 
                         actual = merge old response.posts
                         old = mergeOld old response.posts
                         nextPage = response.nextPage }
             { db with 
                 feeds = Map.add source a db.feeds
-                sharedFeeds = Map.remove source db.sharedFeeds }
+                sharedFeeds = None }
     
         { url = fun db ->
             let a = getPostsWithLevels source db
@@ -62,14 +62,14 @@ module Domain =
 
     let refresh source = 
         let replacePosts (db : LocalDb) =
-            let response = Map.tryFind source db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let response = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
             let a = { actual = response.posts
                       old = [||]
                       preloaded = [||]
                       nextPage = response.nextPage }
             { db with 
                 feeds = Map.add source a db.feeds
-                sharedFeeds = Map.remove source db.sharedFeeds }
+                sharedFeeds = None }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db ->
@@ -82,7 +82,7 @@ module R = JoyReactor.Services.EffRuntime
 
 type PostState = | Actual of Post | Divider | Old of Post
 
-type Model = { source: Source; items: PostState []; hasNew: bool }
+type Model = { source: Source; items: PostState []; hasNew: bool; loading: bool }
 type Msg =
     | PostsLoadedFromCache of Result<PostsWithLevels, exn>
     | FirstPagePreloaded of Result<unit, exn>
@@ -94,25 +94,30 @@ type Msg =
     | RefreshCompleted of Result<PostsWithLevels, exn>
 
 let init source =
-    { source = source; items = [||]; hasNew = false },
+    { source = source; items = [||]; hasNew = false; loading = false },
     Domain.init source |> R.run |> Cmd.map PostsLoadedFromCache
 
 let update model msg =
     let toItems (ps: PostsWithLevels): PostState [] =
-        if Seq.isEmpty ps.old
-            then ps.actual |> Array.map Actual
-            else Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
+        if Seq.isEmpty ps.preloaded && not ^ Seq.isEmpty ps.actual
+            then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
+            else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
 
     match msg with
     | PostsLoadedFromCache(Ok xs) ->
-        { model with items = toItems xs },
+        { model with items = toItems xs; loading = true },
         Domain.preloadFirstPage model.source |> R.run |> Cmd.map FirstPagePreloaded
-    | FirstPagePreloaded(Ok _) -> { model with hasNew = true }, Cmd.none
+    | FirstPagePreloaded(Ok _) -> { model with hasNew = true; loading = false }, Cmd.none
     | ApplyPreloaded -> 
         { model with hasNew = false }, 
         Domain.applyPreloaded model.source |> R.run |> Cmd.map ApplyPreloadedCompleted
     | ApplyPreloadedCompleted (Ok xs) -> { model with items = toItems xs }, Cmd.none
-    | LoadNextPage -> model, Domain.loadNextPage model.source |> R.run |> Cmd.map LoadNextPageCompleted
-    | Refresh -> model, Domain.refresh model.source |> R.run |> Cmd.map RefreshCompleted
-    | RefreshCompleted (Ok xs) -> { model with items = toItems xs }, Cmd.none
-    | _ -> model, Cmd.none
+    | LoadNextPage ->
+        { model with loading = true },
+        Domain.loadNextPage model.source |> R.run |> Cmd.map LoadNextPageCompleted
+    | LoadNextPageCompleted (Ok xs) -> { model with items = toItems xs; loading = false }, Cmd.none
+    | Refresh ->
+        { model with loading = true },
+        Domain.refresh model.source |> R.run |> Cmd.map RefreshCompleted
+    | RefreshCompleted (Ok xs) -> { model with items = toItems xs; loading = false }, Cmd.none
+    | x -> failwithf "Not implemented = %O" x

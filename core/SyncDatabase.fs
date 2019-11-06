@@ -5,7 +5,7 @@ module CofxStorage =
 
     type LocalDb =
         { feeds : Map<Source, PostsWithLevels>
-          sharedFeeds : Map<Source, PostResponse>
+          sharedFeeds : PostResponse option
           posts : Map<int, Post>
           userName : string option
           userTags : Map<string, Tag>
@@ -16,7 +16,7 @@ module CofxStorage =
           profile : Profile option
           parseRequests : string Set }
     with
-        static member empty = { feeds = Map.empty; sharedFeeds = Map.empty; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
+        static member empty = { feeds = Map.empty; sharedFeeds = None; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
 
 module DiffActions =
     open Types
@@ -45,9 +45,7 @@ module DiffActions =
         | Add of Message
         | Remove of Message
 
-    type SharedFeedsActions =
-        | Add of Source * PostResponse
-        | Remove of Source
+    type SharedFeedsActions = Changed of PostResponse option
     
     type AllDiffActions =
         | NextMessagesPage of NextMessagesPageActions
@@ -80,8 +78,7 @@ module SyncStore =
         actions
         |> List.map (
             function
-            | SharedFeeds (SharedFeedsActions.Add (k, v)) -> "sf_a", sprintf "%s|%s" (k |> box |> !toJsonString) (v |> box |> !toJsonString) 
-            | SharedFeeds (SharedFeedsActions.Remove k) -> "sf_r", k |> box |> !toJsonString 
+            | SharedFeeds (SharedFeedsActions.Changed x) -> "sf_a", x |> box |> !toJsonString 
             | SharedMessages (SharedMessagesActions.Add m) -> "sm_a", m |> box |> !toJsonString
             | SharedMessages (SharedMessagesActions.Remove m) -> "sm_r", m |> box |> !toJsonString
             | NextMessagesPage (NextMessagesPageActions.Changed page) -> "mp_ch", page |> Option.defaultValue ""
@@ -99,10 +96,7 @@ module SyncStore =
         form
         |> List.map (
             function
-            | "sf_a", kv ->
-                let parts = kv.Split([| '|' |], 2)
-                (parts.[0] |> !fromJsonString |> unbox, parts.[1] |> !fromJsonString |> unbox) |> SharedFeedsActions.Add |> SharedFeeds
-            | "sf_r", k -> k |> !fromJsonString |> unbox |> SharedFeedsActions.Remove |> SharedFeeds
+            | "sf_a", x -> x |> !fromJsonString |> unbox |> SharedFeedsActions.Changed |> SharedFeeds
             | "sm_a", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Add |> SharedMessages
             | "sm_r", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Remove |> SharedMessages
             | "mp_ch", x -> (if String.length x = 0 then Some x else None) |> NextMessagesPageActions.Changed |> NextMessagesPage
@@ -142,16 +136,9 @@ module SyncStore =
     
     let getDiffForAll (old : LocalDb) (newDb : LocalDb) = 
         List.concat [
-            Set.difference 
-                (old.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
-                (newDb.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
-            |> Seq.map (fun id -> SharedFeedsActions.Remove id |> AllDiffActions.SharedFeeds)
-            |> Seq.toList
-            Set.difference 
-                (newDb.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
-                (old.sharedFeeds |> Seq.map (fun x -> x.Key) |> Set.ofSeq)
-            |> Seq.map (fun id -> SharedFeedsActions.Add (id, newDb.sharedFeeds.[id]) |> AllDiffActions.SharedFeeds)
-            |> Seq.toList
+            (if (old.sharedFeeds <> newDb.sharedFeeds)
+                then [ newDb.sharedFeeds |> SharedFeedsActions.Changed |> AllDiffActions.SharedFeeds ]
+                else [])
 
             Set.difference newDb.sharedMessages old.sharedMessages |> Set.toList
             |> List.map (fun x -> SharedMessagesActions.Add x |> AllDiffActions.SharedMessages)
@@ -210,8 +197,7 @@ module SyncStore =
         |> List.fold
                (fun db action ->
                     match action with
-                    | SharedFeeds (SharedFeedsActions.Add (k, v)) -> { db with sharedFeeds = db.sharedFeeds |> Map.add k v }
-                    | SharedFeeds (SharedFeedsActions.Remove k) -> { db with sharedFeeds = db.sharedFeeds |> Map.remove k }
+                    | SharedFeeds (SharedFeedsActions.Changed x) -> { db with sharedFeeds = x }
                     | SharedMessages (SharedMessagesActions.Add x) -> { db with sharedMessages = db.sharedMessages |> Set.add x }
                     | SharedMessages (SharedMessagesActions.Remove x) -> { db with sharedMessages = db.sharedMessages |> Set.remove x }
                     | NextMessagesPage (NextMessagesPageActions.Changed page) -> { db with nextMessagesPage = page }
