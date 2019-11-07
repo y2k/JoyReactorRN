@@ -26,7 +26,10 @@ module Domain =
     let applyPreloaded source = 
         let mergePreloaded db =
             let old = getPostsWithLevels source db
-            let a = { old with actual = old.preloaded }
+            let ids = old.preloaded |> (Seq.map ^ fun x -> x.id) |> Set.ofSeq
+            let a = { old with
+                        actual = old.preloaded
+                        old = old.actual |> (Seq.filter ^ fun x -> not ^ Seq.contains x.id ids) |> Seq.toArray }
             { db with feeds = Map.add source a db.feeds }
 
         { url = fun db -> db, None
@@ -80,7 +83,7 @@ open Elmish
 open JoyReactor.Types
 module R = JoyReactor.Services.EffRuntime
 
-type PostState = | Actual of Post | Divider | Old of Post
+type PostState = | Actual of Post | LoadNextDivider | Old of Post
 
 type Model = { source: Source; items: PostState []; hasNew: bool; loading: bool }
 type Msg =
@@ -98,26 +101,26 @@ let init source =
     Domain.init source |> R.run |> Cmd.map PostsLoadedFromCache
 
 let update model msg =
-    let toItems (ps: PostsWithLevels): PostState [] =
-        if Seq.isEmpty ps.preloaded && not ^ Seq.isEmpty ps.actual
-            then Array.concat [ ps.actual |> Array.map Actual; [| Divider |]; ps.old |> Array.map Old ]
+    let toItems (ps: PostsWithLevels) loading: PostState [] =
+        if Seq.isEmpty ps.preloaded && not ^ Seq.isEmpty ps.actual && not loading
+            then Array.concat [ ps.actual |> Array.map Actual; [| LoadNextDivider |]; ps.old |> Array.map Old ]
             else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
 
     match msg with
     | PostsLoadedFromCache(Ok xs) ->
-        { model with items = toItems xs; loading = true },
+        { model with items = toItems xs true; loading = true },
         Domain.preloadFirstPage model.source |> R.run |> Cmd.map FirstPagePreloaded
     | FirstPagePreloaded(Ok _) -> { model with hasNew = true; loading = false }, Cmd.none
     | ApplyPreloaded -> 
         { model with hasNew = false }, 
         Domain.applyPreloaded model.source |> R.run |> Cmd.map ApplyPreloadedCompleted
-    | ApplyPreloadedCompleted (Ok xs) -> { model with items = toItems xs }, Cmd.none
+    | ApplyPreloadedCompleted (Ok xs) -> { model with items = toItems xs false }, Cmd.none
     | LoadNextPage ->
         { model with loading = true },
         Domain.loadNextPage model.source |> R.run |> Cmd.map LoadNextPageCompleted
-    | LoadNextPageCompleted (Ok xs) -> { model with items = toItems xs; loading = false }, Cmd.none
+    | LoadNextPageCompleted (Ok xs) -> { model with items = toItems xs false; loading = false }, Cmd.none
     | Refresh ->
         { model with loading = true },
         Domain.refresh model.source |> R.run |> Cmd.map RefreshCompleted
-    | RefreshCompleted (Ok xs) -> { model with items = toItems xs; loading = false }, Cmd.none
+    | RefreshCompleted (Ok xs) -> { model with items = toItems xs false; loading = false }, Cmd.none
     | x -> failwithf "Not implemented = %O" x
