@@ -28,6 +28,7 @@ module Domain =
             let old = getPostsWithLevels source db
             let ids = old.preloaded |> (Seq.map ^ fun x -> x.id) |> Set.ofSeq
             let a = { old with
+                        preloaded = [||]
                         actual = old.preloaded
                         old = old.actual |> (Seq.filter ^ fun x -> not ^ Seq.contains x.id ids) |> Seq.toArray }
             { db with feeds = Map.add source a db.feeds }

@@ -75,24 +75,24 @@ let ``feed test``() =
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
     Assert.Equal([||], msgs)
-    Assert.Equal(10, Seq.length model.items)
+    Assert.Equal(11, Seq.length model.items)
     Assert.Equal(false, model.hasNew)
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.LoadNextPage ]
-    Assert.Equal(10, Seq.length model.items)
+    Assert.Equal(11, Seq.length model.items)
     Assert.Equal(false, model.hasNew)
     Assert.Equal(true, model.loading)
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
     Assert.Equal([||], msgs)
     Assert.Equal(false, model.hasNew)
-    Assert.Equal(20, Seq.length model.items)
+    Assert.Equal(21, Seq.length model.items)
     Assert.Equal(false, model.loading)
     
     (* Refresh list *)
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.Refresh ]
-    Assert.Equal(20, Seq.length model.items)
+    Assert.Equal(21, Seq.length model.items)
     Assert.Equal(false, model.hasNew)
     Assert.Equal(true, model.loading)
 
