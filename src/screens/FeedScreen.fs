@@ -96,6 +96,8 @@ type Msg =
     | LoadNextPageCompleted of Result<PostsWithLevels, exn>
     | Refresh
     | RefreshCompleted of Result<PostsWithLevels, exn>
+    | OpenPost of Post
+    | IgnoreSubMessage
 
 let init source =
     { source = source; items = [||]; hasNew = false; loading = false },
@@ -124,4 +126,91 @@ let update model msg =
         { model with loading = true },
         Domain.refresh model.source |> R.run |> Cmd.map RefreshCompleted
     | RefreshCompleted (Ok xs) -> { model with items = toItems xs false; loading = false }, Cmd.none
+    | IgnoreSubMessage -> model, Cmd.none
     | x -> failwithf "Not implemented = %O" x
+
+let sub _ _ = IgnoreSubMessage
+
+module private View =
+    open Fable.ReactNative.Helpers
+    open Fable.ReactNative.Props
+    open JoyReactor
+    module UI = JoyReactor.CommonUi
+
+    module private Styles =
+        let nextButtonOutter enabled =
+            TouchableWithoutFeedbackProperties.Style [ Margin $ 4.
+                                                       BackgroundColor(if enabled then UI.Colors.primary else "#e4942100")
+                                                       BorderRadius 4.
+                                                       Overflow ImageOverflow.Hidden ]
+
+        let nextButtonInner =
+            TextProperties.Style [ FontWeight FontWeight.Bold
+                                   FontSize 13.
+                                   TextAlign TextAlignment.Center
+                                   Padding $ 15.
+                                   TextStyle.Color "white" ]
+
+        let card =
+            ViewProperties.Style [ AlignItems ItemAlignment.Stretch
+                                   BackgroundColor "white"
+                                   BorderColor "#eee"
+                                   BorderWidth 1.
+                                   BorderRadius 8.
+                                   Overflow ImageOverflow.Hidden ]
+
+        let avatar =
+            ImageProperties.Style [ Width $ 36.
+                                    Height $ 36.
+                                    BorderRadius 18.
+                                    MarginRight $ 9. ]
+
+        let userName =
+            TextProperties.Style [ FontWeight FontWeight.Bold
+                                   FontSize 14.
+                                   TextStyle.Color UI.Colors.darkGray ]
+
+    let private viewItem dispatch post =
+        let viewPostImage post =
+            post.image
+            |> Array.tryHead
+            |> Option.map ^ Image.urlWithHeight ((Fable.ReactNative.RN.Dimensions.get "screen").width)
+            |> function
+            | Some(img, h) ->
+                image [ ImageProperties.Style [ Height $ h; BorderTopLeftRadius 8.; BorderTopRightRadius 8. ]
+                        Source <| remoteImage [ Uri img ] ]
+            | None -> view [] []
+
+        touchableHighlight [ TouchableHighlightProperties.Style [ Margin $ 4. ]
+                             TouchableHighlightProperties.ActiveOpacity 0.7
+                             OnPress(always (OpenPost post) >> dispatch) ] [
+            view [ Styles.card ] [
+                viewPostImage post
+                view [ ViewProperties.Style [ FlexDirection FlexDirection.Row; Margin $ 9. ] ] [
+                    image [ Styles.avatar; Source <| remoteImage [ Uri post.userImage.url ] ]
+                    view [ ViewProperties.Style [ Flex 1. ] ] [
+                        text [ Styles.userName ] post.userName
+                        view [ ViewProperties.Style [ AlignSelf Alignment.FlexEnd; FlexDirection FlexDirection.Row ] ] [
+                            UI.iconView
+                            text [ TextProperties.Style [ MarginLeft $ 8.; TextStyle.Color "#bcbcbc" ] ]
+                                "2 часа" ] ] ] ] ]
+
+    let private viewNextButton dispatch isSyncing =
+        let onPress = if isSyncing then ignore else dispatch <! LoadNextPage
+        touchableOpacity [ Styles.nextButtonOutter <| not isSyncing; OnPress onPress ] [
+            text [ Styles.nextButtonInner ] "Load next page" ]
+
+    let view model dispatch =
+        let mkId = function | LoadNextDivider -> -1 | Actual x -> x.id | Old x -> x.id
+        view [ ViewProperties.Style [ Flex 1. ] ] [
+            UI.list model.items
+                (function
+                | Actual x -> viewItem dispatch x
+                | Old x -> viewItem dispatch x
+                | LoadNextDivider -> viewNextButton dispatch model.loading)
+                (mkId >> string)
+                [ OnRefresh(dispatch <! Refresh); Refreshing false ]
+            UI.reloadButton (not model.hasNew) "New posts" (dispatch <! ApplyPreloaded)
+            UI.loadingView model.loading ]
+
+let view = View.view

@@ -11,6 +11,7 @@ open Fetch
 
 open JoyReactor.CommonUi
 type LocalDb = JoyReactor.CofxStorage.LocalDb
+module PostsComponent = JR.Screens.FeedScreen
 
 module TabsScreen =
     open Fable.ReactNative.Props

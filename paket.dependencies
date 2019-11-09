@@ -20,6 +20,7 @@ nuget Fable.Browser.Dom
 source https://nuget.org/api/v2
 nuget FAKE < 5
 
+nuget Unquote
 nuget Microsoft.NET.Test.Sdk
 nuget xunit
 nuget xunit.runner.visualstudio

@@ -22,9 +22,18 @@ type CustomLogger() =
         member __.name = [| "" |]
         member __.log level line = printfn "LOGX :: %O | %O" level ^ line level
 
+module Serializer =
+    open Utf8Json
+    open Utf8Json.Resolvers
+    open Utf8Json.FSharp
+
+    CompositeResolver.RegisterAndSetAsDefault(FSharpResolver.Instance, StandardResolver.Default)
+
+    let serialize = JsonSerializer.Serialize >> System.Text.Encoding.UTF8.GetString
+
 [<EntryPoint>]
 let main _ =
-    JoyReactor.SyncStore.toJsonString := Newtonsoft.Json.JsonConvert.SerializeObject
+    JoyReactor.SyncStore.toJsonString := Serializer.serialize
 
     choose [
         GET >=> path "/info" >=> OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)

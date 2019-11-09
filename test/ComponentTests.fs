@@ -54,6 +54,8 @@ module Utils =
         init
         |> fun (model, cmd) -> model, runCmd cmd
 
+open Swensen.Unquote
+
 [<Fact>]
 let ``feed test``() =
     Utils.init()
@@ -61,81 +63,52 @@ let ``feed test``() =
     let (model, msgs) = Utils.runInitCmd (FeedScreen.init FeedSource)
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs // PostsLoadedFromCache
-    Assert.Equal([], model.items)
-    Assert.Equal(false, model.hasNew)
+    test <@ model.items = [||] && not model.hasNew @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs // FirstPagePreloaded
-    Assert.Equal([||], msgs)
-    Assert.Equal([], model.items)
-    Assert.Equal(true, model.hasNew)
+    test <@ msgs = [] && model.items = [||] && model.hasNew @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.ApplyPreloaded ]
-    Assert.Equal([], model.items)
-    Assert.Equal(false, model.hasNew)
+    test <@ model.items = [||] && not model.hasNew @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
-    Assert.Equal([||], msgs)
-    Assert.Equal(11, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
+    test <@ msgs = [] && Seq.length model.items = 11 && not model.hasNew @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.LoadNextPage ]
-    Assert.Equal(11, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(true, model.loading)
+    test <@ Seq.length model.items = 11 && not model.hasNew && model.loading @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
-    Assert.Equal([||], msgs)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(21, Seq.length model.items)
-    Assert.Equal(false, model.loading)
+    test <@ msgs = [] && not model.hasNew && model.items.Length = 21 && not model.loading @>
     
     (* Refresh list *)
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.Refresh ]
-    Assert.Equal(21, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(true, model.loading)
+    test <@ model.items.Length = 21 && not model.hasNew && model.loading @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
-    Assert.Equal([||], msgs)
-    Assert.Equal(11, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(false, model.loading)
+    test <@ msgs = [] && model.items.Length = 11 && not model.hasNew && not model.loading @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.LoadNextPage ]
-    Assert.Equal(11, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(true, model.loading)
+    test <@ model.items.Length = 11 && not model.hasNew && model.loading @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
-    Assert.Equal([||], msgs)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(21, Seq.length model.items)
-    Assert.Equal(false, model.loading)
+    test <@ msgs = [] && not model.hasNew && model.items.Length = 21 && not model.loading @>
 
     (* Second enter to screen *)
 
     let (model, msgs) = Utils.runInitCmd (FeedScreen.init FeedSource)
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs // PostsLoadedFromCache
-    Assert.Equal(20, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
-    Assert.Equal(true, model.loading)
+    test <@ model.items.Length = 20 && not model.hasNew && model.loading @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs // FirstPagePreloaded
-    Assert.Equal([||], msgs)
-    Assert.Equal(20, Seq.length model.items)
-    Assert.Equal(true, model.hasNew)
-    Assert.Equal(false, model.loading)
+    test <@ msgs = [] && model.items.Length = 20 && model.hasNew && not model.loading @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model [ FeedScreen.ApplyPreloaded ]
-    Assert.Equal(20, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
+    test <@ model.items.Length = 20 && not model.hasNew @>
 
     let (model, msgs) = Utils.runUpdateCmd FeedScreen.update model msgs
-    Assert.Equal([||], msgs)
-    Assert.Equal(21, Seq.length model.items)
-    Assert.Equal(false, model.hasNew)
+    test <@ msgs = [] && model.items.Length = 21 && not model.hasNew @>
 
 [<Fact>]
 let ``tags test``() =
