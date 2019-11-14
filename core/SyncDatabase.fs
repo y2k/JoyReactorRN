@@ -78,7 +78,7 @@ module SyncStore =
         actions
         |> List.map (
             function
-            | SharedFeeds (SharedFeedsActions.Changed x) -> "sf_a", x |> box |> !toJsonString 
+            | SharedFeeds (SharedFeedsActions.Changed x) -> "sf_a", {| value = x |} |> box |> !toJsonString 
             | SharedMessages (SharedMessagesActions.Add m) -> "sm_a", m |> box |> !toJsonString
             | SharedMessages (SharedMessagesActions.Remove m) -> "sm_r", m |> box |> !toJsonString
             | NextMessagesPage (NextMessagesPageActions.Changed page) -> "mp_ch", page |> Option.defaultValue ""
@@ -96,7 +96,7 @@ module SyncStore =
         form
         |> List.map (
             function
-            | "sf_a", x -> x |> !fromJsonString |> unbox |> SharedFeedsActions.Changed |> SharedFeeds
+            | "sf_a", x -> x |> !fromJsonString |> unbox<{| value: PostResponse option |}> |> fun x -> x.value |> SharedFeedsActions.Changed |> SharedFeeds
             | "sm_a", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Add |> SharedMessages
             | "sm_r", x -> x |> !fromJsonString |> unbox |> SharedMessagesActions.Remove |> SharedMessages
             | "mp_ch", x -> (if String.length x = 0 then Some x else None) |> NextMessagesPageActions.Changed |> NextMessagesPage

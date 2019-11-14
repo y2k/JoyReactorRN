@@ -228,6 +228,5 @@ InitSyncStore.init()
 
 Program.mkProgram App.init App.update App.view
 |> Program.withSubscription App.subscribe
-//|> Program.withConsoleTrace
 |> Program.withReactNative "joyreact"
 |> Program.run
