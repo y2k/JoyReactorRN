@@ -90,6 +90,9 @@ module SyncDomain =
         { url: LocalDb -> LocalDb * string option
           callback: LocalDb -> LocalDb * 'a }
 
+    let private ignore db = db, ()
+    let private fixedUrl url db = db, Some url
+
     let messages page =
         { url = fun db -> 
               { db with sharedMessages = Set.empty },
@@ -97,26 +100,26 @@ module SyncDomain =
           callback = fun db -> 
               { db with messages = Set.union db.messages db.sharedMessages },
               db.nextMessagesPage }
-
+    
     let logout =
-        { url = fun db -> db, sprintf "%s/logout" UrlBuilder.baseUrl |> Some
-          callback = fun db -> db, () }
+        { url = fixedUrl ^ sprintf "%s/logout" UrlBuilder.baseUrl
+          callback = ignore }
 
     let profile =
         { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
-          callback = fun db -> db, () }
+          callback = ignore }
 
     let userTags =
         { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
-          callback = fun db -> db, () }
+          callback = ignore }
 
     let topTags =
-        { url = fun db -> db, UrlBuilder.home |> Some 
-          callback = fun db -> db, () }
+        { url = fixedUrl UrlBuilder.home 
+          callback = ignore }
 
     let post id =
-        { url = fun db -> db, UrlBuilder.post id |> Some
-          callback = fun db -> db, () }
+        { url = fixedUrl ^ UrlBuilder.post id
+          callback = ignore }
 
 module MergeDomain =
     open Types

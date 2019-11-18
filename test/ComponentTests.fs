@@ -117,15 +117,14 @@ let ``tags test``() =
     let (model, msgs) = Utils.runInitCmd TagsScreen.init
 
     let (model, msgs) = Utils.runUpdateCmd TagsScreen.update model msgs
-    Assert.Equal(2, Seq.length msgs)
+    test <@ Seq.length msgs = 2 @>
 
     let (model, msgs) = Utils.runUpdateCmd TagsScreen.update model msgs
-    Assert.Equal(0, Seq.length msgs)
+    test <@ Seq.isEmpty msgs @>
 
     let msg = Utils.readDb TagsScreen.sub
     let (model, _) = TagsScreen.update model msg
-
-    Assert.Equal(11, Seq.length model.tags)
+    test <@ Seq.length model.tags = 11 @>
 
 [<Fact>]
 let ``post test``() =
@@ -134,10 +133,10 @@ let ``post test``() =
     let id = 4111388
 
     let (model, msgs) = Utils.runInitCmd (PostScreen.init id)
-    Assert.Equal({ PostScreen.Model.empty with id = id }, model)
+    test <@ model = { PostScreen.Model.empty with id = id } @>
 
     let (model, _) = Utils.runUpdateCmd PostScreen.update model msgs
-    Assert.Equal({ PostScreen.Model.empty with id = id }, model)
+    test <@ model = { PostScreen.Model.empty with id = id } @>
 
     let msg = Utils.readDb (PostScreen.sub id)
     let (model, _) = Utils.runUpdateCmd PostScreen.update model [ msg ]
