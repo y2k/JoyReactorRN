@@ -140,6 +140,5 @@ let ``post test``() =
 
     let msg = Utils.readDb (PostScreen.sub id)
     let (model, _) = Utils.runUpdateCmd PostScreen.update model [ msg ]
-    Assert.Equal (
-         [| "семья"; "уведомление"; "дети" |] |> Seq.toList,
-         model.post |> Option.map (fun x -> x.tags) |> Option.get)
+    let tags = model.post |> Option.map (fun x -> x.tags) |> Option.get
+    test <@ tags = [| "семья"; "уведомление"; "дети" |] @>
