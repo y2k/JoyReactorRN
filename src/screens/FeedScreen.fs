@@ -18,7 +18,7 @@ module Domain =
             let old = getPostsWithLevels source db
             let preloaded = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
             let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage }
-            { db with feeds = Map.add source a db.feeds; sharedFeeds = None }
+            { db with feeds = Map.add source a db.feeds; sharedFeeds = Map.empty }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db -> mergeFirstPage db, () }
@@ -55,7 +55,7 @@ module Domain =
                         nextPage = response.nextPage }
             { db with 
                 feeds = Map.add source a db.feeds
-                sharedFeeds = None }
+                sharedFeeds = Map.empty }
     
         { url = fun db ->
             let a = getPostsWithLevels source db
@@ -73,7 +73,7 @@ module Domain =
                       nextPage = response.nextPage }
             { db with 
                 feeds = Map.add source a db.feeds
-                sharedFeeds = None }
+                sharedFeeds = Map.empty }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db ->

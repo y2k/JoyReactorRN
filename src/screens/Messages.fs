@@ -16,7 +16,7 @@ type Msg =
     | SendMessage
     | SendMessageResult of Result<Unit, exn>
 
-let sub username (db : LocalDb) = Domain.selectMessageForUser username db.messages |> MessagesLoaded
+let sub username (db : LocalDb) = db.messages |> Seq.map (fun x -> x.Key) |> Domain.selectMessageForUser username |> MessagesLoaded
 
 let init username = { messages = [||]; isBusy = false; username = username }, Cmd.none
 

@@ -65,3 +65,5 @@ packages/
 bin/
 obj/
 *.user
+
+*.gen.fs

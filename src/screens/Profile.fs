@@ -19,7 +19,7 @@ type Msg =
 
 type Model = { profile : Profile option; userName : string option }
 
-let sub (db : LocalDb) = ProfileChanged db.profile
+let sub (db : LocalDb) = ProfileChanged (db.profile |> Map.tryFind ())
 
 let init : Model * Cmd<Msg> =
     { profile = None; userName = None },

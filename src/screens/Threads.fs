@@ -19,7 +19,7 @@ type Msg =
     | ThreadsLoaded of Message []
     | ThreadSelected of string
 
-let sub (db : LocalDb) = Domain.selectThreads db.messages |> ThreadsLoaded
+let sub (db : LocalDb) = db.messages |> Seq.map (fun x -> x.Key) |> Domain.selectThreads |> ThreadsLoaded
 
 let init : Model * Cmd<Msg> = { items = [||]; status = None }, Cmd.ofMsg Refresh
 

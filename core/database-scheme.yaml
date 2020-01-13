@@ -1,0 +1,25 @@
+module: JoyReactor.Database.Gen
+open: JoyReactor.Types
+items:
+- name: feeds
+  type: Map<Source, PostsWithLevels>
+- name: sharedFeeds
+  type: Map<unit, PostResponse>
+- name: posts
+  type: Map<int, Post>
+- name: userName
+  type: Map<string, string>
+- name: userTags
+  type: Map<string, Tag>
+- name: topTags
+  type: Map<string, Tag>
+- name: messages
+  type: Map<Message, unit>
+- name: sharedMessages
+  type: Map<Message, unit>
+- name: nextMessagesPage
+  type: Map<unit, string>
+- name: profile
+  type: Map<unit, Profile>
+- name: parseRequests
+  type: Map<string, unit>

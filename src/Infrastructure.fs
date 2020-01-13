@@ -40,7 +40,7 @@ module EffRuntime =
         match optUrl with
         | Some url ->
             let! html = !ApiRequests.downloadString url [] []
-            do! Store.update ^ fun db -> { db with parseRequests = db.parseRequests |> Set.add html }, ()
+            do! Store.update ^ fun db -> { db with parseRequests = db.parseRequests |> Map.add html () }, ()
         | None -> ()
         return! Store.update ^ fun db -> eff.callback db }
 

@@ -94,10 +94,10 @@ module SyncDomain =
     let private fixedUrl url db = db, Some url
 
     let messages page =
-        { url = fun db -> 
-              { db with sharedMessages = Set.empty },
+        { url = fun db ->
+              { db with sharedMessages = Map.empty },
               UrlBuilder.messages page |> Some
-          callback = fun db -> 
+          callback = fun db ->
               { db with messages = Set.union db.messages db.sharedMessages },
               db.nextMessagesPage }
     
@@ -106,11 +106,11 @@ module SyncDomain =
           callback = ignore }
 
     let profile =
-        { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
+        { url = fun db -> db, db.userName |> Map.tryFind () |> Option.map ^ UrlBuilder.user
           callback = ignore }
 
     let userTags =
-        { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
+        { url = fun db -> db, db.userName |> Map.tryFind () |> Option.map ^ UrlBuilder.user
           callback = ignore }
 
     let topTags =
@@ -146,6 +146,7 @@ module MergeDomain =
     let premergeFirstPage source page =
         let merge (db : LocalDb) =
             db.sharedFeeds
+            |> Map.tryFind ()
             |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
                 let x =
@@ -155,13 +156,14 @@ module MergeDomain =
                 { db with feeds = Map.add source x db.feeds }
             |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = None },
+                    { db with sharedFeeds = Map.empty },
                     UrlBuilder.posts source "FIXME" page |> Some
           callback = fun db -> merge db, () }
 
     let mergeFirstPage source =
         let merge (db : LocalDb) =
             db.sharedFeeds
+            |> Map.tryFind ()
             |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = PostsWithLevels.empty
                 let x = { x with
@@ -171,13 +173,14 @@ module MergeDomain =
                 { db with feeds = Map.add source x db.feeds }
             |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = None },
+                    { db with sharedFeeds = Map.empty },
                     UrlBuilder.posts source "FIXME" None |> Some
           callback = fun db -> merge db, () }
 
     let mergeNextPage source page =
         let merge (db : LocalDb) =
             db.sharedFeeds
+            |> Map.tryFind ()
             |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
                 let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
                 let x = { x with
@@ -187,6 +190,6 @@ module MergeDomain =
                 { db with feeds = Map.add source x db.feeds }
             |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = None },
+                    { db with sharedFeeds = Map.empty },
                     UrlBuilder.posts source "FIXME" page |> Some
           callback = fun db -> merge db, () }
