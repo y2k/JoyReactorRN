@@ -8,7 +8,7 @@ items:
 - name: posts
   type: Map<int, Post>
 - name: userName
-  type: Map<string, string>
+  type: Map<unit, string>
 - name: userTags
   type: Map<string, Tag>
 - name: topTags
