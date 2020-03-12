@@ -1,0 +1,22 @@
+{
+    "scripts": {
+        "start": "webpack-dev-server",
+        "prod": "webpack-dev-server --mode production --host 0.0.0.0 --disable-host-check"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.5.5",
+        "@babel/preset-env": "^7.7.7",
+        "fable-compiler": "^2.4.11",
+        "fable-loader": "^2.1.8",
+        "fable-splitter": "^2.1.11",
+        "webpack": "^4.39.2",
+        "webpack-cli": "^3.3.6",
+        "webpack-dev-server": "^3.8.0"
+    },
+    "dependencies": {
+        "@material-ui/core": "^4.9.0",
+        "@material-ui/icons": "^4.5.1",
+        "react": "^16.12.0",
+        "react-dom": "^16.12.0"
+    }
+}
