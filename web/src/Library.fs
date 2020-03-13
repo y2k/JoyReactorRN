@@ -100,6 +100,7 @@ module PostScreen =
                     viewComments model.comments ] ]
 
 module FeedScreen =
+    open JoyReactor.Types
     type Model = Post [] States
     type Msg = PostsLoaded of Result<Post [], exn> | OpenPost of int
 
@@ -108,7 +109,7 @@ module FeedScreen =
         open Elmish
 
         let downloadPosts() =
-            fetch "https://jsonplaceholder.typicode.com/posts" []
+            fetch "http://localhost:8090/feed" []
             |> Promise.bind ^ fun r -> r.json<Post []>()
 
         let init _ = 
@@ -127,11 +128,15 @@ module FeedScreen =
 
         let viewItem dispatch (i : Post) =
             card [] [
+                cardMedia [
+                    Image i.image.[0].url
+                    Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.image.[0].aspect)) ]
+                ]
                 cardContent [] [
                     typography [ Variant TypographyVariant.H6 ] [ 
                         str i.title ]
                     typography [ Variant TypographyVariant.Subtitle1 ] [ 
-                        str i.body ] ]
+                        str i.title ] ]
                 cardActions [] [
                     button 
                         [ ButtonProp.Size ButtonSize.Small
