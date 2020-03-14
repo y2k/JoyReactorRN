@@ -123,70 +123,77 @@ module SyncDomain =
 
 module MergeDomain =
     open Types
-    open SyncDomain
 
-    let private filterNotIn target xs =
+    let filterNotIn target xs =
         let ids =
             target
             |> Seq.map ^ fun x -> x.id
             |> Set.ofSeq
         xs |> Array.filter ^ fun x -> not ^ Set.contains x.id ids
 
-    let mergeApply source =
-        let merge (db : LocalDb) =
-            let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
+    let premergeFirstPage' source sharedFeeds feeds =
+        sharedFeeds
+        |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
+            let x = Map.tryFind source feeds |> Option.defaultValue PostsWithLevels.empty
+            let x =
+                if Seq.isEmpty x.actual
+                    then { x with actual = posts; nextPage = nextPage }
+                    else { x with preloaded = posts; nextPage = nextPage }
+            Map.add source x feeds
+        |> Option.defaultValue feeds
+
+    let mergeApply' source feeds =
+        let x = Map.tryFind source feeds |> Option.defaultValue PostsWithLevels.empty
+        let x = { x with
+                    old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded
+                    actual = x.preloaded
+                    preloaded = [||] }
+        Map.add source x feeds
+
+    let mergeFirstPage' source sharedFeeds feeds =
+        sharedFeeds
+        |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
+            let x = PostsWithLevels.empty
             let x = { x with
-                        old = Array.concat [ x.actual; x.old ] |> filterNotIn x.preloaded
-                        actual = x.preloaded
-                        preloaded = [||] }
-            { db with feeds = Map.add source x db.feeds }
-        { url = fun db -> merge db, None
+                        actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                        old = filterNotIn posts x.old
+                        nextPage = nextPage }
+            Map.add source x feeds
+        |> Option.defaultValue feeds
+
+    let mergeNextPage' source sharedFeeds feeds =
+        sharedFeeds
+        |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
+            let x = Map.tryFind source feeds |> Option.defaultValue PostsWithLevels.empty
+            let x = { x with
+                        actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
+                        old = filterNotIn posts x.old
+                        nextPage = nextPage }
+            Map.add source x feeds
+        |> Option.defaultValue feeds
+
+module MergeDomainEff =
+    open SyncDomain
+    open MergeDomain
+
+    let mergeApply source =
+        { url = fun db -> { db with feeds = mergeApply' source db.feeds }, None
           callback = fun db -> db, () }
 
     let premergeFirstPage source page =
-        let merge (db : LocalDb) =
-            db.sharedFeeds
-            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
-                let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
-                let x =
-                    if Seq.isEmpty x.actual
-                        then { x with actual = posts; nextPage = nextPage }
-                        else { x with preloaded = posts; nextPage = nextPage }
-                { db with feeds = Map.add source x db.feeds }
-            |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = None },
-                    UrlBuilder.posts source "FIXME" page |> Some
-          callback = fun db -> merge db, () }
+              { db with sharedFeeds = None }, UrlBuilder.posts source "FIXME" page |> Some
+          callback = fun db -> 
+              { db with feeds = premergeFirstPage' source db.sharedFeeds db.feeds }, () }
 
     let mergeFirstPage source =
-        let merge (db : LocalDb) =
-            db.sharedFeeds
-            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
-                let x = PostsWithLevels.empty
-                let x = { x with
-                            actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
-                            old = filterNotIn posts x.old
-                            nextPage = nextPage }
-                { db with feeds = Map.add source x db.feeds }
-            |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = None },
-                    UrlBuilder.posts source "FIXME" None |> Some
-          callback = fun db -> merge db, () }
+              { db with sharedFeeds = None }, UrlBuilder.posts source "FIXME" None |> Some
+          callback = fun db -> 
+              { db with feeds = mergeFirstPage' source db.sharedFeeds db.feeds }, () }
 
     let mergeNextPage source page =
-        let merge (db : LocalDb) =
-            db.sharedFeeds
-            |> Option.map ^ fun { posts = posts; nextPage = nextPage } ->
-                let x = Map.tryFind source db.feeds |> Option.defaultValue PostsWithLevels.empty
-                let x = { x with
-                            actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
-                            old = filterNotIn posts x.old
-                            nextPage = nextPage }
-                { db with feeds = Map.add source x db.feeds }
-            |> Option.defaultValue db
         { url = fun db -> 
-                    { db with sharedFeeds = None },
-                    UrlBuilder.posts source "FIXME" page |> Some
-          callback = fun db -> merge db, () }
+              { db with sharedFeeds = None }, UrlBuilder.posts source "FIXME" page |> Some
+          callback = fun db -> 
+              { db with feeds = mergeNextPage' source db.sharedFeeds db.feeds }, () }

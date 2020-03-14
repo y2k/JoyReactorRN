@@ -11,7 +11,6 @@
     <Compile Include="Infrastructure.fs" />
     <Compile Include="CommonUi.fs" />
     <Compile Include="screens/FeedScreen.fs" />
-    <Compile Include="screens/PostList.fs" />
     <Compile Include="screens/Messages.fs" />
     <Compile Include="screens/Threads.fs" />
     <Compile Include="screens/Post.fs" />
