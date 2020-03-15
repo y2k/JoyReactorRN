@@ -38,8 +38,8 @@ module Types =
 
     type PostResponse =
         { posts : Post []
-          nextPage : int option }
-        static member empty : PostResponse = { posts = [||]; nextPage = None }
+          nextPage : int [] }
+        static member empty : PostResponse = { posts = [||]; nextPage = [||] }
     
     type PostsWithLevels =
         { actual : Post []

@@ -195,7 +195,7 @@ module Parsers =
 
     let parsePostsWithNext html =
         { posts = parsePostsForTag html
-          nextPage = parseNewPageNumber html }
+          nextPage = parseNewPageNumber html |> Option.toArray }
 
     let parsePost html =
         let element = getDocument html

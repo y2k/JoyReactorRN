@@ -137,8 +137,8 @@ module MergeDomain =
             let x = Map.tryFind source feeds |> Option.defaultValue PostsWithLevels.empty
             let x =
                 if Seq.isEmpty x.actual
-                    then { x with actual = posts; nextPage = nextPage }
-                    else { x with preloaded = posts; nextPage = nextPage }
+                    then { x with actual = posts; nextPage = nextPage |> Array.tryHead }
+                    else { x with preloaded = posts; nextPage = nextPage |> Array.tryHead }
             Map.add source x feeds
         |> Option.defaultValue feeds
 
@@ -157,7 +157,7 @@ module MergeDomain =
             let x = { x with
                         actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
                         old = filterNotIn posts x.old
-                        nextPage = nextPage }
+                        nextPage = nextPage |> Array.tryHead }
             Map.add source x feeds
         |> Option.defaultValue feeds
 
@@ -168,7 +168,7 @@ module MergeDomain =
             let x = { x with
                         actual = Array.concat [ x.actual; filterNotIn x.actual posts ]
                         old = filterNotIn posts x.old
-                        nextPage = nextPage }
+                        nextPage = nextPage |> Array.tryHead }
             Map.add source x feeds
         |> Option.defaultValue feeds
 

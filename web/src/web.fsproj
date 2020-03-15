@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\core\core.fsproj" />
+    <ProjectReference Include="..\..\components\components.fsproj" />
   </ItemGroup>
 
 </Project>

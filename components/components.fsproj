@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Domain.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="FeedScreen.fs" />
   </ItemGroup>
 
   <ItemGroup>

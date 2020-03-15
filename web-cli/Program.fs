@@ -1,6 +1,4 @@
-﻿let (@@) f x = f x
-
-module Foo =
+﻿module Domain =
     module Downloader =
         open System.Net.Http
         let loadHtml (url : string) : string Async = 
@@ -12,14 +10,15 @@ module Foo =
     open Suave
     open System.Text.Json
 
-    let feed = 
-        request @@ fun _ ctx ->
-            async {
-                let! html = Downloader.loadHtml "http://joyreactor.cc/"
-                let posts = JoyReactor.Parsers.parsePostsForTag html
-                let json = JsonSerializer.SerializeToUtf8Bytes posts
-                return! Successful.ok json ctx
-            }
+    let posts url ctx =
+        async {
+            let! html = Downloader.loadHtml url
+            let wp = 
+                JoyReactor.Parsers.parsePostsWithNext html
+                |> JsonSerializer.SerializeToUtf8Bytes
+                |> Successful.ok
+            return! wp ctx
+        }
 
 open Suave
 open Suave.Operators
@@ -28,8 +27,8 @@ open Suave.Filters
 [<EntryPoint>]
 let main _ =
     choose [
-        GET >=> path "/info" >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
-        GET >=> path "/feed" >=> Foo.feed ]
+        GET >=> pathScan "/posts/%s" Domain.posts >=> (Writers.setHeader  "Access-Control-Allow-Origin" "*")
+        GET >=> path "/info" >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now) ]
     |> startWebServer {
         defaultConfig with
             bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8090us ] }

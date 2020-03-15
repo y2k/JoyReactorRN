@@ -29,8 +29,7 @@
             },
             "presentation": {
                 "reveal": "always"
-            },
-            "problemMatcher": "$msCompile"
+            }
         },
         {
             "label": "test",

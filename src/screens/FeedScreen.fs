@@ -16,8 +16,8 @@ module Domain =
     let preloadFirstPage source =
         let mergeFirstPage db =
             let old = getPostsWithLevels source db
-            let preloaded = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
-            let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage }
+            let preloaded = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = [||] }
+            let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage |> Array.tryHead }
             { db with feeds = Map.add source a db.feeds; sharedFeeds = None }
 
         { url = fun db -> db, UrlBuilder.posts source "FIXME" None |> Some
@@ -48,11 +48,11 @@ module Domain =
                 old.old |> Array.filter ^ fun x -> Set.contains x.id keys
 
             let old = getPostsWithLevels source db
-            let response = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let response = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = [||] }
             let a = { old with 
                         actual = merge old response.posts
                         old = mergeOld old response.posts
-                        nextPage = response.nextPage }
+                        nextPage = response.nextPage |> Array.tryHead }
             { db with 
                 feeds = Map.add source a db.feeds
                 sharedFeeds = None }
@@ -66,11 +66,11 @@ module Domain =
 
     let refresh source = 
         let replacePosts (db : LocalDb) =
-            let response = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = None }
+            let response = db.sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = [||] }
             let a = { actual = response.posts
                       old = [||]
                       preloaded = [||]
-                      nextPage = response.nextPage }
+                      nextPage = response.nextPage |> Array.tryHead }
             { db with 
                 feeds = Map.add source a db.feeds
                 sharedFeeds = None }
