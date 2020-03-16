@@ -9,6 +9,26 @@
 
     open Suave
     open System.Text.Json
+    open JoyReactor
+    open JoyReactor.Types
+
+    let private wrapToJsonOption isEmpty (xs : _) : _ JsonOption =
+        match isEmpty xs with
+        | true -> [||]
+        | false -> [| xs |]
+
+    let parse url ctx =
+        async {
+            let! html = Downloader.loadHtml url
+            let wp =
+                { posts = Parsers.parsePostsWithNext html |> wrapToJsonOption (fun x -> Array.isEmpty x.posts)
+                  userName = Parsers.parseUserName html |> JsonOption.fromOption
+                  userTags = Parsers.readUserTags html |> wrapToJsonOption Array.isEmpty
+                  topTags = Parsers.parseTopTags html |> wrapToJsonOption Array.isEmpty }
+                |> JsonSerializer.SerializeToUtf8Bytes
+                |> Successful.ok
+            return! wp ctx
+        }
 
     let posts url ctx =
         async {
@@ -27,7 +47,7 @@ open Suave.Filters
 [<EntryPoint>]
 let main _ =
     choose [
-        GET >=> pathScan "/posts/%s" Domain.posts >=> (Writers.setHeader  "Access-Control-Allow-Origin" "*")
+        GET >=> pathScan "/parse/%s" Domain.parse >=> (Writers.setHeader  "Access-Control-Allow-Origin" "*")
         GET >=> path "/info" >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now) ]
     |> startWebServer {
         defaultConfig with

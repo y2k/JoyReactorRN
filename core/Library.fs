@@ -1,4 +1,9 @@
 ﻿namespace JoyReactor
+    
+type 'a JsonOption = 'a []
+module JsonOption =
+    let toOption (x : _ JsonOption) = Array.tryHead x
+    let fromOption x : _ JsonOption = Option.toArray x
 
 module Types =
     type Source =
@@ -40,7 +45,13 @@ module Types =
         { posts : Post []
           nextPage : int [] }
         static member empty : PostResponse = { posts = [||]; nextPage = [||] }
-    
+
+    type ParseResponse = 
+        { posts : PostResponse JsonOption
+          userName : string JsonOption
+          userTags : Tag [] JsonOption
+          topTags : Tag [] JsonOption }
+
     type PostsWithLevels =
         { actual : Post []
           old : Post []

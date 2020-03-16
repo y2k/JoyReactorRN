@@ -161,3 +161,22 @@ module Domain'' =
                   preloaded = [||]
                   nextPage = response.nextPage |> Array.tryHead }
         Map.add source a feeds, None              
+
+module DomainInterpetator =
+    open JoyReactor.Types
+    open JoyReactor.CofxStorage
+
+    let saveAllParseResults db (pr : ParseResponse) =
+        let toMapTag tags dbTags =
+            tags 
+            |> JsonOption.toOption 
+            |> Option.map (fun x -> 
+                x 
+                |> Array.map (fun x -> x.name, x)
+                |> Map.ofArray)
+            |> Option.defaultValue dbTags
+        { db with 
+            sharedFeeds = pr.posts |> JsonOption.toOption
+            userName = pr.userName |> JsonOption.toOption |> Option.orElse db.userName
+            userTags = toMapTag pr.userTags db.userTags
+            topTags = toMapTag pr.topTags db.topTags }

@@ -3,6 +3,7 @@
 [<AutoOpen>]
 module Prelude =
     let inline (^) f x = f x
+    let inline (@@) f x = f x
     let inline (<!) f a () = f a
     let inline (>>=) ma mf = async.Bind(ma, mf)
     let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
@@ -28,7 +29,7 @@ module Styles =
                       MaterialProp.Color ComponentColor.Inherit ] [ 
                     icon [] [ str "more_vert" ] ] ] ]
 
-module HomeSreen =
+module FeedScreen =
     open JoyReactor.Types
     open JoyReactor.Components.FeedScreen
     open Fable.React
@@ -98,22 +99,59 @@ module HomeSreen =
                     bottomNavigationAction [ Label ^ str "Messages" ] 
                     bottomNavigationAction [ Label ^ str "Profile" ] ] ] ]
 
+module TagsScreen =
+    open JoyReactor.Types
+    open JoyReactor.Components.TagsScreen
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+
+    let private viewItem dispatch (i : Tag) = 
+        card [ Style [ Flex 1. ] ] [
+            cardMedia [
+                Image i.image
+                Style [ Height 0; PaddingTop "100%" ] ]
+            cardContent [] [
+                typography [ Variant TypographyVariant.H6 ] [ 
+                    str i.name ]
+                typography [ Variant TypographyVariant.Subtitle1 ] [ 
+                    str i.name ] ]
+            cardActions [] [
+                button 
+                    [ ButtonProp.Size ButtonSize.Small
+                      OnClick ignore ] [ 
+                    str "Open tag" ] ] ]
+
+    let view (model : Model) dispatch =
+        div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
+            yield
+                match not model.loaded with
+                | true ->
+                    div [ Style [ Display DisplayOptions.Flex; JustifyContent "center" ] ] [
+                        yield circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ] ]
+                | false ->
+                    list [] [ yield! model.tags |> Array.map (fun x -> listItem [] [ viewItem dispatch x ]) ]
+            yield 
+                snackbar [ Open false; Message ^ str "Error" ] [] ]
+
 module Interpretator =
     open Fable.Core
+    open JoyReactor
     open JoyReactor.Types
     open JoyReactor.CofxStorage
     open Elmish
-    type 'a Action = 'a JoyReactor.Components.FeedScreen.Action.Action
+    type 'a Action = 'a JoyReactor.Components.Action
 
     let private db = ref LocalDb.empty
 
     let private downloadPostsForUrl url =
         async {
             let! r = 
-                Fetch.fetch (sprintf "http://localhost:8090/posts/%s" (JS.encodeURIComponent url)) [] 
+                Fetch.fetch (sprintf "http://localhost:8090/parse/%s" (JS.encodeURIComponent url)) [] 
                 |> Async.AwaitPromise
-            let! pr = r.json<PostResponse>() |> Async.AwaitPromise
-            db := { !db with sharedFeeds = Some pr }
+            let! pr = r.json<ParseResponse>() |> Async.AwaitPromise
+            db := DomainInterpetator.saveAllParseResults !db pr
         }
 
     let private invoke furl callback : _ Async =
@@ -126,18 +164,20 @@ module Interpretator =
             return result
         }
 
-    let private toCmd (action : 'msg Action) : 'msg Cmd =
-        match action with
-        | Action.NoneAction -> Cmd.none
-        | Action.Eff (url, callback) ->
-            Cmd.OfAsync.perform (fun () -> invoke url callback) () id
+    let private toCmd (action : 'msg Action list) : 'msg Cmd =
+        action
+        |> List.map @@ fun action ->
+            match action with
+            | Action.Eff (url, callback) ->
+                Cmd.OfAsync.perform (fun () -> invoke url callback) () id
+        |> Cmd.batch
 
-    let init (f : 'arg -> 'model * 'msg Action) : ('arg -> 'model * 'msg Cmd) =
+    let init (f : 'arg -> 'model * 'msg Action list) : ('arg -> 'model * 'msg Cmd) =
         fun arg ->
             let (model, action) = f arg
             model, toCmd action
 
-    let udpate (f : 'model -> 'msg -> 'model * 'msg Action) : ('msg -> 'model -> 'model * 'msg Cmd) =
+    let udpate (f : 'model -> 'msg -> 'model * 'msg Action list) : ('msg -> 'model -> 'model * 'msg Cmd) =
         fun msg model ->
             let (model, action) = f model msg
             model, toCmd action
@@ -145,12 +185,10 @@ module Interpretator =
 open Elmish
 open Elmish.React
 open Elmish.Navigation
-open Elmish.UrlParser
 open Elmish.HMR
 module D = JoyReactor.Components.FeedScreen
 
-Program.mkProgram (Interpretator.init D.init) (Interpretator.udpate D.update) HomeSreen.view
-// |> Program.toNavigable (parseHash Application.Domain.route) Application.Domain.urlUpdate
+Program.mkProgram (Interpretator.init D.init) (Interpretator.udpate D.update) FeedScreen.view
 |> Program.withReactSynchronous "elmish-app"
 |> Program.withConsoleTrace
 |> Program.runWith JoyReactor.Types.FeedSource
