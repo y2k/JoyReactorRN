@@ -10,10 +10,15 @@ module Action =
         | Eff (url, callback) -> 
             Eff (url, (fun db -> let (db, a) = callback db in db, f (Ok a)))
             |> List.singleton
+    let map' (f : 'a -> 'b) (a : 'a Action list) : 'b Action list =
+        a
+        |> List.map (fun a -> 
+            match a with
+            | Eff (url, callback) -> 
+                Eff (url, (fun db -> let (db, a) = callback db in db, f a)))
 
 module FeedScreen =
     module Domain =
-        open Action
         open JoyReactor
         open JoyReactor.Types
         open JoyReactor.Domain''
@@ -167,3 +172,32 @@ module TagsScreen =
             , Action.none
         | RefreshComplete (Error e) -> failwithf "RefreshComplete %O" e
         | OpenPosts _ -> model, Action.none
+
+module TabsScreen =
+    open JoyReactor.Types
+
+    type Model =
+        | FeedModel of FeedScreen.Model
+        | TagsModel of TagsScreen.Model
+    type Msg = 
+        | FeedMsg of FeedScreen.Msg
+        | TagsMsg of TagsScreen.Msg
+        | SelectPage of int
+    let init _ =
+        FeedScreen.init FeedSource
+        ||> fun model cmd -> FeedModel model, (cmd |> Action.map' FeedMsg)
+    let update model msg =
+        match model, msg with
+        | FeedModel model, FeedMsg msg -> 
+            FeedScreen.update model msg
+            ||> fun model cmd -> FeedModel model, (cmd |> Action.map' FeedMsg)
+        | TagsModel model, TagsMsg msg -> 
+            TagsScreen.update model msg
+            ||> fun model cmd -> TagsModel model, (cmd |> Action.map' TagsMsg)
+        | _, SelectPage 0 ->
+            FeedScreen.init FeedSource
+            ||> fun model cmd -> FeedModel model, (cmd |> Action.map' FeedMsg)
+        | _, SelectPage 1 ->
+            TagsScreen.init ()
+            ||> fun model cmd -> TagsModel model, (cmd |> Action.map' TagsMsg)
+        | _ -> model, []

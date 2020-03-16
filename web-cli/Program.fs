@@ -9,33 +9,27 @@
 
     open Suave
     open System.Text.Json
+    open System.Text.Json.Serialization
     open JoyReactor
     open JoyReactor.Types
 
-    let private wrapToJsonOption isEmpty (xs : _) : _ JsonOption =
+    let private options = JsonSerializerOptions()
+    options.Converters.Add(JsonFSharpConverter())
+
+    let private wrapToJsonOption isEmpty (xs : _) =
         match isEmpty xs with
-        | true -> [||]
-        | false -> [| xs |]
+        | true -> None
+        | false -> Some xs
 
     let parse url ctx =
         async {
             let! html = Downloader.loadHtml url
             let wp =
                 { posts = Parsers.parsePostsWithNext html |> wrapToJsonOption (fun x -> Array.isEmpty x.posts)
-                  userName = Parsers.parseUserName html |> JsonOption.fromOption
+                  userName = Parsers.parseUserName html
                   userTags = Parsers.readUserTags html |> wrapToJsonOption Array.isEmpty
                   topTags = Parsers.parseTopTags html |> wrapToJsonOption Array.isEmpty }
-                |> JsonSerializer.SerializeToUtf8Bytes
-                |> Successful.ok
-            return! wp ctx
-        }
-
-    let posts url ctx =
-        async {
-            let! html = Downloader.loadHtml url
-            let wp = 
-                JoyReactor.Parsers.parsePostsWithNext html
-                |> JsonSerializer.SerializeToUtf8Bytes
+                |> fun response -> JsonSerializer.SerializeToUtf8Bytes (response, options)
                 |> Successful.ok
             return! wp ctx
         }

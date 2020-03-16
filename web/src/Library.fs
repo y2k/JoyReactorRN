@@ -66,7 +66,7 @@ module FeedScreen =
                   OnClick ^ fun _ -> dispatch LoadNextPage ] [ 
                 str "Load next" ]
 
-    let contentView (model : Model) dispatch =
+    let view (model : Model) dispatch =
         div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
             yield
                 (match model.hasNew with
@@ -85,19 +85,6 @@ module FeedScreen =
                     list [] [ yield! model.items |> Array.map (fun x -> listItem [] [ viewItem dispatch x ]) ]
             yield 
                 snackbar [ Open false; Message ^ str "Error" ] [] ]
-
-    let view model dispatch =
-        fragment [] [
-            Styles.appBar "Posts"
-            contentView model dispatch
-            appBar 
-                [ Style [ Bottom 0; Top "auto" ]
-                  AppBarProp.Position AppBarPosition.Fixed ] [
-                bottomNavigation [ ShowLabels true ] [
-                    bottomNavigationAction [ Label ^ str "Feed" ] 
-                    bottomNavigationAction [ Label ^ str "Tags" ] 
-                    bottomNavigationAction [ Label ^ str "Messages" ] 
-                    bottomNavigationAction [ Label ^ str "Profile" ] ] ] ]
 
 module TagsScreen =
     open JoyReactor.Types
@@ -123,7 +110,7 @@ module TagsScreen =
                       OnClick ignore ] [ 
                     str "Open tag" ] ] ]
 
-    let view (model : Model) dispatch =
+    let view (model : Model) (dispatch : Msg -> unit) =
         div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
             yield
                 match not model.loaded with
@@ -134,6 +121,31 @@ module TagsScreen =
                     list [] [ yield! model.tags |> Array.map (fun x -> listItem [] [ viewItem dispatch x ]) ]
             yield 
                 snackbar [ Open false; Message ^ str "Error" ] [] ]
+
+module TabsScreen =
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+    open JoyReactor.Components.TabsScreen
+
+    let contentView model dispatch =
+        match model with
+        | FeedModel m -> FeedScreen.view m (FeedMsg >> dispatch)
+        | TagsModel m -> TagsScreen.view m (TagsMsg >> dispatch)
+
+    let view model dispatch =
+        fragment [] [
+            Styles.appBar "JR"
+            contentView model dispatch
+            appBar 
+                [ Style [ Bottom 0; Top "auto" ]
+                  AppBarProp.Position AppBarPosition.Fixed ] [
+                bottomNavigation [ ShowLabels true ] [
+                    bottomNavigationAction [ Label ^ str "Feed"; OnClick (fun _ -> dispatch ^ SelectPage 0) ]
+                    bottomNavigationAction [ Label ^ str "Tags"; OnClick (fun _ -> dispatch ^ SelectPage 1) ]
+                    bottomNavigationAction [ Label ^ str "Messages"; OnClick (fun _ -> dispatch ^ SelectPage 2) ]
+                    bottomNavigationAction [ Label ^ str "Profile"; OnClick (fun _ -> dispatch ^ SelectPage 3) ] ] ] ]
 
 module Interpretator =
     open Fable.Core
@@ -186,9 +198,9 @@ open Elmish
 open Elmish.React
 open Elmish.Navigation
 open Elmish.HMR
-module D = JoyReactor.Components.FeedScreen
+module D = JoyReactor.Components.TabsScreen
 
-Program.mkProgram (Interpretator.init D.init) (Interpretator.udpate D.update) FeedScreen.view
+Program.mkProgram (Interpretator.init D.init) (Interpretator.udpate D.update) TabsScreen.view
 |> Program.withReactSynchronous "elmish-app"
 |> Program.withConsoleTrace
-|> Program.runWith JoyReactor.Types.FeedSource
+|> Program.run
