@@ -74,15 +74,19 @@ module FeedScreen =
                       OnClick ^ fun _ -> dispatch ^ OpenPost i ] [ 
                     str "Open post" ] ] ]
 
-    let viewItem dispatch (i : PostState) =
+    let private viewItem dispatch (i : PostState) =
         match i with 
-        | Actual i -> viewPost dispatch i
-        | Old i -> viewPost dispatch i
+        | Actual i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
+        | Old i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
         | LoadNextDivider ->
-            button 
-                [ ButtonProp.Size ButtonSize.Small
-                  OnClick ^ fun _ -> dispatch LoadNextPage ] [ 
-                str "Load next" ]
+            listItem [ Key "divider" ] [
+                button 
+                    [ ButtonProp.Size ButtonSize.Small
+                      OnClick ^ fun _ -> dispatch LoadNextPage ] [ 
+                    str "Load next" ] ]
+
+    let private viewItemList (model : Model) dispatch =
+        list [] (model.items |> Array.map (viewItem dispatch))
 
     let view (model : Model) dispatch =
         div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
@@ -99,8 +103,7 @@ module FeedScreen =
                 | true ->
                     div [ Style [ Display DisplayOptions.Flex; JustifyContent "center" ] ] [
                         yield circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ] ]
-                | false ->
-                    list [] [ yield! model.items |> Array.map (fun x -> listItem [] [ viewItem dispatch x ]) ]
+                | false -> viewItemList model dispatch
             yield 
                 snackbar [ Open false; Message ^ str "Error" ] [] ]
 
@@ -136,7 +139,7 @@ module TagsScreen =
                     div [ Style [ Display DisplayOptions.Flex; JustifyContent "center" ] ] [
                         yield circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ] ]
                 | false ->
-                    list [] [ yield! model.tags |> Array.map (fun x -> listItem [] [ viewItem dispatch x ]) ]
+                    list [] (model.tags |> Array.map (fun x -> listItem [ Key x.name ] [ viewItem dispatch x ]))
             yield 
                 snackbar [ Open false; Message ^ str "Error" ] [] ]
 
@@ -164,6 +167,23 @@ module TabsScreen =
                     bottomNavigationAction [ Label ^ str "Messages"; OnClick (fun _ -> dispatch ^ SelectPage 2) ]
                     bottomNavigationAction [ Label ^ str "Profile"; OnClick (fun _ -> dispatch ^ SelectPage 3) ] ] ] ]
 
+module PostScreen =
+    open JoyReactor.Types
+    open JoyReactor.Components.PostScreen
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+
+    let contentView (post : Post) =
+        div [] []
+
+    let view (model : Model) msg = 
+        fragment [] [
+            match model.post with
+            | Some post -> contentView post
+            | None -> div [] [] ]
+
 module StackNavigationComponent =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
@@ -173,7 +193,8 @@ module StackNavigationComponent =
         match model.history with
         | (TabsModel m) :: _ -> TabsScreen.view m (TabsMsg >> dispatch)
         | (PostsModel m) :: _ -> FeedScreen.view m (PostsMsg >> dispatch)
-        | _ -> failwithf "illegal state (%O)" model
+        | (PostModel m) :: _ -> PostScreen.view m (PostMsg >> dispatch)
+        | [] -> failwithf "illegal state (%O)" model
 
     let view model dispatch =
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [

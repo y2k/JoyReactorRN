@@ -220,15 +220,55 @@ module TabsScreen =
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
         | _ -> model, []
 
+module PostScreen =
+    module Domain =
+        open JoyReactor
+        let fromCache id =
+            ActionModule.run (fun db -> db, None) (fun db -> db, Map.tryFind id db.posts)
+        let post id =
+            ActionModule.run (fun db -> db, Some ^ UrlBuilder.post id) (fun db -> db, Map.tryFind id db.posts)
+
+    open Elmish
+    open JoyReactor
+    open JoyReactor.Types
+
+    type Model = { post : Post option; error : string option; id : int }
+
+    type Msg =
+        | PostLoaded of Result<Post option, exn>
+        | RefreshComplete of Result<Post option, exn>
+        | OpenInWeb
+        | OpenTag of Source
+
+    let init id = 
+        { post = None; error = None; id = id }
+        , Cmd.batch [
+            Domain.fromCache id |> Cmd.map PostLoaded
+            Domain.post id |> Cmd.map RefreshComplete ]
+
+    let update (model : Model) = function
+        | PostLoaded (Ok post) -> { model with post = post }, Cmd.none
+        | PostLoaded (Error e) -> failwithf "Error: PostLoaded: %O" e
+        | RefreshComplete(Ok post) -> { model with error = None; post = post }, Cmd.none
+        | RefreshComplete(Error e) -> { model with error = Some <| string e }, Cmd.none
+        | OpenInWeb ->
+            model
+            , failwith "???"
+            // , sprintf "http://m.%s/post/%i" UrlBuilder.domain model.id
+            //   |> Platform.openUrl |> Cmd.ofEffect0
+        | _ -> model, Cmd.none
+
 module StackNavigationComponent =
     open Elmish
     open JoyReactor.Types
 
     type ChildModel = 
+        | PostModel of PostScreen.Model
         | PostsModel of FeedScreen.Model
         | TabsModel of TabsScreen.Model
     type Model = { history : ChildModel list }
     type Msg = 
+        | PostMsg of PostScreen.Msg
         | PostsMsg of FeedScreen.Msg
         | TabsMsg of TabsScreen.Msg
 
@@ -239,6 +279,10 @@ module StackNavigationComponent =
 
     let update model msg =
         match model, msg with
+        | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) -> 
+            let (m, cmd) = PostScreen.init post.id
+            { history = PostModel m :: model.history }
+            , cmd |> Cmd.map PostMsg
         | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
             let (m, cmd) = FeedScreen.init ^ TagSource tag.name
             { history = PostsModel m :: model.history }
@@ -251,4 +295,8 @@ module StackNavigationComponent =
             let (m, cmd) = FeedScreen.update cmodel cmsg
             { model with history = PostsModel m :: other }
             , cmd |> Cmd.map PostsMsg
+        | { history = (PostModel cmodel) :: other }, PostMsg cmsg ->
+            let (m, cmd) = PostScreen.update cmodel cmsg
+            { model with history = PostModel m :: other }
+            , cmd |> Cmd.map PostMsg
         | _ -> model, Cmd.none

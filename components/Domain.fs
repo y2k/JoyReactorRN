@@ -116,10 +116,6 @@ module SyncDomain =
         { url = fixedUrl UrlBuilder.home 
           callback = ignore }
 
-    let post id =
-        { url = fixedUrl ^ UrlBuilder.post id
-          callback = ignore }
-
 module Domain'' =
     open JoyReactor.Types
 
@@ -166,6 +162,11 @@ module DomainInterpetator =
     open JoyReactor.Types
     open JoyReactor.CofxStorage
 
+    let private tryAddPost posts post =
+        post
+        |> Option.map ^ fun p -> Map.add p.id p posts
+        |> Option.defaultValue posts
+
     let saveAllParseResults db (pr : ParseResponse) =
         let toMapTag tags dbTags =
             tags 
@@ -178,4 +179,5 @@ module DomainInterpetator =
             sharedFeeds = pr.posts
             userName = pr.userName |> Option.orElse db.userName
             userTags = toMapTag pr.userTags db.userTags
-            topTags = toMapTag pr.topTags db.topTags }
+            topTags = toMapTag pr.topTags db.topTags
+            posts = tryAddPost db.posts pr.post }

@@ -45,7 +45,8 @@ module Types =
         { posts : PostResponse option
           userName : string option
           userTags : Tag [] option
-          topTags : Tag [] option }
+          topTags : Tag [] option
+          post : Post option }
 
     type PostsWithLevels =
         { actual : Post []

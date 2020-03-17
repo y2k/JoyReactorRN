@@ -16,7 +16,7 @@
     let private options = JsonSerializerOptions()
     options.Converters.Add(JsonFSharpConverter())
 
-    let private wrapToJsonOption isEmpty (xs : _) =
+    let private wrapToOption isEmpty xs =
         match isEmpty xs with
         | true -> None
         | false -> Some xs
@@ -25,10 +25,11 @@
         async {
             let! html = Downloader.loadHtml url
             let wp =
-                { posts = Parsers.parsePostsWithNext html |> wrapToJsonOption (fun x -> Array.isEmpty x.posts)
+                { posts = Parsers.parsePostsWithNext html |> wrapToOption (fun x -> Array.isEmpty x.posts)
                   userName = Parsers.parseUserName html
-                  userTags = Parsers.readUserTags html |> wrapToJsonOption Array.isEmpty
-                  topTags = Parsers.parseTopTags html |> wrapToJsonOption Array.isEmpty }
+                  userTags = Parsers.readUserTags html |> wrapToOption Array.isEmpty
+                  topTags = Parsers.parseTopTags html |> wrapToOption Array.isEmpty
+                  post = Parsers.parsePost html }
                 |> fun response -> JsonSerializer.SerializeToUtf8Bytes (response, options)
                 |> Successful.ok
             return! wp ctx
