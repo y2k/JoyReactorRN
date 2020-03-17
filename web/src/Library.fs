@@ -10,6 +10,19 @@ module Prelude =
     let inline flip f a b = f b a
     let wrap fmodel fmsg (a, b) = a |> fmodel, b |> Elmish.Cmd.map fmsg
 
+module Interpretator =
+    open Fable.Core
+    open JoyReactor.Types
+
+    JoyReactor.Components.ActionModule.downloadAndParse <-
+        fun url ->
+            async {
+                let! r = 
+                    Fetch.fetch (sprintf "http://localhost:8090/parse/%s" (JS.encodeURIComponent url)) [] 
+                    |> Async.AwaitPromise
+                return! r.json<ParseResponse>() |> Async.AwaitPromise
+            }
+
 module Styles =
     open Fable.React
     open Fable.React.Props
@@ -140,8 +153,7 @@ module TabsScreen =
         | TagsModel m -> TagsScreen.view m (TagsMsg >> dispatch)
 
     let view model dispatch =
-        muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar "JR"
+        fragment [] [
             contentView model dispatch
             appBar 
                 [ Style [ Bottom 0; Top "auto" ]
@@ -152,26 +164,29 @@ module TabsScreen =
                     bottomNavigationAction [ Label ^ str "Messages"; OnClick (fun _ -> dispatch ^ SelectPage 2) ]
                     bottomNavigationAction [ Label ^ str "Profile"; OnClick (fun _ -> dispatch ^ SelectPage 3) ] ] ] ]
 
-module Interpretator =
-    open Fable.Core
-    open JoyReactor.Types
+module StackNavigationComponent =
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+    open JoyReactor.Components.StackNavigationComponent
 
-    JoyReactor.Components.ActionModule.downloadAndParse <-
-        fun url ->
-            async {
-                let! r = 
-                    Fetch.fetch (sprintf "http://localhost:8090/parse/%s" (JS.encodeURIComponent url)) [] 
-                    |> Async.AwaitPromise
-                return! r.json<ParseResponse>() |> Async.AwaitPromise
-            }
+    let private contentView model dispatch =
+        match model.history with
+        | (TabsModel m) :: _ -> TabsScreen.view m (TabsMsg >> dispatch)
+        | (PostsModel m) :: _ -> FeedScreen.view m (PostsMsg >> dispatch)
+        | _ -> failwithf "illegal state (%O)" model
+
+    let view model dispatch =
+        muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
+            Styles.appBar "JR"
+            contentView model dispatch ]
 
 open Elmish
 open Elmish.React
 open Elmish.Navigation
 open Elmish.HMR
-module D = JoyReactor.Components.TabsScreen
+module D = JoyReactor.Components.StackNavigationComponent
 
-Program.mkProgram D.init (flip D.update) TabsScreen.view
+Program.mkProgram D.init (flip D.update) StackNavigationComponent.view
 |> Program.withReactSynchronous "elmish-app"
 |> Program.withConsoleTrace
 |> Program.run

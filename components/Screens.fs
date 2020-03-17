@@ -239,6 +239,10 @@ module StackNavigationComponent =
 
     let update model msg =
         match model, msg with
+        | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
+            let (m, cmd) = FeedScreen.init ^ TagSource tag.name
+            { history = PostsModel m :: model.history }
+            , cmd |> Cmd.map PostsMsg
         | { history = (TabsModel cmodel) :: other }, TabsMsg cmsg ->
             let (m, cmd) = TabsScreen.update cmodel cmsg
             { model with history = TabsModel m :: other }
@@ -246,9 +250,5 @@ module StackNavigationComponent =
         | { history = (PostsModel cmodel) :: other }, PostsMsg cmsg ->
             let (m, cmd) = FeedScreen.update cmodel cmsg
             { model with history = PostsModel m :: other }
-            , cmd |> Cmd.map PostsMsg
-        | { history = _ :: other }, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
-            let (m, cmd) = FeedScreen.init ^ TagSource tag.name
-            { history = PostsModel m :: other }
             , cmd |> Cmd.map PostsMsg
         | _ -> model, Cmd.none
