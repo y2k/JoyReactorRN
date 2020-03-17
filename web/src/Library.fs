@@ -13,8 +13,13 @@ module Prelude =
 module Styles =
     open Fable.React
     open Fable.React.Props
-    open Fable.MaterialUI.Props
+    open Fable.MaterialUI
     open Fable.MaterialUI.Core
+
+    let theme = 
+        createMuiTheme [
+            Palette [
+                Primary [ Main orange.``800`` ] ] ]
 
     let appBar title =
         appBar [ AppBarProp.Position AppBarPosition.Fixed ] [
@@ -107,8 +112,8 @@ module TagsScreen =
             cardActions [] [
                 button 
                     [ ButtonProp.Size ButtonSize.Small
-                      OnClick ignore ] [ 
-                    str "Open tag" ] ] ]
+                      OnClick (fun _ -> dispatch @@ OpenTag i) ] [ 
+                    str "Open" ] ] ]
 
     let view (model : Model) (dispatch : Msg -> unit) =
         div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
@@ -135,7 +140,7 @@ module TabsScreen =
         | TagsModel m -> TagsScreen.view m (TagsMsg >> dispatch)
 
     let view model dispatch =
-        fragment [] [
+        muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
             Styles.appBar "JR"
             contentView model dispatch
             appBar 
@@ -149,50 +154,16 @@ module TabsScreen =
 
 module Interpretator =
     open Fable.Core
-    open JoyReactor
     open JoyReactor.Types
-    open JoyReactor.CofxStorage
-    open Elmish
-    type 'a Action = 'a JoyReactor.Components.Action
 
-    let private db = ref LocalDb.empty
-
-    let private downloadPostsForUrl url =
-        async {
-            let! r = 
-                Fetch.fetch (sprintf "http://localhost:8090/parse/%s" (JS.encodeURIComponent url)) [] 
-                |> Async.AwaitPromise
-            let! pr = r.json<ParseResponse>() |> Async.AwaitPromise
-            db := DomainInterpetator.saveAllParseResults !db pr
-        }
-
-    let private invoke furl callback : _ Async =
-        async {
-            let (ldb, opUrl) = furl !db
-            db := ldb
-            match opUrl with None -> () | Some url -> do! downloadPostsForUrl url
-            let (ldb, result) = callback !db
-            db := ldb
-            return result
-        }
-
-    let private toCmd (action : 'msg Action list) : 'msg Cmd =
-        action
-        |> List.map @@ fun action ->
-            match action with
-            | Action.Eff (url, callback) ->
-                Cmd.OfAsync.perform (fun () -> invoke url callback) () id
-        |> Cmd.batch
-
-    let init (f : 'arg -> 'model * 'msg Action list) : ('arg -> 'model * 'msg Cmd) =
-        fun arg ->
-            let (model, action) = f arg
-            model, toCmd action
-
-    let udpate (f : 'model -> 'msg -> 'model * 'msg Action list) : ('msg -> 'model -> 'model * 'msg Cmd) =
-        fun msg model ->
-            let (model, action) = f model msg
-            model, toCmd action
+    JoyReactor.Components.ActionModule.downloadAndParse <-
+        fun url ->
+            async {
+                let! r = 
+                    Fetch.fetch (sprintf "http://localhost:8090/parse/%s" (JS.encodeURIComponent url)) [] 
+                    |> Async.AwaitPromise
+                return! r.json<ParseResponse>() |> Async.AwaitPromise
+            }
 
 open Elmish
 open Elmish.React
@@ -200,7 +171,7 @@ open Elmish.Navigation
 open Elmish.HMR
 module D = JoyReactor.Components.TabsScreen
 
-Program.mkProgram (Interpretator.init D.init) (Interpretator.udpate D.update) TabsScreen.view
+Program.mkProgram D.init (flip D.update) TabsScreen.view
 |> Program.withReactSynchronous "elmish-app"
 |> Program.withConsoleTrace
 |> Program.run
