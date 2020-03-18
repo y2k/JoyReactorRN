@@ -42,7 +42,9 @@ open Suave.Filters
 [<EntryPoint>]
 let main _ =
     choose [
-        GET >=> pathScan "/parse/%s" Domain.parse >=> (Writers.setHeader  "Access-Control-Allow-Origin" "*")
+        GET >=> pathScan "/parse/%s" Domain.parse 
+            >=> Writers.setHeader "Access-Control-Allow-Origin" "*"
+            >=> Writers.setMimeType "application/json"
         GET >=> path "/info" >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now) ]
     |> startWebServer {
         defaultConfig with

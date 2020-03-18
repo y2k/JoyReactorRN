@@ -126,7 +126,7 @@ module Domain'' =
         let old = getPostsWithLevels' source feeds
         let preloaded = sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = [||] }
         let a = { old with preloaded = preloaded.posts; nextPage = preloaded.nextPage |> Array.tryHead }
-        Map.add source a feeds, None
+        Map.add source a feeds, None, a
     let mergePreloaded' source feeds =
         let old = getPostsWithLevels' source feeds
         let ids = old.preloaded |> (Seq.map ^ fun x -> x.id) |> Set.ofSeq

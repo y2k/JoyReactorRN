@@ -55,57 +55,66 @@ module FeedScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let private viewPost dispatch (i : Post) = 
+    let private viewPost dispatch (post : Post) = 
         card [ Style [ Flex 1. ] ] [
-            (match i.image with
+            if post.title = ""
+                then div [] []
+                else
+                    cardContent [] [
+                        typography [ Variant TypographyVariant.Subtitle1 ] [ 
+                            str post.title ] ]
+            (match post.image with
              | [| i |] ->
                  cardMedia [
                      Image i.url
                      Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] ]
              | _ -> div [] [])
-            cardContent [] [
-                typography [ Variant TypographyVariant.H6 ] [ 
-                    str i.title ]
-                typography [ Variant TypographyVariant.Subtitle1 ] [ 
-                    str i.title ] ]
             cardActions [] [
                 button 
                     [ ButtonProp.Size ButtonSize.Small
-                      OnClick ^ fun _ -> dispatch ^ OpenPost i ] [ 
-                    str "Open post" ] ] ]
-
-    let private viewItem dispatch (i : PostState) =
-        match i with 
-        | Actual i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
-        | Old i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
-        | LoadNextDivider ->
-            listItem [ Key "divider" ] [
-                button 
-                    [ ButtonProp.Size ButtonSize.Small
-                      OnClick ^ fun _ -> dispatch LoadNextPage ] [ 
-                    str "Load next" ] ]
+                      OnClick ^ fun _ -> dispatch ^ OpenPost post ] [ 
+                    str "Открыть" ] ] ]
 
     let private viewItemList (model : Model) dispatch =
+        let viewItem dispatch (i : PostState) =
+            match i with 
+            | Actual i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
+            | Old i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
+            | LoadNextDivider ->
+                listItem [ Key "divider" ] [
+                    button 
+                        [ Style [ Flex 1. ]
+                          ButtonProp.Variant ButtonVariant.Contained
+                          MaterialProp.Color ComponentColor.Primary
+                          OnClick @@ fun _ -> dispatch LoadNextPage ] [ 
+                        str "Еще" ] ]
+
         list [] (model.items |> Array.map (viewItem dispatch))
 
     let view (model : Model) dispatch =
-        div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
-            yield
-                (match model.hasNew with
-                 | true -> 
+        fragment [] [
+            yield viewItemList model dispatch
+            if model.hasNew then
+                yield
                     button 
-                        [ ButtonProp.Size ButtonSize.Small
-                          OnClick ^ fun _ -> dispatch ApplyPreloaded ] [ 
-                        str "New posts" ]
-                 | false -> div [] [])
-            yield
-                match model.loading with
-                | true ->
-                    div [ Style [ Display DisplayOptions.Flex; JustifyContent "center" ] ] [
-                        yield circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ] ]
-                | false -> viewItemList model dispatch
-            yield 
-                snackbar [ Open false; Message ^ str "Error" ] [] ]
+                        [ Style [ 
+                              CSSProp.Position PositionOptions.Fixed
+                              Bottom 60; Left 12; Right 12 ]
+                          ButtonProp.Variant ButtonVariant.Contained
+                          MaterialProp.Color ComponentColor.Primary
+                          OnClick @@ fun _ -> dispatch ApplyPreloaded ] [ 
+                        str "Новые посты" ]
+            if model.loading then
+                yield
+                    div [
+                        Style [
+                            Top 70
+                            CSSProp.Position PositionOptions.Fixed
+                            Display DisplayOptions.Flex
+                            Width "100%"
+                            JustifyContent "center" ] ] [
+                        circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ] ]
+            yield snackbar [ Open false; Message @@ str "Ошибка" ] [] ]
 
 module TagsScreen =
     open JoyReactor.Types
@@ -115,33 +124,22 @@ module TagsScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let private viewItem dispatch (i : Tag) = 
-        card [ Style [ Flex 1. ] ] [
-            cardMedia [
-                Image i.image
-                Style [ Height 0; PaddingTop "100%" ] ]
-            cardContent [] [
-                typography [ Variant TypographyVariant.H6 ] [ 
-                    str i.name ]
-                typography [ Variant TypographyVariant.Subtitle1 ] [ 
-                    str i.name ] ]
-            cardActions [] [
-                button 
-                    [ ButtonProp.Size ButtonSize.Small
-                      OnClick (fun _ -> dispatch @@ OpenTag i) ] [ 
-                    str "Open" ] ] ]
+    let private viewTagList dispatch (comments : Tag []) =
+        let viewItem (tag : Tag) =
+            listItem [ OnClick (fun _ -> dispatch @@ OpenTag tag) ] [
+                listItemAvatar [] [
+                    avatar [ Src tag.image ] [] ]
+                listItemText [
+                    ListItemTextProp.Primary ^ str tag.name ] [] ]
 
-    let view (model : Model) (dispatch : Msg -> unit) =
-        div [ Style [ PaddingTop 60; PaddingBottom 50 ] ] [
-            yield
-                match not model.loaded with
-                | true ->
-                    div [ Style [ Display DisplayOptions.Flex; JustifyContent "center" ] ] [
-                        yield circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ] ]
-                | false ->
-                    list [] (model.tags |> Array.map (fun x -> listItem [ Key x.name ] [ viewItem dispatch x ]))
-            yield 
-                snackbar [ Open false; Message ^ str "Error" ] [] ]
+        comments
+        |> Array.map viewItem
+        |> list []
+
+    let view (model : Model) dispatch =
+        fragment [] [
+            viewTagList dispatch model.tags
+            snackbar [ Open false; Message ^ str "Error" ] [] ]
 
 module TabsScreen =
     open Fable.React
@@ -175,16 +173,57 @@ module PostScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let contentView (post : Post) =
-        div [] []
+    let private viweTopComment (comments : Comment []) =
+        let viewComment (comment : Comment) =
+            listItem [ AlignItems ListItemAlignItems.FlexStart ] [
+                listItemAvatar [] [
+                    avatar [ Src comment.image.url ] [] ]
+                listItemText [ 
+                    ListItemTextProp.Primary ^ str comment.userName
+                    ListItemTextProp.Secondary ^ str comment.text ] [] ]
 
-    let view (model : Model) msg = 
+        comments
+        |> Array.sortByDescending ^ fun comment -> comment.rating
+        |> Array.take (min comments.Length 10)
+        |> Array.map viewComment
+        |> list []
+
+    let private contentView dispatch (post : Post) =
+        fragment [] [
+            card [ Style [ Flex 1. ] ] [
+                cardContent [] [
+                    typography [ Variant TypographyVariant.H6 ] [ 
+                        str post.title ] ]
+                (match post.image with
+                 | [| i |] ->
+                     cardMedia [
+                         Image i.url
+                         Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] ]
+                 | _ -> div [] [])
+                cardActions [] [
+                    button 
+                        [ ButtonProp.Size ButtonSize.Small
+                          OnClick ignore ] [
+                        str "Open comments" ] ] ]
+
+            h3 [] [ str "Теги:" ]
+            div [] (
+                post.tags 
+                |> Array.map ^ fun tag -> 
+                    chip [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag ])
+
+            h3 [] [ str "Лучшие комментари:" ]
+            viweTopComment post.comments ]
+
+    let view (model : Model) dispatch = 
         fragment [] [
             match model.post with
-            | Some post -> contentView post
+            | Some post -> contentView dispatch post
             | None -> div [] [] ]
 
 module StackNavigationComponent =
+    open Fable.React
+    open Fable.React.Props
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
     open JoyReactor.Components.StackNavigationComponent
@@ -199,7 +238,8 @@ module StackNavigationComponent =
     let view model dispatch =
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
             Styles.appBar "JR"
-            contentView model dispatch ]
+            div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
+                contentView model dispatch ] ]
 
 open Elmish
 open Elmish.React

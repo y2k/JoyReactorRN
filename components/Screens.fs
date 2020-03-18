@@ -42,8 +42,8 @@ module FeedScreen =
             ActionModule.run 
                 (fun db -> db, UrlBuilder.posts source "FIXME" None |> Some)
                 (fun db ->
-                     let (feeds, sharedFeeds) = mergeFirstPage' source db.sharedFeeds db.feeds
-                     { db with feeds = feeds; sharedFeeds = sharedFeeds }, ())
+                     let (feeds, sharedFeeds, posts) = mergeFirstPage' source db.sharedFeeds db.feeds
+                     { db with feeds = feeds; sharedFeeds = sharedFeeds }, posts)
         let applyPreloaded source = 
             ActionModule.run 
                 (fun db -> db, None)
@@ -75,7 +75,7 @@ module FeedScreen =
     type Model = { source: Source; items: PostState []; hasNew: bool; loading: bool }
     type Msg =
         | PostsLoadedFromCache of Result<PostsWithLevels, exn>
-        | FirstPagePreloaded of Result<unit, exn>
+        | FirstPagePreloaded of Result<PostsWithLevels, exn>
         | ApplyPreloaded
         | ApplyPreloadedCompleted of Result<PostsWithLevels, exn>
         | LoadNextPage
@@ -99,9 +99,15 @@ module FeedScreen =
             { model with items = toItems xs true; loading = true }
             , Domain.preloadFirstPage model.source |> Cmd.map FirstPagePreloaded
         | PostsLoadedFromCache (Error e) -> failwithf "Error: PostsLoadedFromCache: %O" e
-        | FirstPagePreloaded _ -> 
-            { model with hasNew = true; loading = false }
-            , Cmd.none
+        | FirstPagePreloaded (Ok posts) ->
+            if Array.isEmpty posts.actual && Array.isEmpty posts.old 
+                then
+                    { model with hasNew = true; loading = false }
+                    , Cmd.ofMsg ApplyPreloaded
+                else
+                    { model with hasNew = true; loading = false }
+                    , Cmd.none
+        | FirstPagePreloaded (Error e) -> failwithf "Error: FirstPagePreloaded: %O" e
         | ApplyPreloaded -> 
             { model with hasNew = false }
             , Domain.applyPreloaded model.source |> Cmd.map ApplyPreloadedCompleted
