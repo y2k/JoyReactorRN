@@ -66,9 +66,12 @@ module FeedScreen =
                             str post.title ] ]
             (match post.image with
              | [| i |] ->
+                 let (iurl, h) = I.urlWithHeight 400. i
                  cardMedia [
-                     Image @@ fst @@ I.urlWithHeight 400. i
-                     Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] ]
+                     Image iurl
+                     Style [ Height h ] 
+                    //  Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] 
+                     ]
              | _ -> div [] [])
             cardActions [] [
                 button 
@@ -231,7 +234,7 @@ module PostScreen =
         |> list []
 
     let private contentView dispatch (post : Post) =
-        fragment [] [
+        div [ Style [ CSSProp.Padding "16px" ] ] [
             card [ Style [ Flex 1. ] ] [
                 cardContent [] [
                     typography [ Variant TypographyVariant.H6 ] [ 
