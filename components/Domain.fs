@@ -35,6 +35,20 @@ module UrlBuilder =
             |> Option.defaultValue ""
             |> (+) (sprintf "%s/user/%s/favorite" baseUrl userName)
 
+module Image =
+    open System
+    open Types
+
+    let normalize url (w : float) (h : float) =
+        sprintf "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
+            (Uri.EscapeDataString url)
+
+    let urlWithHeight limitWidth (attachment : Attachment) =
+        let aspect = max 1.2 attachment.aspect
+        let w = limitWidth
+        let h = w / aspect
+        normalize attachment.url w h, h
+
 module Domain =
     open System.Text.RegularExpressions
     open Types

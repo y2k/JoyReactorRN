@@ -14,7 +14,7 @@ module Interpretator =
     open Fable.Core
     open JoyReactor.Types
 
-    JoyReactor.Components.ActionModule.downloadAndParse <-
+    JoyReactor.Components.ActionModule.downloadAndParseImpl <-
         fun url ->
             async {
                 let! r = 
@@ -48,6 +48,7 @@ module Styles =
                     icon [] [ str "more_vert" ] ] ] ]
 
 module FeedScreen =
+    module I = JoyReactor.Image
     open JoyReactor.Types
     open JoyReactor.Components.FeedScreen
     open Fable.React
@@ -66,7 +67,7 @@ module FeedScreen =
             (match post.image with
              | [| i |] ->
                  cardMedia [
-                     Image i.url
+                     Image @@ fst @@ I.urlWithHeight 400. i
                      Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] ]
              | _ -> div [] [])
             cardActions [] [
@@ -126,11 +127,13 @@ module TagsScreen =
 
     let private viewTagList dispatch (comments : Tag []) =
         let viewItem (tag : Tag) =
-            listItem [ OnClick (fun _ -> dispatch @@ OpenTag tag) ] [
+            listItem
+                [ ListItemProp.Button true
+                  OnClick (fun _ -> dispatch @@ OpenTag tag) ] [
                 listItemAvatar [] [
                     avatar [ Src tag.image ] [] ]
-                listItemText [
-                    ListItemTextProp.Primary ^ str tag.name ] [] ]
+                listItemText 
+                    [ ListItemTextProp.Primary ^ str tag.name ] [] ]
 
         comments
         |> Array.map viewItem
@@ -140,6 +143,44 @@ module TagsScreen =
         fragment [] [
             viewTagList dispatch model.tags
             snackbar [ Open false; Message ^ str "Error" ] [] ]
+
+module LoginScreen =
+    open Fable.Core.JsInterop
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+    open JoyReactor.Components.LoginScreen
+
+    let view model dispatch =
+        div [ Style [ CSSProp.Padding "16px" ] ] [
+            formControl 
+                [ MaterialProp.Margin FormControlMargin.Normal
+                  HTMLAttr.Required true
+                  MaterialProp.FullWidth true] [
+                inputLabel [] [ str "Логин" ]
+                input 
+                    [ OnChange (fun e _ -> !!e?target?value |> UsernameMsg |> dispatch)
+                      AutoComplete "email" ] ]
+
+            formControl 
+                [ MaterialProp.Margin FormControlMargin.Normal
+                  HTMLAttr.Required true
+                  MaterialProp.FullWidth true] [
+                inputLabel [] [ str "Пароль" ]
+                input 
+                    [ OnChange (fun e _ -> !!e?target?value |> PasswordMsg |> dispatch)
+                      HTMLAttr.Type "password"
+                      AutoComplete "current-password" ] ]
+
+            button 
+                [ OnClick (fun _ -> dispatch LoginMsg)
+                  HTMLAttr.Disabled (not model.isEnabled)
+                  HTMLAttr.Type "submit"
+                  MaterialProp.FullWidth true
+                  ButtonProp.Variant ButtonVariant.Contained
+                  MaterialProp.Color ComponentColor.Primary ]  [
+                str "Войти" ] ]
 
 module TabsScreen =
     open Fable.React
@@ -152,6 +193,7 @@ module TabsScreen =
         match model with
         | FeedModel m -> FeedScreen.view m (FeedMsg >> dispatch)
         | TagsModel m -> TagsScreen.view m (TagsMsg >> dispatch)
+        | ProfileModel m -> LoginScreen.view m (ProfileMsg >> dispatch)
 
     let view model dispatch =
         fragment [] [

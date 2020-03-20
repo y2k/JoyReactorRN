@@ -74,6 +74,11 @@ module Types =
         { messages : Message []
           nextPage : string option }
 
+    type PostForm =
+        { url : string
+          form : string
+          csrfName : string }
+
 module UrlBuilder =
     let domain = "joyreactor.cc"
 #if DEBUG

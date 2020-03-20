@@ -4,29 +4,84 @@ module ActionModule =
     open Elmish
     open JoyReactor
     open JoyReactor.Types
-    type LocalDb = CofxStorage.LocalDb
+    type Db = CofxStorage.LocalDb
 
-    let mutable downloadAndParse : string -> ParseResponse Async = fun _ -> failwith "not implemented"
+    let mutable downloadAndParseImpl : string -> ParseResponse Async = fun _ -> failwith "not implemented"
+    let mutable postFormImpl : PostForm -> unit Async = fun _ -> failwith "not implemented"
 
-    let private db = ref LocalDb.empty
+    let postForm form = Cmd.OfAsync.either (fun _ -> postFormImpl form) () Ok Error
 
-    let private invoke furl callback : _ Async =
-        let downloadPostsForUrl url =
+    let private db = ref Db.empty
+
+    let run (furl: Db -> Db * string option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
+        let invoke furl callback : _ Async =
+            let downloadPostsForUrl url =
+                async {
+                    let! pr = downloadAndParseImpl url
+                    db := DomainInterpetator.saveAllParseResults !db pr
+                }
             async {
-                let! pr = downloadAndParse url
-                db := DomainInterpetator.saveAllParseResults !db pr
+                let (ldb, opUrl) = furl !db
+                db := ldb
+                match opUrl with None -> () | Some url -> do! downloadPostsForUrl url
+                let (ldb, result) = callback !db
+                db := ldb
+                return result
             }
-        async {
-            let (ldb, opUrl) = furl !db
-            db := ldb
-            match opUrl with None -> () | Some url -> do! downloadPostsForUrl url
-            let (ldb, result) = callback !db
-            db := ldb
-            return result
-        }
-
-    let run (furl: LocalDb -> LocalDb * string option) (callback: LocalDb -> LocalDb * 'a) : Result<'a, exn> Cmd =
         Cmd.OfAsync.either (fun _ -> invoke furl callback) () Ok Error
+
+module LoginScreen =
+    module Domain =
+        open System
+        open JoyReactor
+        open JoyReactor.Types
+
+        let private mkLoginForm username password =
+            [ "signin[username]", username
+              "signin[password]", password ]
+            |> List.fold (fun a (k, v) -> sprintf "%s&%s=%s" a k (Uri.EscapeDataString v)) ""
+            |> fun form -> { url = sprintf "%s/login" UrlBuilder.baseUrl; form = form; csrfName = "signin[_csrf_token]" }
+
+        let login username password =
+            mkLoginForm username password
+            |> ActionModule.postForm
+
+    open Elmish
+
+    type Model =
+        { username : string
+          password : string
+          isEnabled : bool
+          isBusy : bool
+          error : string option }
+
+    type Msg =
+        | LoginMsg
+        | LoginResultMsg of Result<unit, exn>
+        | UsernameMsg of string
+        | PasswordMsg of string
+        | ClosePage
+
+    let init =
+        { username = ""; password = ""; isEnabled = false; isBusy = false; error = None }, Cmd.none
+
+    let private computeIsEnable model = 
+        { model with isEnabled = model.username <> "" && model.password <> "" }
+
+    let update model msg : Model * Cmd<Msg> =
+        match msg with
+        | LoginMsg ->
+            { model with isBusy = true; error = None }
+            , Domain.login model.username model.password |> Cmd.map LoginResultMsg
+        | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.ofMsg ClosePage
+        | LoginResultMsg(Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
+        | UsernameMsg x -> 
+            { model with username = x } |> computeIsEnable
+            , Cmd.none
+        | PasswordMsg x -> 
+            { model with password = x } |> computeIsEnable
+            , Cmd.none
+        | _ -> model, Cmd.none
 
 module FeedScreen =
     module Domain =
@@ -203,15 +258,22 @@ module TabsScreen =
     type Model =
         | FeedModel of FeedScreen.Model
         | TagsModel of TagsScreen.Model
+        | ProfileModel of LoginScreen.Model
     type Msg = 
         | FeedMsg of FeedScreen.Msg
         | TagsMsg of TagsScreen.Msg
+        | ProfileMsg of LoginScreen.Msg
         | SelectPage of int
+
     let init _ =
         FeedScreen.init FeedSource
         ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
+
     let update model msg =
         match model, msg with
+        | ProfileModel model, ProfileMsg msg -> 
+            LoginScreen.update model msg
+            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | FeedModel model, FeedMsg msg -> 
             FeedScreen.update model msg
             ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
@@ -224,6 +286,9 @@ module TabsScreen =
         | _, SelectPage 1 ->
             TagsScreen.init ()
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
+        | _, SelectPage 3 ->
+            LoginScreen.init
+            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | _ -> model, []
 
 module PostScreen =
