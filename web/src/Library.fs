@@ -185,6 +185,19 @@ module LoginScreen =
                   MaterialProp.Color ComponentColor.Primary ]  [
                 str "Войти" ] ]
 
+module ProfileScreen =
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+    open JoyReactor.Components.ProfileScreen
+
+    let view model dispatch =
+        match model with
+        | ProfileLoading -> str "Loading..."
+        | ProfileModel profile -> str <| sprintf "Profile: %O" profile
+        | LoginModel model -> LoginScreen.view model (LoginMsg >> dispatch)
+
 module TabsScreen =
     open Fable.React
     open Fable.React.Props
@@ -196,7 +209,7 @@ module TabsScreen =
         match model with
         | FeedModel m -> FeedScreen.view m (FeedMsg >> dispatch)
         | TagsModel m -> TagsScreen.view m (TagsMsg >> dispatch)
-        | ProfileModel m -> LoginScreen.view m (ProfileMsg >> dispatch)
+        | ProfileModel m -> ProfileScreen.view m (ProfileMsg >> dispatch)
 
     let view model dispatch =
         fragment [] [

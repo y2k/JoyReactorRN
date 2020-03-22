@@ -83,6 +83,44 @@ module LoginScreen =
             , Cmd.none
         | _ -> model, Cmd.none
 
+module Update =
+    open Elmish
+    let inline map f fcmd (model, cmd) = f model, cmd |> Cmd.map fcmd
+
+module ProfileScreen =
+    module Domain =
+        open JoyReactor
+        let profile =
+            ActionModule.run
+                (fun db -> db, db.userName |> Option.map UrlBuilder.user)
+                (fun db -> db, db.profile)
+
+    open JoyReactor.Types
+    open Elmish
+
+    type Model =
+        | ProfileLoading
+        | ProfileModel of Profile
+        | LoginModel of LoginScreen.Model
+    type Msg = 
+        | ProfileLoaded of Result<Profile option, exn>
+        | LoginMsg of LoginScreen.Msg
+
+    let init =
+        ProfileLoading
+        , Domain.profile |> Cmd.map ProfileLoaded
+
+    let update model msg =
+        match msg with
+        | ProfileLoaded (Ok (Some profile)) -> ProfileModel profile, Cmd.none
+        | ProfileLoaded (Ok None) ->
+            LoginScreen.init |> Update.map LoginModel LoginMsg
+        | ProfileLoaded (Error e) -> failwithf "ProfileLoaded: %O" e
+        | LoginMsg childMsg ->
+            match model with
+            | LoginModel childModel -> LoginScreen.update childModel childMsg |> Update.map LoginModel LoginMsg
+            | _ -> model, []
+
 module FeedScreen =
     module Domain =
         open JoyReactor
@@ -258,11 +296,11 @@ module TabsScreen =
     type Model =
         | FeedModel of FeedScreen.Model
         | TagsModel of TagsScreen.Model
-        | ProfileModel of LoginScreen.Model
+        | ProfileModel of ProfileScreen.Model
     type Msg = 
         | FeedMsg of FeedScreen.Msg
         | TagsMsg of TagsScreen.Msg
-        | ProfileMsg of LoginScreen.Msg
+        | ProfileMsg of ProfileScreen.Msg
         | SelectPage of int
 
     let init _ =
@@ -272,7 +310,7 @@ module TabsScreen =
     let update model msg =
         match model, msg with
         | ProfileModel model, ProfileMsg msg -> 
-            LoginScreen.update model msg
+            ProfileScreen.update model msg
             ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | FeedModel model, FeedMsg msg -> 
             FeedScreen.update model msg
@@ -287,7 +325,7 @@ module TabsScreen =
             TagsScreen.init ()
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
         | _, SelectPage 3 ->
-            LoginScreen.init
+            ProfileScreen.init
             ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | _ -> model, []
 

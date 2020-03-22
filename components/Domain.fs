@@ -13,8 +13,8 @@ module UrlBuilder =
         |> Option.defaultValue "/private/list"
         |> (+) baseUrl
 
-    let user userName : string = failwith "FIXME"
-        // encodeURIComponent userName |> sprintf "%s/user/%s" baseUrl
+    let user userName : string =
+        System.Uri.EscapeDataString userName |> sprintf "%s/user/%s" baseUrl
     let post id = sprintf "%s/post/%i" baseUrl id
 
     let posts source userName (page : int option) =
