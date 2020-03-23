@@ -37,6 +37,13 @@ module Parsers =
         doc.LoadHtml html
         doc.DocumentNode
 
+    let getCsrfToken name html =
+        let doc = getDocument html
+        let tokenNode =
+            sprintf "input[name='%s']" name
+            |> doc.QuerySelector
+        tokenNode.Attributes.["value"].Value
+
     let private resolveTagImage name =
         TagResolver.tryGetImageId TagResolver.tagIcons name
         |> Option.map ^ sprintf "http://img1.joyreactor.cc/pics/avatar/tag/%i"

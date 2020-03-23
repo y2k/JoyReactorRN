@@ -40,7 +40,10 @@ module LoginScreen =
             [ "signin[username]", username
               "signin[password]", password ]
             |> List.fold (fun a (k, v) -> sprintf "%s&%s=%s" a k (Uri.EscapeDataString v)) ""
-            |> fun form -> { url = sprintf "%s/login" UrlBuilder.baseUrl; form = form; csrfName = "signin[_csrf_token]" }
+            |> fun form ->
+                { url = sprintf "%s/login" UrlBuilder.baseUrl
+                  form = form
+                  csrfName = Uri.EscapeDataString "signin[_csrf_token]" }
 
         let login username password =
             mkLoginForm username password
