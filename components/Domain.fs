@@ -96,39 +96,39 @@ module Domain =
         let stop = isStop messages lastOffset nextPage newMessages
         newMessages, stop
 
-module SyncDomain =
-    type LocalDb = JoyReactor.CofxStorage.LocalDb
+// module SyncDomain =
+//     type LocalDb = JoyReactor.CofxStorage.LocalDb
 
-    type Eff<'a> =    
-        { url: LocalDb -> LocalDb * string option
-          callback: LocalDb -> LocalDb * 'a }
+//     type Eff<'a> =    
+//         { url: LocalDb -> LocalDb * string option
+//           callback: LocalDb -> LocalDb * 'a }
 
-    let private ignore db = db, ()
-    let private fixedUrl url db = db, Some url
+//     let private ignore db = db, ()
+//     let private fixedUrl url db = db, Some url
 
-    let messages page =
-        { url = fun db -> 
-              { db with sharedMessages = Set.empty },
-              UrlBuilder.messages page |> Some
-          callback = fun db -> 
-              { db with messages = Set.union db.messages db.sharedMessages },
-              db.nextMessagesPage }
+//     let messages page =
+//         { url = fun db -> 
+//               { db with sharedMessages = Set.empty },
+//               UrlBuilder.messages page |> Some
+//           callback = fun db -> 
+//               { db with messages = Set.union db.messages db.sharedMessages },
+//               db.nextMessagesPage }
     
-    let logout =
-        { url = fixedUrl ^ sprintf "%s/logout" UrlBuilder.baseUrl
-          callback = ignore }
+//     let logout =
+//         { url = fixedUrl ^ sprintf "%s/logout" UrlBuilder.baseUrl
+//           callback = ignore }
 
-    let profile =
-        { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
-          callback = ignore }
+//     let profile =
+//         { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
+//           callback = ignore }
 
-    let userTags =
-        { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
-          callback = ignore }
+//     let userTags =
+//         { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
+//           callback = ignore }
 
-    let topTags =
-        { url = fixedUrl UrlBuilder.home 
-          callback = ignore }
+//     let topTags =
+//         { url = fixedUrl UrlBuilder.home 
+//           callback = ignore }
 
 module Domain'' =
     open JoyReactor.Types

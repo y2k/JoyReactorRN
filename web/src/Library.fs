@@ -11,16 +11,37 @@ module Prelude =
     let wrap fmodel fmsg (a, b) = a |> fmodel, b |> Elmish.Cmd.map fmsg
 
 module Interpretator =
+    open System
     open Fable.Core
+    open Fable.Core.JsInterop
+    open Fetch.Types
     open JoyReactor.Types
 
     JoyReactor.Components.ActionModule.downloadAndParseImpl <-
         fun url ->
             async {
+                let hostname = Browser.Dom.document.location.hostname
                 let! r = 
-                    Fetch.fetch (sprintf "http://localhost:8090/parse/%s" (JS.encodeURIComponent url)) [] 
+                    Fetch.fetch (sprintf "http://%s:8090/parse/%s" hostname (JS.encodeURIComponent url)) [] 
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
+            }
+    JoyReactor.Components.ActionModule.postFormImpl <-
+        fun form ->
+            async {
+                let textForm = 
+                    sprintf "url=%s&form=%s&csrfName=%s"
+                        (Uri.EscapeDataString form.url)
+                        (Uri.EscapeDataString form.form)
+                        (Uri.EscapeDataString form.csrfName)
+                let hostname = Browser.Dom.document.location.hostname
+                let! r = 
+                    Fetch.fetch 
+                        (sprintf "http://%s:8090/form" hostname ) 
+                        [ Method HttpMethod.POST
+                          Body !^ textForm ]
+                    |> Async.AwaitPromise
+                failwith "???"
             }
 
 module Styles =
@@ -58,26 +79,28 @@ module FeedScreen =
 
     let private viewPost dispatch (post : Post) = 
         card [ Style [ Flex 1. ] ] [
-            if post.title = ""
-                then div [] []
-                else
-                    cardContent [] [
-                        typography [ Variant TypographyVariant.Subtitle1 ] [ 
-                            str post.title ] ]
-            (match post.image with
-             | [| i |] ->
-                 let (iurl, h) = I.urlWithHeight 400. i
-                 cardMedia [
-                     Image iurl
-                     Style [ Height h ] 
-                    //  Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] 
-                     ]
-             | _ -> div [] [])
+            cardHeader 
+                [ CardHeaderProp.Avatar <| avatar [ Src post.userImage.url ] []
+                  CardHeaderProp.Title <| str post.userName
+                  CardHeaderProp.Subheader <| str (sprintf "%O" post.created) ] []
+            cardActionArea [ OnClick ^ fun _ -> dispatch ^ OpenPost post ] [
+                if post.title = ""
+                    then div [] []
+                    else
+                        cardContent [] [
+                            typography [ Variant TypographyVariant.Caption ] [ 
+                                str post.title ] ]
+                (match post.image with
+                 | [| i |] ->
+                     let (iurl, h) = I.urlWithHeight 400. i
+                     cardMedia [
+                         Image iurl
+                         Style [ Height h ] 
+                        //  Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] 
+                         ]
+                 | _ -> div [] []) ]
             cardActions [] [
-                button 
-                    [ ButtonProp.Size ButtonSize.Small
-                      OnClick ^ fun _ -> dispatch ^ OpenPost post ] [ 
-                    str "Открыть" ] ] ]
+                typography [] [ str <| sprintf "%g" post.rating ] ] ]
 
     let private viewItemList (model : Model) dispatch =
         let viewItem dispatch (i : PostState) =
@@ -212,16 +235,25 @@ module TabsScreen =
         | ProfileModel m -> ProfileScreen.view m (ProfileMsg >> dispatch)
 
     let view model dispatch =
+        let viewTab title index =
+            bottomNavigationAction 
+                [ Label ^ typography [ Variant TypographyVariant.Body2 ] ^ [ str title ]
+                  OnClick (fun _ -> dispatch ^ SelectPage index) ]
+        let toIndex = function
+            | FeedModel _ -> 0
+            | TagsModel _ -> 1
+            | ProfileModel _ -> 3
+
         fragment [] [
             contentView model dispatch
             appBar 
                 [ Style [ Bottom 0; Top "auto" ]
                   AppBarProp.Position AppBarPosition.Fixed ] [
-                bottomNavigation [ ShowLabels true ] [
-                    bottomNavigationAction [ Label ^ str "Feed"; OnClick (fun _ -> dispatch ^ SelectPage 0) ]
-                    bottomNavigationAction [ Label ^ str "Tags"; OnClick (fun _ -> dispatch ^ SelectPage 1) ]
-                    bottomNavigationAction [ Label ^ str "Messages"; OnClick (fun _ -> dispatch ^ SelectPage 2) ]
-                    bottomNavigationAction [ Label ^ str "Profile"; OnClick (fun _ -> dispatch ^ SelectPage 3) ] ] ] ]
+                bottomNavigation [ ShowLabels true; Value ^ toIndex model ] [
+                    viewTab "Лента" 0
+                    viewTab "Теги" 1
+                    viewTab "Сообщения" 2
+                    viewTab "Профиль" 3 ] ] ]
 
 module PostScreen =
     open JoyReactor.Types
@@ -231,7 +263,7 @@ module PostScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let private viweTopComment (comments : Comment []) =
+    let private viewTopComment (comments : Comment []) =
         let viewComment (comment : Comment) =
             listItem [ AlignItems ListItemAlignItems.FlexStart ] [
                 listItemAvatar [] [
@@ -241,28 +273,17 @@ module PostScreen =
                     ListItemTextProp.Secondary ^ str comment.text ] [] ]
 
         comments
-        |> Array.sortByDescending ^ fun comment -> comment.rating
-        |> Array.take (min comments.Length 10)
         |> Array.map viewComment
         |> list []
 
-    let private contentView dispatch (post : Post) =
+    let private contentView dispatch (post : Post) comments =
         div [ Style [ CSSProp.Padding "16px" ] ] [
-            card [ Style [ Flex 1. ] ] [
-                cardContent [] [
-                    typography [ Variant TypographyVariant.H6 ] [ 
-                        str post.title ] ]
-                (match post.image with
+            (match post.image with
                  | [| i |] ->
                      cardMedia [
                          Image i.url
                          Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] ]
                  | _ -> div [] [])
-                cardActions [] [
-                    button 
-                        [ ButtonProp.Size ButtonSize.Small
-                          OnClick ignore ] [
-                        str "Open comments" ] ] ]
 
             h3 [] [ str "Теги:" ]
             div [] (
@@ -271,12 +292,12 @@ module PostScreen =
                     chip [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag ])
 
             h3 [] [ str "Лучшие комментари:" ]
-            viweTopComment post.comments ]
+            viewTopComment comments ]
 
     let view (model : Model) dispatch = 
         fragment [] [
             match model.post with
-            | Some post -> contentView dispatch post
+            | Some post -> contentView dispatch post model.comments
             | None -> div [] [] ]
 
 module StackNavigationComponent =

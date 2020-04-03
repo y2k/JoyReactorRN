@@ -74,7 +74,12 @@ module Domain =
           csrfName : string }
 
     let private tryParseForm (ctx : HttpContext) : PostForm option =
-        failwith "???"
+        Choice.lift3
+            (fun url form csrfName -> { url = url; form = form; csrfName = csrfName })
+            (ctx.request.formData "url")
+            (ctx.request.formData "form")
+            (ctx.request.formData "csrfName")
+        |> Option.ofChoice
 
     let private sendFormTo url form cookies : (string * (string * string) list) Async =
         failwith "???"
@@ -113,9 +118,9 @@ open Suave.Filters
 [<EntryPoint>]
 let main _ =
     choose [
-        GET >=> pathScan "/parse/%s" Domain.parse 
+        GET >=> pathScan "/parse/%s" Domain.parse
             >=> Writers.setMimeType "application/json"
-        POST >=> path "/form" >=> Domain.sendForm 
+        POST >=> path "/form" >=> Domain.sendForm
              >=> Writers.setMimeType "application/json"
         GET >=> path "/info" 
             >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now) ]

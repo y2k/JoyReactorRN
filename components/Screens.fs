@@ -344,7 +344,7 @@ module PostScreen =
     open JoyReactor
     open JoyReactor.Types
 
-    type Model = { post : Post option; error : string option; id : int }
+    type Model = { post : Post option; error : string option; id : int; comments : Comment [] }
 
     type Msg =
         | PostLoaded of Result<Post option, exn>
@@ -353,15 +353,25 @@ module PostScreen =
         | OpenTag of Source
 
     let init id = 
-        { post = None; error = None; id = id }
+        { post = None; error = None; id = id; comments = [||] }
         , Cmd.batch [
             Domain.fromCache id |> Cmd.map PostLoaded
             Domain.post id |> Cmd.map RefreshComplete ]
 
+    let private updateModel (model : Model) (post : Post option) =
+        let comments =
+            match post with
+            | Some post ->
+                post.comments
+                |> Array.sortByDescending ^ fun comment -> comment.rating
+                |> Array.take (min post.comments.Length 10)
+            | None -> [||]
+        { model with post = post; comments = comments }
+
     let update (model : Model) = function
-        | PostLoaded (Ok post) -> { model with post = post }, Cmd.none
+        | PostLoaded (Ok post) -> updateModel model post, Cmd.none
         | PostLoaded (Error e) -> failwithf "Error: PostLoaded: %O" e
-        | RefreshComplete(Ok post) -> { model with error = None; post = post }, Cmd.none
+        | RefreshComplete(Ok post) -> { (updateModel model post) with error = None }, Cmd.none
         | RefreshComplete(Error e) -> { model with error = Some <| string e }, Cmd.none
         | OpenInWeb ->
             model
