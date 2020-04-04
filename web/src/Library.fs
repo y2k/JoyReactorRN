@@ -22,7 +22,9 @@ module Interpretator =
             async {
                 let hostname = Browser.Dom.document.location.hostname
                 let! r = 
-                    Fetch.fetch (sprintf "http://%s:8090/parse/%s" hostname (JS.encodeURIComponent url)) [] 
+                    Fetch.fetch 
+                        (sprintf "http://%s:8090/parse/%s" hostname (JS.encodeURIComponent url)) 
+                        [ Credentials RequestCredentials.Include ] 
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
@@ -30,18 +32,18 @@ module Interpretator =
         fun form ->
             async {
                 let textForm = 
-                    sprintf "url=%s&form=%s&csrfName=%s"
+                    sprintf "url=%s&form=%s"
                         (Uri.EscapeDataString form.url)
                         (Uri.EscapeDataString form.form)
-                        (Uri.EscapeDataString form.csrfName)
                 let hostname = Browser.Dom.document.location.hostname
                 let! r = 
                     Fetch.fetch 
-                        (sprintf "http://%s:8090/form" hostname ) 
+                        (sprintf "http://%s:8090/form" hostname) 
                         [ Method HttpMethod.POST
+                          Credentials RequestCredentials.Include
                           Body !^ textForm ]
                     |> Async.AwaitPromise
-                failwith "???"
+                return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
 
 module Styles =

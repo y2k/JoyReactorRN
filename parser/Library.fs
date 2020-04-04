@@ -37,11 +37,13 @@ module Parsers =
         doc.LoadHtml html
         doc.DocumentNode
 
-    let getCsrfToken name html =
+    let csrfTokenName = "signin[_csrf_token]"
+
+    let getCsrfToken html =
         let doc = getDocument html
-        let tokenNode =
-            sprintf "input[name='%s']" name
-            |> doc.QuerySelector
+        let tokenNode = 
+            sprintf "//input[@name='%s']" csrfTokenName
+            |> doc.SelectSingleNode
         tokenNode.Attributes.["value"].Value
 
     let private resolveTagImage name =
@@ -149,6 +151,10 @@ module Parsers =
                         { aspect = (float x.Attributes.["width"].Value) / (float x.Attributes.["height"].Value)
                           url = normalizeUrl (x.Attributes.["src"].Value) } }
                 |> Seq.toArray
+            let parseFloat (value : string) =
+                match Double.TryParse value with
+                | true, x -> x
+                | false, _ -> failwithf "Can't parse (%s) to float" value
 
             let postId = findNumber (element.Id)
             element.QuerySelectorAll("div.comment[parent]")
@@ -165,7 +171,8 @@ module Parsers =
                   rating = node.QuerySelectorAll("span.comment_rating")
                            |> Seq.map ^ fun x -> x.InnerText
                            |> Seq.fold (sprintf "%s%s") ""
-                           |> float
+                           |> fun x -> x.Replace("≈", "").Trim()
+                           |> parseFloat
                 //   postId = postId
                 //   id = (node.select("span.comment_rating").attr("comment_id")).toLong()
                   userName = userImg.Attributes.["alt"].Value

@@ -1,13 +1,14 @@
 module ParserTests
 
+type R = System.Text.RegularExpressions.Regex
+type F = System.IO.File
+type D = System.IO.Directory
+
 open System
 open JoyReactor
 open JoyReactor.Types
 open Xunit
-
-type R = System.Text.RegularExpressions.Regex
-type F = System.IO.File
-type D = System.IO.Directory
+open Swensen.Unquote
 
 let RESOURCES_DIR = sprintf "%s/Resources" __SOURCE_DIRECTORY__
 
@@ -19,12 +20,17 @@ let private assertMessages actual =
     actual.messages
     |> Array.iter ^ fun message ->
         let toUnixTime year = (DateTime(year, 1, 1) - DateTime(1970, 1, 1)).TotalMilliseconds
-        
         Assert.InRange(message.date, toUnixTime 2015, toUnixTime 2017)
         Assert.Matches(R(@"^http://img\w\.joyreactor\.cc/pics/avatar/user/\w{6}$"), message.userImage)
         Assert.Matches(R(@"^[\w\d_]{4,6}$"), message.userName)
         Assert.Equal(message.text.Trim([| '\n'; '\r'; '\t'; ' ' |]), message.text)
         
+[<Fact>]
+let ``get csrf token``() =
+    let token = getHtml "login.html" |> Parsers.getCsrfToken
+    test <@ "fc30296a9b71af8738ec6d3fd5754203" = token @>
+    ()
+
 [<Fact>]
 let ``parse first messages``() =
     Assert.Equal(None, getHtml "feed.html" |> Parsers.getMessages)

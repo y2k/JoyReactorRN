@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "start": "webpack-dev-server",
+        "start": "webpack-dev-server --disable-host-check",
         "prod": "webpack-dev-server --mode production --host 0.0.0.0 --disable-host-check"
     },
     "devDependencies": {

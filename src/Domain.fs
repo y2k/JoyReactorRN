@@ -62,7 +62,7 @@ module Domain =
         |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
 
-    let selectMessageForUser userName messages =
+    let selectMessageForUser userName (messages : Message seq) =
         messages
         |> Seq.filter (fun x -> x.userName = userName)
         |> Seq.toArray

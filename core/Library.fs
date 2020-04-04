@@ -41,13 +41,6 @@ module Types =
           nextPage : int [] }
         static member empty : PostResponse = { posts = [||]; nextPage = [||] }
 
-    type ParseResponse = 
-        { posts : PostResponse option
-          userName : string option
-          userTags : Tag [] option
-          topTags : Tag [] option
-          post : Post option }
-
     type PostsWithLevels =
         { actual : Post []
           old : Post []
@@ -74,10 +67,17 @@ module Types =
         { messages : Message []
           nextPage : string option }
 
+    type ParseResponse = 
+        { profile : Profile option
+          posts : PostResponse option
+          userName : string option
+          userTags : Tag [] option
+          topTags : Tag [] option
+          post : Post option }
+
     type PostForm =
         { url : string
-          form : string
-          csrfName : string }
+          form : string }
 
 module UrlBuilder =
     let domain = "joyreactor.cc"
