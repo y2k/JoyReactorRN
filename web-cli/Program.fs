@@ -20,7 +20,25 @@
             return response, responseCookie
         }
 
+    let postForm (url : string) body (cookies : (string * string) list) : (string * (string * string) list) Async = 
+        async {
+            use handler = new HttpClientHandler()
+            handler.CookieContainer <- CookieContainer()
+            cookies
+            |> List.iter ^ fun (k, v) -> handler.CookieContainer.Add(Uri url, Cookie(k, v))
+            use httpClient = new HttpClient(handler)
+            
+            let data = new StringContent(body, Text.Encoding.UTF8, "application/x-www-form-urlencoded")
+
+            let! response' = httpClient.PostAsync(url, data)
+            let! response = (response' :> HttpResponseMessage).Content.ReadAsStringAsync()
+
+            let responseCookie = gerResultCookie handler url
+            return response, responseCookie
+        }
+
 module Domain =
+    open System
     open System.Text.Json
     open System.Text.Json.Serialization
     open Suave
@@ -42,7 +60,8 @@ module Domain =
         |> List.map ^ fun (k, v) -> k, v.value
 
     let private mkResponseBody html =
-        { posts = Parsers.parsePostsWithNext html |> wrapToOption (fun x -> Array.isEmpty x.posts)
+        { profile = Parsers.profile html
+          posts = Parsers.parsePostsWithNext html |> wrapToOption (fun x -> Array.isEmpty x.posts)
           userName = Parsers.parseUserName html
           userTags = Parsers.readUserTags html |> wrapToOption Array.isEmpty
           topTags = Parsers.parseTopTags html |> wrapToOption Array.isEmpty
@@ -68,21 +87,12 @@ module Domain =
             return! (compose bodyWebPart cookieWebPart) ctx
         }
 
-    type PostForm =
-        { url : string
-          form : string
-          csrfName : string }
-
     let private tryParseForm (ctx : HttpContext) : PostForm option =
-        Choice.lift3
-            (fun url form csrfName -> { url = url; form = form; csrfName = csrfName })
+        Choice.lift2
+            (fun url form -> { url = url; form = form })
             (ctx.request.formData "url")
             (ctx.request.formData "form")
-            (ctx.request.formData "csrfName")
         |> Option.ofChoice
-
-    let private sendFormTo url form cookies : (string * (string * string) list) Async =
-        failwith "???"
 
     let sendForm (ctx : HttpContext) =
         async {
@@ -93,10 +103,10 @@ module Domain =
                     extractCookiese ctx
                     |> Downloader.loadHtml form.url
 
-                let token = Parsers.getCsrfToken form.csrfName html
-                let form' = sprintf "%s&%s=%s" form.form form.csrfName token
+                let token = Parsers.getCsrfToken html
+                let form' = sprintf "%s&%s=%s" form.form (Uri.EscapeDataString Parsers.csrfTokenName) (Uri.EscapeDataString token)
 
-                let! (html, cookies) = sendFormTo form.url form' cookies
+                let! (html, cookies) = Downloader.postForm form.url form' cookies
 
                 let bodyWebPart =
                     mkResponseBody html
@@ -124,7 +134,8 @@ let main _ =
              >=> Writers.setMimeType "application/json"
         GET >=> path "/info" 
             >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now) ]
-    >=> Writers.setHeader "Access-Control-Allow-Origin" "*"
+    >=> Writers.setHeader "Access-Control-Allow-Origin" "http://localhost:8080"
+    >=> Writers.setHeader "Access-Control-Allow-Credentials" "true"
     |> startWebServer {
         defaultConfig with
             bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8090us ] }

@@ -75,7 +75,7 @@ module Domain =
         |> Array.sortByDescending (fun x -> x.date)
         |> Array.distinctBy (fun x -> x.userName)
 
-    let selectMessageForUser userName messages =
+    let selectMessageForUser userName (messages : Message seq) =
         messages
         |> Seq.filter (fun x -> x.userName = userName)
         |> Seq.toArray
@@ -116,18 +116,6 @@ module Domain =
     
 //     let logout =
 //         { url = fixedUrl ^ sprintf "%s/logout" UrlBuilder.baseUrl
-//           callback = ignore }
-
-//     let profile =
-//         { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
-//           callback = ignore }
-
-//     let userTags =
-//         { url = fun db -> db, db.userName |> Option.map ^ UrlBuilder.user
-//           callback = ignore }
-
-//     let topTags =
-//         { url = fixedUrl UrlBuilder.home 
 //           callback = ignore }
 
 module Domain'' =
@@ -194,4 +182,5 @@ module DomainInterpetator =
             userName = pr.userName |> Option.orElse db.userName
             userTags = toMapTag pr.userTags db.userTags
             topTags = toMapTag pr.topTags db.topTags
-            posts = tryAddPost db.posts pr.post }
+            posts = tryAddPost db.posts pr.post
+            profile = pr.profile |> Option.orElse db.profile }

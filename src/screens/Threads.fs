@@ -36,7 +36,7 @@ let update model msg =
     | RefreshComplete (Error x) -> log x { model with status = Some <| Error x }, Cmd.none
     | _ -> model, Cmd.none
 
-let private itemView dispatch i =
+let private itemView dispatch (i : Message) =
     touchableHighlight [ TouchableHighlightProperties.Style [ Margin $ 4. ]
                          TouchableHighlightProperties.ActiveOpacity 0.7
                          OnPress(dispatch <! ThreadSelected i.userName) ] [

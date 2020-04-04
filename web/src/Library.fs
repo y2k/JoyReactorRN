@@ -22,7 +22,9 @@ module Interpretator =
             async {
                 let hostname = Browser.Dom.document.location.hostname
                 let! r = 
-                    Fetch.fetch (sprintf "http://%s:8090/parse/%s" hostname (JS.encodeURIComponent url)) [] 
+                    Fetch.fetch 
+                        (sprintf "http://%s:8090/parse/%s" hostname (JS.encodeURIComponent url)) 
+                        [ Credentials RequestCredentials.Include ] 
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
@@ -30,18 +32,18 @@ module Interpretator =
         fun form ->
             async {
                 let textForm = 
-                    sprintf "url=%s&form=%s&csrfName=%s"
+                    sprintf "url=%s&form=%s"
                         (Uri.EscapeDataString form.url)
                         (Uri.EscapeDataString form.form)
-                        (Uri.EscapeDataString form.csrfName)
                 let hostname = Browser.Dom.document.location.hostname
                 let! r = 
                     Fetch.fetch 
-                        (sprintf "http://%s:8090/form" hostname ) 
+                        (sprintf "http://%s:8090/form" hostname) 
                         [ Method HttpMethod.POST
+                          Credentials RequestCredentials.Include
                           Body !^ textForm ]
                     |> Async.AwaitPromise
-                failwith "???"
+                return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
 
 module Styles =
@@ -209,16 +211,53 @@ module LoginScreen =
                 str "Войти" ] ]
 
 module ProfileScreen =
+    open JoyReactor.Types
     open Fable.React
     open Fable.React.Props
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
     open JoyReactor.Components.ProfileScreen
 
+    let profileView (profile : Profile) dispatch =
+        div [ Style [
+                BackgroundColor "#f8f8f8"
+                PaddingTop "16px"
+                CSSProp.AlignItems AlignItemsOptions.Center
+                Display DisplayOptions.Flex
+                FlexDirection "column" ] ] [
+            avatar
+                [ Style [ Width "80px"; Height "80px"; MarginBottom "8px" ]
+                  Src profile.userImage.url ] []
+            typography [ Variant TypographyVariant.H5 ] [ str profile.userName ]
+            typography [ Variant TypographyVariant.Body1 ] [ str <| sprintf "Рейтинг: %g" profile.rating ]
+            divider [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginTop "16px" ] ]
+            div [ Style [
+                    PaddingTop "16px"
+                    PaddingBottom "16px"
+                    BackgroundColor "white"
+                    AlignSelf AlignSelfOptions.Stretch ] ] [
+                typography 
+                    [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginLeft "16px"; MarginRight "16px"; MarginBottom "8px" ]
+                      Variant TypographyVariant.Body1 ] [ str "Прогресс до следующей звезды:" ]
+                linearProgress 
+                    [ Style 
+                          [ AlignSelf AlignSelfOptions.Stretch
+                            CSSProp.BorderRadius "4px"
+                            MarginLeft "16px"; MarginRight "16px"; Height "20px" ]
+                      LinearProgressProp.Variant LinearProgressVariant.Determinate
+                      Value (int profile.progressToNewStar) ] ]
+            divider [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginBottom "16px"; ] ]
+            button 
+                [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginLeft "16px"; MarginRight "16px" ]
+                  ButtonProp.Variant ButtonVariant.Contained
+                  MaterialProp.Color ComponentColor.Primary
+                  OnClick @@ fun _ -> dispatch Logout ] [ 
+                str "Выйти" ] ]
+
     let view model dispatch =
         match model with
-        | ProfileLoading -> str "Loading..."
-        | ProfileModel profile -> str <| sprintf "Profile: %O" profile
+        | ProfileLoading -> div [] []
+        | ProfileModel profile -> profileView profile dispatch
         | LoginModel model -> LoginScreen.view model (LoginMsg >> dispatch)
 
 module TabsScreen =

@@ -25,7 +25,7 @@ let init : Model * Cmd<Msg> =
     { profile = None; userName = None },
     D.profile |> R.run |> Cmd.map SyncComplete
 
-let update model = function
+let update (model : Model) = function
     | ProfileChanged p -> { model with profile = p }, Cmd.none
     | SyncComplete _ -> model, Cmd.none
     | Logout ->

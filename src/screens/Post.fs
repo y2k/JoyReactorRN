@@ -26,7 +26,7 @@ let init id =
     { post = None; error = None; id = id }, 
     D.post id |> R.run |> Cmd.map RefreshComplete
 
-let update model = function
+let update (model : Model) = function
     | PostLoaded x -> { model with post = x }, Cmd.none
     | RefreshComplete(Ok _) -> { model with error = None }, Cmd.none
     | RefreshComplete(Error x) -> { model with error = Some <| string x }, Cmd.none

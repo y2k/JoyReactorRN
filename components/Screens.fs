@@ -7,11 +7,18 @@ module ActionModule =
     type Db = CofxStorage.LocalDb
 
     let mutable downloadAndParseImpl : string -> ParseResponse Async = fun _ -> failwith "not implemented"
-    let mutable postFormImpl : PostForm -> unit Async = fun _ -> failwith "not implemented"
-
-    let postForm form = Cmd.OfAsync.either (fun _ -> postFormImpl form) () Ok Error
+    let mutable postFormImpl : PostForm -> ParseResponse Async = fun _ -> failwith "not implemented"
 
     let private db = ref Db.empty
+
+    let postForm form =
+        let invoke =
+            async {
+                let! pr = postFormImpl form
+                db := DomainInterpetator.saveAllParseResults !db pr
+                return ()
+            }
+        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
 
     let run (furl: Db -> Db * string option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
         let invoke furl callback : _ Async =
@@ -30,6 +37,10 @@ module ActionModule =
             }
         Cmd.OfAsync.either (fun _ -> invoke furl callback) () Ok Error
 
+module Update =
+    open Elmish
+    let inline map f fcmd (model, cmd) = f model, cmd |> Cmd.map fcmd
+
 module LoginScreen =
     module Domain =
         open System
@@ -42,8 +53,7 @@ module LoginScreen =
             |> List.fold (fun a (k, v) -> sprintf "%s&%s=%s" a k (Uri.EscapeDataString v)) ""
             |> fun form ->
                 { url = sprintf "%s/login" UrlBuilder.baseUrl
-                  form = form
-                  csrfName = Uri.EscapeDataString "signin[_csrf_token]" }
+                  form = form }
 
         let login username password =
             mkLoginForm username password
@@ -60,7 +70,7 @@ module LoginScreen =
 
     type Msg =
         | LoginMsg
-        | LoginResultMsg of Result<unit, exn>
+        | LoginEnd of Result<unit, exn>
         | UsernameMsg of string
         | PasswordMsg of string
         | ClosePage
@@ -75,9 +85,9 @@ module LoginScreen =
         match msg with
         | LoginMsg ->
             { model with isBusy = true; error = None }
-            , Domain.login model.username model.password |> Cmd.map LoginResultMsg
-        | LoginResultMsg(Ok _) -> { model with isBusy = false }, Cmd.ofMsg ClosePage
-        | LoginResultMsg(Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
+            , Domain.login model.username model.password |> Cmd.map LoginEnd
+        | LoginEnd(Ok _) -> { model with isBusy = false }, Cmd.ofMsg ClosePage
+        | LoginEnd(Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
         | UsernameMsg x -> 
             { model with username = x } |> computeIsEnable
             , Cmd.none
@@ -85,10 +95,6 @@ module LoginScreen =
             { model with password = x } |> computeIsEnable
             , Cmd.none
         | _ -> model, Cmd.none
-
-module Update =
-    open Elmish
-    let inline map f fcmd (model, cmd) = f model, cmd |> Cmd.map fcmd
 
 module ProfileScreen =
     module Domain =
@@ -108,6 +114,7 @@ module ProfileScreen =
     type Msg = 
         | ProfileLoaded of Result<Profile option, exn>
         | LoginMsg of LoginScreen.Msg
+        | Logout
 
     let init =
         ProfileLoading
@@ -115,10 +122,12 @@ module ProfileScreen =
 
     let update model msg =
         match msg with
+        | Logout -> model, Cmd.none
         | ProfileLoaded (Ok (Some profile)) -> ProfileModel profile, Cmd.none
         | ProfileLoaded (Ok None) ->
             LoginScreen.init |> Update.map LoginModel LoginMsg
         | ProfileLoaded (Error e) -> failwithf "ProfileLoaded: %O" e
+        | LoginMsg (LoginScreen.LoginEnd (Ok _)) -> init
         | LoginMsg childMsg ->
             match model with
             | LoginModel childModel -> LoginScreen.update childModel childMsg |> Update.map LoginModel LoginMsg
