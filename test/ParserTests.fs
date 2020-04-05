@@ -16,7 +16,7 @@ let getHtml name =
     sprintf "%s/%s" RESOURCES_DIR name
     |> F.ReadAllText
 
-let private assertMessages actual =
+let private assertMessages (actual : MessagesWithNext) =
     actual.messages
     |> Array.iter ^ fun message ->
         let toUnixTime year = (DateTime(year, 1, 1) - DateTime(1970, 1, 1)).TotalMilliseconds

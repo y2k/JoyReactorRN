@@ -73,11 +73,31 @@ module Types =
           userName : string option
           userTags : Tag [] option
           topTags : Tag [] option
-          post : Post option }
+          post : Post option
+          messages : MessagesWithNext option }
 
     type PostForm =
         { url : string
           form : string }
+
+module CofxStorage =
+    open Types
+
+    type LocalDb =
+        { feeds : Map<Source, PostsWithLevels>
+          sharedFeeds : PostResponse option
+          posts : Map<int, Post>
+          userName : string option
+          userTags : Map<string, Tag>
+          topTags : Map<string, Tag>
+          messages : Message Set
+          messages2 : Map<double, Message>
+          nextMessagesPage : string option
+          sharedMessages : Message Set
+          profile : Profile option
+          parseRequests : string Set }
+    with
+        static member empty = { feeds = Map.empty; sharedFeeds = None; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; messages2 = Map.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
 
 module UrlBuilder =
     let domain = "joyreactor.cc"

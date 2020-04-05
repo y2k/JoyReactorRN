@@ -71,9 +71,11 @@ module Domain =
 
     let selectThreads messages =
         messages
+        |> Map.toArray
+        |> Seq.map snd
+        |> Seq.sortByDescending (fun x -> x.date)
+        |> Seq.distinctBy (fun x -> x.userName)
         |> Seq.toArray
-        |> Array.sortByDescending (fun x -> x.date)
-        |> Array.distinctBy (fun x -> x.userName)
 
     let selectMessageForUser userName (messages : Message seq) =
         messages
@@ -96,24 +98,6 @@ module Domain =
         let stop = isStop messages lastOffset nextPage newMessages
         newMessages, stop
 
-// module SyncDomain =
-//     type LocalDb = JoyReactor.CofxStorage.LocalDb
-
-//     type Eff<'a> =    
-//         { url: LocalDb -> LocalDb * string option
-//           callback: LocalDb -> LocalDb * 'a }
-
-//     let private ignore db = db, ()
-//     let private fixedUrl url db = db, Some url
-
-//     let messages page =
-//         { url = fun db -> 
-//               { db with sharedMessages = Set.empty },
-//               UrlBuilder.messages page |> Some
-//           callback = fun db -> 
-//               { db with messages = Set.union db.messages db.sharedMessages },
-//               db.nextMessagesPage }
-    
 //     let logout =
 //         { url = fixedUrl ^ sprintf "%s/logout" UrlBuilder.baseUrl
 //           callback = ignore }
@@ -168,14 +152,24 @@ module DomainInterpetator =
         post
         |> Option.map ^ fun p -> Map.add p.id p posts
         |> Option.defaultValue posts
+    let private addMessages messages (newMessages : MessagesWithNext option) =
+        match newMessages with
+        | Some mesWithNext ->
+            mesWithNext.messages
+            |> Array.fold (fun a x -> Map.add x.date x a) messages
+        | None -> messages
+    let private updateNextMessagePage nextMessagesPage newMessages =
+        match newMessages with
+        | None -> nextMessagesPage
+        | Some x -> x.nextPage
 
     let saveAllParseResults db (pr : ParseResponse) =
         let toMapTag tags dbTags =
             tags 
-            |> Option.map (fun x -> 
+            |> Option.map ^ fun x -> 
                 x 
                 |> Array.map (fun x -> x.name, x)
-                |> Map.ofArray)
+                |> Map.ofArray
             |> Option.defaultValue dbTags
         { db with 
             sharedFeeds = pr.posts
@@ -183,4 +177,61 @@ module DomainInterpetator =
             userTags = toMapTag pr.userTags db.userTags
             topTags = toMapTag pr.topTags db.topTags
             posts = tryAddPost db.posts pr.post
-            profile = pr.profile |> Option.orElse db.profile }
+            profile = pr.profile |> Option.orElse db.profile
+            messages2 = addMessages db.messages2 pr.messages
+            nextMessagesPage = updateNextMessagePage db.nextMessagesPage pr.messages }
+
+module ActionModule =
+    open Elmish
+    open JoyReactor
+    open JoyReactor.Types
+    type Db = CofxStorage.LocalDb
+
+    let mutable downloadAndParseImpl : string -> ParseResponse Async = fun _ -> failwith "not implemented"
+    let mutable postFormImpl : PostForm -> ParseResponse Async = fun _ -> failwith "not implemented"
+
+    let private db = ref Db.empty
+
+    let postForm form =
+        let invoke =
+            async {
+                let! pr = postFormImpl form
+                db := DomainInterpetator.saveAllParseResults !db pr
+                return ()
+            }
+        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
+
+    let run (furl: Db -> Db * string option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
+        let invoke : _ Async =
+            let downloadPostsForUrl url =
+                async {
+                    let! pr = downloadAndParseImpl url
+                    db := DomainInterpetator.saveAllParseResults !db pr
+                }
+            async {
+                let (ldb, opUrl) = furl !db
+                db := ldb
+                match opUrl with None -> () | Some url -> do! downloadPostsForUrl url
+                let (ldb, result) = callback !db
+                db := ldb
+                return result
+            }
+        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
+
+    let readStore (callback: Db -> Db * 'a) : 'a Cmd =
+        let invoke =
+            async {
+                let (ldb, result) = callback !db
+                db := ldb
+                return result
+            }
+        Cmd.OfAsync.either (fun _ -> invoke) () id raise
+
+module Services =
+    let getThreads =
+        ActionModule.readStore
+            (fun db -> db, Domain.selectThreads db.messages2)
+    let syncThreads page =
+        ActionModule.run
+            (fun db -> db, UrlBuilder.messages page |> Some)
+            (fun db -> db, (Domain.selectThreads db.messages2, db.nextMessagesPage))

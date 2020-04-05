@@ -1,23 +1,5 @@
 namespace JoyReactor
 
-module CofxStorage =
-    open Types
-
-    type LocalDb =
-        { feeds : Map<Source, PostsWithLevels>
-          sharedFeeds : PostResponse option
-          posts : Map<int, Post>
-          userName : string option
-          userTags : Map<string, Tag>
-          topTags : Map<string, Tag>
-          messages : Message Set
-          sharedMessages : Message Set
-          nextMessagesPage : string option
-          profile : Profile option
-          parseRequests : string Set }
-    with
-        static member empty = { feeds = Map.empty; sharedFeeds = None; posts = Map.empty; userName = None; userTags = Map.empty; topTags = Map.empty; messages = Set.empty; sharedMessages = Set.empty; nextMessagesPage = None; profile = None; parseRequests = Set.empty }
-
 module DiffActions =
     open Types
     

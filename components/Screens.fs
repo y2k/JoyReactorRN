@@ -1,45 +1,37 @@
 ﻿namespace JoyReactor.Components
 
-module ActionModule =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-    type Db = CofxStorage.LocalDb
-
-    let mutable downloadAndParseImpl : string -> ParseResponse Async = fun _ -> failwith "not implemented"
-    let mutable postFormImpl : PostForm -> ParseResponse Async = fun _ -> failwith "not implemented"
-
-    let private db = ref Db.empty
-
-    let postForm form =
-        let invoke =
-            async {
-                let! pr = postFormImpl form
-                db := DomainInterpetator.saveAllParseResults !db pr
-                return ()
-            }
-        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
-
-    let run (furl: Db -> Db * string option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
-        let invoke furl callback : _ Async =
-            let downloadPostsForUrl url =
-                async {
-                    let! pr = downloadAndParseImpl url
-                    db := DomainInterpetator.saveAllParseResults !db pr
-                }
-            async {
-                let (ldb, opUrl) = furl !db
-                db := ldb
-                match opUrl with None -> () | Some url -> do! downloadPostsForUrl url
-                let (ldb, result) = callback !db
-                db := ldb
-                return result
-            }
-        Cmd.OfAsync.either (fun _ -> invoke furl callback) () Ok Error
-
 module Update =
     open Elmish
     let inline map f fcmd (model, cmd) = f model, cmd |> Cmd.map fcmd
+
+module ThreadsScreen =
+    open Elmish
+    open JoyReactor
+    open JoyReactor.Types
+
+    type Model = { threads : Message []; pageLoaded : int }
+    type Msg = 
+        | LocalThreadsLoaded of Message []
+        | NextPageLoaded of Result<Message [] * string option, exn>
+
+    let init =
+        { threads = [||]; pageLoaded = 0 }
+        , Services.getThreads |> Cmd.map LocalThreadsLoaded
+
+    let private tryLoadNextPage next model =
+        if model.pageLoaded > 2 then Cmd.none
+        else Services.syncThreads next |> Cmd.map NextPageLoaded
+
+    let update model = function
+        | LocalThreadsLoaded threads -> 
+            { model with threads = threads }
+            , Services.syncThreads None |> Cmd.map NextPageLoaded
+        | NextPageLoaded (Ok (threads, None)) ->
+            { model with threads = threads }, Cmd.none
+        | NextPageLoaded (Ok (threads, (Some _ as next))) ->
+            { model with threads = threads; pageLoaded = model.pageLoaded + 1 }
+            , tryLoadNextPage next model
+        | NextPageLoaded (Error e) -> raise e
 
 module LoginScreen =
     module Domain =
@@ -308,10 +300,12 @@ module TabsScreen =
     type Model =
         | FeedModel of FeedScreen.Model
         | TagsModel of TagsScreen.Model
+        | ThreadsModel of ThreadsScreen.Model
         | ProfileModel of ProfileScreen.Model
     type Msg = 
         | FeedMsg of FeedScreen.Msg
         | TagsMsg of TagsScreen.Msg
+        | ThreadsMsg of ThreadsScreen.Msg
         | ProfileMsg of ProfileScreen.Msg
         | SelectPage of int
 
@@ -321,21 +315,27 @@ module TabsScreen =
 
     let update model msg =
         match model, msg with
-        | ProfileModel model, ProfileMsg msg -> 
-            ProfileScreen.update model msg
-            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | FeedModel model, FeedMsg msg -> 
             FeedScreen.update model msg
             ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
         | TagsModel model, TagsMsg msg -> 
             TagsScreen.update model msg
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
+        | ThreadsModel model, ThreadsMsg msg -> 
+            ThreadsScreen.update model msg
+            ||> fun model cmd -> ThreadsModel model, (cmd |> Cmd.map ThreadsMsg)
+        | ProfileModel model, ProfileMsg msg -> 
+            ProfileScreen.update model msg
+            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | _, SelectPage 0 ->
             FeedScreen.init FeedSource
             ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
         | _, SelectPage 1 ->
             TagsScreen.init ()
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
+        | _, SelectPage 2 ->
+            ThreadsScreen.init
+            ||> fun model cmd -> ThreadsModel model, (cmd |> Cmd.map ThreadsMsg)
         | _, SelectPage 3 ->
             ProfileScreen.init
             ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)

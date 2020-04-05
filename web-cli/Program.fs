@@ -65,7 +65,8 @@ module Domain =
           userName = Parsers.parseUserName html
           userTags = Parsers.readUserTags html |> wrapToOption Array.isEmpty
           topTags = Parsers.parseTopTags html |> wrapToOption Array.isEmpty
-          post = Parsers.parsePost html }
+          post = Parsers.parsePost html
+          messages = Parsers.getMessages html }
         |> fun response -> JsonSerializer.SerializeToUtf8Bytes (response, options)
 
     let parse url (ctx : HttpContext) =

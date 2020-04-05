@@ -17,7 +17,7 @@ module Interpretator =
     open Fetch.Types
     open JoyReactor.Types
 
-    JoyReactor.Components.ActionModule.downloadAndParseImpl <-
+    JoyReactor.ActionModule.downloadAndParseImpl <-
         fun url ->
             async {
                 let hostname = Browser.Dom.document.location.hostname
@@ -28,7 +28,7 @@ module Interpretator =
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
-    JoyReactor.Components.ActionModule.postFormImpl <-
+    JoyReactor.ActionModule.postFormImpl <-
         fun form ->
             async {
                 let textForm = 
@@ -69,6 +69,27 @@ module Styles =
                     [ Style [ MarginRight -12 ]
                       MaterialProp.Color ComponentColor.Inherit ] [ 
                     icon [] [ str "more_vert" ] ] ] ]
+
+module ThreadsScreen =
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+    open JoyReactor.Types
+    open JoyReactor.Components.ThreadsScreen
+
+    let viewThread (thread : Message) dispatch =
+        listItem [ Key (string thread.date) ] [
+            listItemAvatar [] [
+                avatar [ Src thread.userImage ] [] ]
+            listItemText 
+                [ ListItemTextProp.Primary <| str thread.userName
+                  ListItemTextProp.Secondary <| str thread.text ] [] ]
+
+    let view model dispatch = 
+        list [] [
+            for t in model.threads do
+                yield viewThread t dispatch ]
 
 module FeedScreen =
     module I = JoyReactor.Image
@@ -271,6 +292,7 @@ module TabsScreen =
         match model with
         | FeedModel m -> FeedScreen.view m (FeedMsg >> dispatch)
         | TagsModel m -> TagsScreen.view m (TagsMsg >> dispatch)
+        | ThreadsModel m -> ThreadsScreen.view m (ThreadsMsg >> dispatch)
         | ProfileModel m -> ProfileScreen.view m (ProfileMsg >> dispatch)
 
     let view model dispatch =
@@ -281,6 +303,7 @@ module TabsScreen =
         let toIndex = function
             | FeedModel _ -> 0
             | TagsModel _ -> 1
+            | ThreadsModel _ -> 2
             | ProfileModel _ -> 3
 
         fragment [] [
