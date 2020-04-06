@@ -319,7 +319,7 @@ module PostScreen =
     type Msg =
         | PostLoaded of Result<Post option, exn>
         | RefreshComplete of Result<Post option, exn>
-        | OpenTag of Source
+        | OpenTag of string
 
     let init id = 
         { post = None; error = None; id = id; comments = [||] }
@@ -344,7 +344,7 @@ module PostScreen =
         | RefreshComplete(Error e) -> { model with error = Some <| string e }, Cmd.none
         | OpenTag _ -> model, Cmd.none
 
-module StackNavigationComponent =
+module ApplicationScreen =
     open Elmish
     open JoyReactor.Types
 
@@ -379,6 +379,14 @@ module StackNavigationComponent =
             let (m, cmd) = MessagesScreen.init thread.userName
             { history = MessagesModel m :: model.history }
             , cmd |> Cmd.map MessagesMsg
+        | _, (PostMsg (PostScreen.OpenTag source)) -> 
+            let (m, cmd) = FeedScreen.init ^ TagSource source
+            { history = PostsModel m :: model.history }
+            , cmd |> Cmd.map PostsMsg
+        | _, (PostsMsg (FeedScreen.OpenPost post)) -> 
+            let (m, cmd) = PostScreen.init post.id
+            { history = PostModel m :: model.history }
+            , cmd |> Cmd.map PostMsg
         | { history = (TabsModel cmodel) :: other }, TabsMsg cmsg ->
             let (m, cmd) = TabsScreen.update cmodel cmsg
             { model with history = TabsModel m :: other }

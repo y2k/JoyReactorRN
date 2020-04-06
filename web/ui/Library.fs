@@ -385,7 +385,9 @@ module PostScreen =
             div [] (
                 post.tags 
                 |> Array.map ^ fun tag -> 
-                    chip [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag ])
+                    chip 
+                        [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag 
+                          OnClick (fun _ -> dispatch <| OpenTag tag) ])
 
             h3 [] [ str "Лучшие комментари:" ]
             viewTopComment comments ]
@@ -401,7 +403,7 @@ module ApplicationScreen =
     open Fable.React.Props
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
-    open JoyReactor.Components.StackNavigationComponent
+    open JoyReactor.Components.ApplicationScreen
 
     let private contentView model dispatch =
         match model.history with
@@ -422,7 +424,7 @@ module App =
     open Elmish.React
     open Elmish.Navigation
     open Elmish.HMR
-    module D = JoyReactor.Components.StackNavigationComponent
+    module D = JoyReactor.Components.ApplicationScreen
 
     Program.mkProgram D.init (flip D.update) ApplicationScreen.view
     |> Program.withReactSynchronous "elmish-app"
