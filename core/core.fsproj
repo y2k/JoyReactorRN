@@ -1,12 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
-    <Compile Include="SyncDatabase.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Domain.fs" />
+    <Compile Include="Screens.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Elmish" Version="3.0.6" />
+    <PackageReference Include="Prelude" Version="0.2.4" />
   </ItemGroup>
 
 </Project>
