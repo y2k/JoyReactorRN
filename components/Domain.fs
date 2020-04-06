@@ -82,6 +82,14 @@ module Domain =
         |> Seq.filter (fun x -> x.userName = userName)
         |> Seq.toArray
         |> Array.sortByDescending (fun x -> x.date)
+    
+    let selectMessageForUser' userName (messages : Map<double, Message>) =
+        messages
+        |> Map.toSeq
+        |> Seq.filter (fun (_, v) -> v.userName = userName)
+        |> Seq.map snd
+        |> Seq.toArray
+        |> Array.sortByDescending (fun x -> x.date)
 
     let filterNewMessages (messages : Message []) offset = messages |> Array.filter (fun x -> x.date > offset)
     let checkMessagesIsOld (messages : Message []) offset = messages |> Array.exists (fun x -> x.date <= offset)
@@ -97,10 +105,6 @@ module Domain =
         let newMessages = Array.append parentMessages (filterNewMessages messages lastOffset)
         let stop = isStop messages lastOffset nextPage newMessages
         newMessages, stop
-
-//     let logout =
-//         { url = fixedUrl ^ sprintf "%s/logout" UrlBuilder.baseUrl
-//           callback = ignore }
 
 module Domain'' =
     open JoyReactor.Types
@@ -228,9 +232,22 @@ module ActionModule =
         Cmd.OfAsync.either (fun _ -> invoke) () id raise
 
 module Services =
+    let logout =
+        ActionModule.run
+            (fun db -> db, Some <| sprintf "%s/logout" UrlBuilder.baseUrl)
+            (fun db -> 
+                { db with userName = None; messages2 = Map.empty; profile = None; userTags = Map.empty }
+                , ())
+    let getMessages userName =
+        ActionModule.readStore
+            (fun db -> db, Domain.selectMessageForUser' userName db.messages2)
     let getThreads =
         ActionModule.readStore
-            (fun db -> db, Domain.selectThreads db.messages2)
+            (fun db -> 
+                db
+                , match db.userName with
+                  | Some _ -> Some <| Domain.selectThreads db.messages2
+                  | None -> None)
     let syncThreads page =
         ActionModule.run
             (fun db -> db, UrlBuilder.messages page |> Some)

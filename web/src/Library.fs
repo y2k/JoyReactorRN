@@ -70,6 +70,28 @@ module Styles =
                       MaterialProp.Color ComponentColor.Inherit ] [ 
                     icon [] [ str "more_vert" ] ] ] ]
 
+module MessagesScreen =
+    open Fable.React
+    open Fable.React.Props
+    open Fable.MaterialUI.Props
+    open Fable.MaterialUI.Core
+    open JoyReactor.Types
+    open JoyReactor.Components.MessagesScreen
+
+    let viewThread (thread : Message) dispatch =
+        listItem 
+            [ Key (string thread.date) ] [
+            listItemAvatar [] [
+                avatar [ Src thread.userImage ] [] ]
+            listItemText 
+                [ ListItemTextProp.Primary <| str thread.userName
+                  ListItemTextProp.Secondary <| str thread.text ] [] ]
+
+    let view model dispatch = 
+        list [] [
+            for t in model.messages do
+                yield viewThread t dispatch ]
+
 module ThreadsScreen =
     open Fable.React
     open Fable.React.Props
@@ -79,17 +101,29 @@ module ThreadsScreen =
     open JoyReactor.Components.ThreadsScreen
 
     let viewThread (thread : Message) dispatch =
-        listItem [ Key (string thread.date) ] [
+        listItem 
+            [ Key (string thread.date) 
+              ListItemProp.Button true
+              OnClick (fun _ -> dispatch @@ OpenThread thread) ] [
             listItemAvatar [] [
                 avatar [ Src thread.userImage ] [] ]
             listItemText 
                 [ ListItemTextProp.Primary <| str thread.userName
                   ListItemTextProp.Secondary <| str thread.text ] [] ]
 
-    let view model dispatch = 
-        list [] [
-            for t in model.threads do
-                yield viewThread t dispatch ]
+    let view model dispatch =
+        match model.notAuthorized with
+        | true ->
+            button 
+                [ Style [ CSSProp.Position PositionOptions.Absolute; Left "10%"; Right "10%"; Bottom "50%" ]
+                  ButtonProp.Variant ButtonVariant.Contained
+                  MaterialProp.Color ComponentColor.Primary
+                  OnClick @@ fun _ -> dispatch OpenAuthorization ] [ 
+                str "Войти" ]
+        | false ->
+            list [] [
+                for t in model.threads do
+                    yield viewThread t dispatch ]
 
 module FeedScreen =
     module I = JoyReactor.Image
@@ -374,6 +408,7 @@ module StackNavigationComponent =
         | (TabsModel m) :: _ -> TabsScreen.view m (TabsMsg >> dispatch)
         | (PostsModel m) :: _ -> FeedScreen.view m (PostsMsg >> dispatch)
         | (PostModel m) :: _ -> PostScreen.view m (PostMsg >> dispatch)
+        | (MessagesModel m) :: _ -> MessagesScreen.view m (MessagesMsg >> dispatch)
         | [] -> failwithf "illegal state (%O)" model
 
     let view model dispatch =
