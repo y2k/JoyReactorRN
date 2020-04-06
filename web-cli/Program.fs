@@ -125,19 +125,25 @@ module Domain =
 open Suave
 open Suave.Operators
 open Suave.Filters
+open System.IO
 
 [<EntryPoint>]
 let main _ =
     choose [
-        GET >=> pathScan "/parse/%s" Domain.parse
-            >=> Writers.setMimeType "application/json"
-        POST >=> path "/form" >=> Domain.sendForm
-             >=> Writers.setMimeType "application/json"
+        choose [
+            GET >=> pathScan "/parse/%s" Domain.parse
+                >=> Writers.setMimeType "application/json"
+            POST >=> path "/form" >=> Domain.sendForm
+                 >=> Writers.setMimeType "application/json" ]
+        >=> Writers.setHeader "Access-Control-Allow-Origin" "http://localhost:8080"
+        >=> Writers.setHeader "Access-Control-Allow-Credentials" "true"
         GET >=> path "/info" 
-            >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now) ]
-    >=> Writers.setHeader "Access-Control-Allow-Origin" "http://localhost:8080"
-    >=> Writers.setHeader "Access-Control-Allow-Credentials" "true"
+            >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
+        GET >=> path "/" >=> Files.browseFileHome "index.html"
+        GET >=> path "/bundle.js" >=> Files.browseFileHome "bundle.js"
+        GET >=> path "/icon.png" >=> Files.browseFileHome "icon.png" ]
     |> startWebServer {
         defaultConfig with
+            homeFolder = Some <| Path.Combine(Directory.GetCurrentDirectory(), "public")
             bindings = [ HttpBinding.create HTTP (System.Net.IPAddress.Parse "0.0.0.0") 8090us ] }
     0

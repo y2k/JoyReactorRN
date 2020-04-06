@@ -20,10 +20,10 @@ module Interpretator =
     JoyReactor.ActionModule.downloadAndParseImpl <-
         fun url ->
             async {
-                let hostname = Browser.Dom.document.location.hostname
+                let baseUrl = Browser.Dom.document.location.origin
                 let! r = 
                     Fetch.fetch 
-                        (sprintf "http://%s:8090/parse/%s" hostname (JS.encodeURIComponent url)) 
+                        (sprintf "%s/parse/%s" baseUrl (JS.encodeURIComponent url)) 
                         [ Credentials RequestCredentials.Include ] 
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
@@ -35,10 +35,10 @@ module Interpretator =
                     sprintf "url=%s&form=%s"
                         (Uri.EscapeDataString form.url)
                         (Uri.EscapeDataString form.form)
-                let hostname = Browser.Dom.document.location.hostname
+                let baseUrl = Browser.Dom.document.location.origin
                 let! r = 
                     Fetch.fetch 
-                        (sprintf "http://%s:8090/form" hostname) 
+                        (sprintf "%s/form" baseUrl) 
                         [ Method HttpMethod.POST
                           Credentials RequestCredentials.Include
                           Body !^ textForm ]
