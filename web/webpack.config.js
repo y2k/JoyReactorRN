@@ -12,7 +12,14 @@ module.exports = {
         contentBase: "./public",
         port: 8080,
         hot: true,
-        inline: true
+        inline: true,
+        proxy: [{
+            path: '/parse/',
+            target: 'http://localhost:8090'
+        }, {
+            path: '/form',
+            target: 'http://localhost:8090'
+        }],
     },
     devtool: "source-map",
     module: {

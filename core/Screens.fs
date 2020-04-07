@@ -217,24 +217,27 @@ module TagsScreen =
     type LocalDb = CofxStorage.LocalDb
 
     type Model =
-        { tags : Tag []; loaded : bool }
-        with static member empty = { tags = [||]; loaded = false }
+        { topTags : Tag []; userTags : Tag []; loaded : bool }
+        with static member empty = { topTags = [||]; userTags = [||]; loaded = false }
 
     type Msg =
-        | Refresh
-        | RefreshComplete of Result<Tag[], exn>
-        | FromCacheMsg of Result<Tag[], exn>
+        | TopTags of Tag []
+        | UserTags of Tag []
+        | TopTagsSynced of Result<Tag[], exn>
+        | UserTagsSynced of Result<Tag[], exn>
         | OpenTag of Tag
 
-    let private refresh model =
-        { model with loaded = false }
+    let init = 
+        Model.empty
         , Cmd.batch [
-            Services.topTags |> Cmd.map RefreshComplete
-            Services.userTags |> Cmd.map RefreshComplete ]
-
-    let init _ = 
-        let (model, action) = refresh Model.empty
-        model, (Services.tagFromCache |> Cmd.map FromCacheMsg) @ action
+            ActionModule.readStore (fun db -> db, db.topTags |> Map.toArray |> Array.map snd) |> Cmd.map TopTags
+            ActionModule.readStore (fun db -> db, db.userTags |> Map.toArray |> Array.map snd) |> Cmd.map UserTags
+            ActionModule.run
+                (fun db -> db, Some UrlBuilder.home)
+                (fun db -> db, db.topTags |> Map.toArray |> Array.map snd) |> Cmd.map TopTagsSynced
+            ActionModule.run
+                (fun db -> db, db.userName |> Option.map UrlBuilder.user)
+                (fun db -> db, db.userTags |> Map.toArray |> Array.map snd) |> Cmd.map UserTagsSynced ]
 
     let private addFavorite tags =
         Array.concat [
@@ -247,15 +250,12 @@ module TagsScreen =
         | _ -> TagSource tag.name
 
     let update (model : Model) = function
-        | Refresh -> refresh model
-        | FromCacheMsg (Ok tags) -> 
-            { model with tags = addFavorite tags }
-            , Cmd.none
-        | FromCacheMsg (Error e) -> failwithf "FromCacheMsg %O" e
-        | RefreshComplete (Ok tags) -> 
-            { model with loaded = true; tags = addFavorite tags }
-            , Cmd.none
-        | RefreshComplete (Error e) -> failwithf "RefreshComplete %O" e
+        | TopTags tags -> { model with topTags = tags }, Cmd.none
+        | UserTags tags -> { model with userTags = tags }, Cmd.none
+        | TopTagsSynced (Ok tags) -> { model with topTags = tags }, Cmd.none
+        | UserTagsSynced (Ok tags) -> { model with userTags = tags }, Cmd.none
+        | TopTagsSynced (Error _) -> model, Cmd.none
+        | UserTagsSynced (Error _) -> model, Cmd.none
         | OpenTag _ -> model, Cmd.none
 
 module TabsScreen =
@@ -299,7 +299,7 @@ module TabsScreen =
             FeedScreen.init FeedSource
             ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
         | _, SelectPage 1 ->
-            TagsScreen.init ()
+            TagsScreen.init
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
         | _, SelectPage 2 ->
             ThreadsScreen.init

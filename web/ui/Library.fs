@@ -208,7 +208,7 @@ module TagsScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let private viewTagList dispatch (comments : Tag []) =
+    let private viewTagList title dispatch (tags : Tag []) =
         let viewItem (tag : Tag) =
             listItem
                 [ ListItemProp.Button true
@@ -218,14 +218,17 @@ module TagsScreen =
                 listItemText 
                     [ ListItemTextProp.Primary ^ str tag.name ] [] ]
 
-        comments
+        tags
         |> Array.map viewItem
-        |> list []
+        |> list [ Subheader (listSubheader [ Style [ BackgroundColor "#f0f0f0" ] ] [ str title ]) ]
 
     let view (model : Model) dispatch =
         fragment [] [
-            viewTagList dispatch model.tags
-            snackbar [ Open false; Message ^ str "Error" ] [] ]
+            if not <| Array.isEmpty model.userTags then
+                yield viewTagList "Мои теги" dispatch model.userTags
+                yield divider []
+            yield viewTagList "Популярные теги" dispatch model.topTags
+            yield snackbar [ Open false; Message ^ str "Ошибка" ] [] ]
 
 module LoginScreen =
     open Fable.Core.JsInterop

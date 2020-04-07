@@ -198,9 +198,7 @@ module Services =
     let logout =
         ActionModule.run
             (fun db -> db, Some <| sprintf "%s/logout" UrlBuilder.baseUrl)
-            (fun db -> 
-                { db with userName = None; messages2 = Map.empty; profile = None; userTags = Map.empty }
-                , ())
+            (fun _ -> CofxStorage.LocalDb.empty, ())
     let getMessages userName =
         ActionModule.readStore
             (fun db -> db, Domain.selectMessageForUser' userName db.messages2)
