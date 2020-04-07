@@ -42,7 +42,7 @@ module Image =
     open Types
 
     let normalize url (w : float) (h : float) =
-        sprintf "http://rc.y2k.work:8080/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
+        sprintf "https://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
             (Uri.EscapeDataString url)
 
     let urlWithHeight limitWidth (attachment : Attachment) =
