@@ -9,6 +9,7 @@
         "fable-compiler": "^2.4.11",
         "fable-loader": "^2.1.8",
         "fable-splitter": "^2.1.11",
+        "offline-plugin": "^5.0.7",
         "webpack": "^4.39.2",
         "webpack-cli": "^3.3.6",
         "webpack-dev-server": "^3.8.0"

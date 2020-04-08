@@ -141,6 +141,10 @@ let main _ =
             >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
         GET >=> path "/" >=> Files.browseFileHome "index.html"
         GET >=> path "/bundle.js" >=> Files.browseFileHome "bundle.js"
+        GET >=> path "/bundle.js.map" >=> Files.browseFileHome "bundle.js.map"
+        GET >=> path "/sw.js" 
+            >=> Files.browseFileHome "sw.js"
+            >=> Writers.setHeader "Cache-Control" "no-store"
         GET >=> path "/icon.png" >=> Files.browseFileHome "icon.png" ]
     |> startWebServer {
         defaultConfig with
