@@ -418,7 +418,7 @@ module ApplicationScreen =
 
     let view model dispatch =
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar "JoyReactor"
+            Styles.appBar "JoyReactor (0.1)"
             div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
                 contentView model dispatch ] ]
 
@@ -428,6 +428,11 @@ module App =
     open Elmish.Navigation
     open Elmish.HMR
     module D = JoyReactor.Components.ApplicationScreen
+
+    [<Fable.Core.Emit("require('offline-plugin/runtime').install();")>]
+    let initOfflinePlugin () = Fable.Core.Util.jsNative
+
+    Browser.Dom.window.addEventListener ("load", fun _ -> initOfflinePlugin())
 
     Program.mkProgram D.init (flip D.update) ApplicationScreen.view
     |> Program.withReactSynchronous "elmish-app"

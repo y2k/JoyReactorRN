@@ -1,5 +1,6 @@
 var path = require("path");
 var webpack = require("webpack");
+var OfflinePlugin = require('offline-plugin');
 
 module.exports = {
     mode: "development",
@@ -28,5 +29,12 @@ module.exports = {
             use: "fable-loader"
         }]
     },
-    plugins: [new webpack.HotModuleReplacementPlugin()]
+    plugins: [
+        new webpack.HotModuleReplacementPlugin(),
+        new OfflinePlugin({
+            autoUpdate: true,
+            externals: [
+                '/'
+            ]
+        })]
 }
