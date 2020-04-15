@@ -359,6 +359,7 @@ module ApplicationScreen =
         | PostsMsg of FeedScreen.Msg
         | TabsMsg of TabsScreen.Msg
         | MessagesMsg of MessagesScreen.Msg
+        | NavigateBack
 
     let init _ =
         let (m, cmd) = TabsScreen.init ()
@@ -367,6 +368,8 @@ module ApplicationScreen =
 
     let update model msg =
         match model, msg with
+        | { history = _ :: ((_ :: _) as prev) }, NavigateBack ->
+            { model with history = prev }, Cmd.none
         | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) -> 
             let (m, cmd) = PostScreen.init post.id
             { history = PostModel m :: model.history }

@@ -2,7 +2,7 @@ var path = require("path");
 var webpack = require("webpack");
 var OfflinePlugin = require('offline-plugin');
 
-module.exports = {
+var config = {
     mode: "development",
     entry: "./ui/ui.fsproj",
     output: {
@@ -22,19 +22,27 @@ module.exports = {
             target: 'http://localhost:8090'
         }],
     },
-    devtool: "source-map",
     module: {
         rules: [{
             test: /\.fs(x|proj)?$/,
             use: "fable-loader"
         }]
-    },
-    plugins: [
-        new webpack.HotModuleReplacementPlugin(),
-        new OfflinePlugin({
-            autoUpdate: true,
-            externals: [
-                '/'
-            ]
-        })]
-}
+    }
+};
+
+module.exports = (env, argv) => {
+    if (argv.mode === 'production') {
+        config.plugins = [
+            new OfflinePlugin({
+                autoUpdate: true,
+                externals: ['/']
+            })
+        ]
+    } else {
+        config.devtool = 'source-map';
+        config.plugins = [
+            new webpack.HotModuleReplacementPlugin(),
+        ]
+    }
+    return config;
+};
