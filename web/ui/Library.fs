@@ -451,7 +451,7 @@ module App =
 #endif
 
     Program.mkProgram D.init (flip D.update) ApplicationScreen.view
-    |> Program.withReactSynchronous "elmish-app"
+    |> Program.withReactBatched "elmish-app"
     |> Program.withNavigation
 #if DEBUG
     |> Program.withConsoleTrace
