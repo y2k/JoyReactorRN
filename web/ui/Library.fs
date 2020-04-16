@@ -276,6 +276,11 @@ module ProfileScreen =
     open Fable.MaterialUI.Core
     open JoyReactor.Components.ProfileScreen
 
+    let private viewStars count =
+        typography [ TypographyProp.Color TypographyColor.Primary ] [
+            String.init 10 (fun i -> if i < count then "★ " else "☆ ")
+            |> str ]
+
     let profileView (profile : Profile) dispatch =
         div [ Style [
                 BackgroundColor "#f8f8f8"
@@ -289,6 +294,15 @@ module ProfileScreen =
             typography [ Variant TypographyVariant.H5 ] [ str profile.userName ]
             typography [ Variant TypographyVariant.Body1 ] [ str <| sprintf "Рейтинг: %g" profile.rating ]
             divider [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginTop "16px" ] ]
+            div [ Style [
+                    PaddingTop "16px"
+                    PaddingBottom "16px"
+                    BackgroundColor "white"
+                    Display DisplayOptions.Flex
+                    JustifyContent "center"
+                    AlignSelf AlignSelfOptions.Stretch ] ] [
+                viewStars profile.stars ]
+            divider [ Style [ AlignSelf AlignSelfOptions.Stretch ] ]
             div [ Style [
                     PaddingTop "16px"
                     PaddingBottom "16px"
@@ -426,7 +440,7 @@ module ApplicationScreen =
 
     let view model dispatch =
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar "JoyReactor (0.4)"
+            Styles.appBar "JoyReactor (0.5)"
             div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
                 contentView model dispatch ] ]
 
