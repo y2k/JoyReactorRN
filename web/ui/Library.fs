@@ -369,7 +369,15 @@ module PostScreen =
                     avatar [ Src comment.image.url ] [] ]
                 listItemText [ 
                     ListItemTextProp.Primary ^ str comment.userName
-                    ListItemTextProp.Secondary ^ str comment.text ] [] ]
+                    ListItemTextProp.Secondary (
+                        fragment [] [ 
+                            str comment.text
+                            typography 
+                                [ Component ("span" |> ReactElementType.ofHtmlElement)
+                                  MaterialProp.Color ComponentColor.Primary ] [
+                                str <| sprintf " (%g)" comment.rating
+                            ] ]) ] []
+                ]
 
         comments
         |> Array.map viewComment
@@ -418,7 +426,7 @@ module ApplicationScreen =
 
     let view model dispatch =
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar "JoyReactor (0.3)"
+            Styles.appBar "JoyReactor (0.4)"
             div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
                 contentView model dispatch ] ]
 

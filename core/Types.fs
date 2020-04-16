@@ -22,7 +22,9 @@ module Types =
           image : Attachment
           rating : float
           userName : string
-          attachments : AttachmentResource [] }
+          attachments : AttachmentResource []
+          id : int
+          parentId : int }
 
     type Post =
         { id : int

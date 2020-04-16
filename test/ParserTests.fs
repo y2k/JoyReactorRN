@@ -43,7 +43,7 @@ let ``parse first messages``() =
     assertMessages actual
         
 [<Fact>]
-let ``parse lst messages``() =
+let ``parse last messages``() =
     let actual = getHtml "messages_last.html" |> Parsers.getMessages |> Option.get
     Assert.Equal(None, actual.nextPage)
     Assert.Equal(3, Seq.length actual.messages)
@@ -51,7 +51,7 @@ let ``parse lst messages``() =
     Assert.Equal(3, actual.messages |> Seq.filter (fun x -> not x.isMine) |> Seq.length)
     assertMessages actual
 
-[<Fact(Skip = "FIXME")>]
+[<Fact>]
 let ``parsers should not crash``() =
     RESOURCES_DIR
     |> D.GetFiles
@@ -81,7 +81,11 @@ let ``get username``() =
 
 [<Fact>]
 let ``parse post``() =
-    getHtml "post_4111388.html" |> Parsers.parsePost
+    let actual = getHtml "post_4111388.html" |> Parsers.parsePost |> Option.get
+    let topCommentCount = actual.comments |> Array.filter (fun x -> x.parentId = 0) |> Array.length
+    let childCommentCount = actual.comments |> Array.filter (fun x -> x.parentId <> 0) |> Array.length
+    Assert.Equal(7, topCommentCount)
+    Assert.Equal(15, childCommentCount)
 
 [<Fact>]
 let ``reading top tags``() =

@@ -82,12 +82,18 @@ module Parsers =
         let NUMBER_REGEX = Regex("\\d+")
         int ^ NUMBER_REGEX.Match(value).Value
 
+    let private tryMatch (r : Regex) value =
+        let m = r.Match(value)
+        if m.Success then Some m else None
+
     let private parserSinglePost (element : HtmlNode) =
         let getRating() =
             let RATING_REGEX = Regex("[\\d\\.]+")
-            let e = element.QuerySelector("span.post_rating > span")
-            let m = RATING_REGEX.Match(e.InnerText)
-            if m.Success then float m.Value else 0.0
+            element.QuerySelector("span.post_rating > span")
+            |> Option.ofObj
+            |> Option.bind ^ fun e -> tryMatch RATING_REGEX e.InnerText
+            |> Option.map ^ fun m -> float m.Value
+            |> Option.defaultValue 0.0
         let getCreated() =
             let e = element.QuerySelector("span.date > span")
             DateTime(1970, 1, 1).AddSeconds(float e.Attributes.["data-time"].Value)
@@ -166,6 +172,7 @@ module Parsers =
                         else 0
 
                 let userImg = node.QuerySelector("img.avatar")
+                let id = int (node.QuerySelector("span.comment_rating").Attributes.["comment_id"].Value)
                 { text = node.QuerySelector("div.txt > div").InnerText
                   image = { aspect = 1.0; url = userImg.Attributes.["src"].Value }
                   rating = node.QuerySelectorAll("span.comment_rating")
@@ -176,7 +183,9 @@ module Parsers =
                 //   postId = postId
                 //   id = (node.select("span.comment_rating").attr("comment_id")).toLong()
                   userName = userImg.Attributes.["alt"].Value
-                  attachments = parseCommentAttachments (node) }
+                  attachments = parseCommentAttachments (node)
+                  id = id
+                  parentId = parentId }
             |> Seq.toArray
 
         { userImage = { aspect = 1.0; url = element.QuerySelector("div.uhead_nick > img").Attributes.["src"].Value }

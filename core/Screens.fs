@@ -332,8 +332,9 @@ module PostScreen =
             match post with
             | Some post ->
                 post.comments
+                |> Array.filter ^ fun comment -> comment.parentId = 0 && comment.rating >= -0.3
                 |> Array.sortByDescending ^ fun comment -> comment.rating
-                |> Array.take (min post.comments.Length 10)
+                |> fun comments -> Array.take (min comments.Length 10) comments
             | None -> [||]
         { model with post = post; comments = comments }
 
