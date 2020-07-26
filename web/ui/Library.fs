@@ -46,6 +46,28 @@ module Interpretator =
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
 
+module ReactVirtualized =
+    open Fable.Core
+    open Fable.React
+    open Fable.React.Props
+    open Fable.Core.JsInterop
+
+    type ReactVirtualizedProps = 
+        | RowRenderer of ({| index : int; key : string; style : string |} -> ReactElement)
+        | RowCount of int
+        | Width of float
+        | Height of float
+        | OverscanRowCount of int
+        | RowHeight of ({| index : int |} -> float)
+        | [<CompiledName("rowHeight")>] RowHeightFixed of float
+        interface Props.IHTMLProp
+
+    let inline autoSizer (elems : ReactElement list) : ReactElement =
+        ofImport "AutoSizer" "react-virtualized/dist/commonjs/AutoSizer" (keyValueList CaseRules.LowerFirst []) elems
+
+    let inline list (props : IHTMLProp list) (elems : ReactElement list) : ReactElement =
+        ofImport "List" "react-virtualized/dist/commonjs/List" (keyValueList CaseRules.LowerFirst props) elems
+
 module Styles =
     open Fable.React
     open Fable.React.Props
@@ -160,12 +182,12 @@ module FeedScreen =
                 typography [] [ str <| sprintf "%g" post.rating ] ] ]
 
     let private viewItemList (model : Model) dispatch =
-        let viewItem dispatch (i : PostState) =
-            match i with 
-            | Actual i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
-            | Old i -> listItem [ Key ^ string i.id ] [ viewPost dispatch i ]
+        let viewItemVirt (x : {| index : int; key : string; style : string |}) =
+            match model.items.[x.index] with 
+            | Actual i -> listItem [ Key ^ string i.id; HTMLAttr.Custom ("style", x.style) ] [ viewPost dispatch i ]
+            | Old i -> listItem [ Key ^ string i.id; HTMLAttr.Custom ("style", x.style) ] [ viewPost dispatch i ]
             | LoadNextDivider ->
-                listItem [ Key "divider" ] [
+                listItem [ Key "divider"; HTMLAttr.Custom ("style", x.style) ] [
                     button 
                         [ Style [ Flex 1. ]
                           ButtonProp.Variant ButtonVariant.Contained
@@ -173,7 +195,19 @@ module FeedScreen =
                           OnClick @@ fun _ -> dispatch LoadNextPage ] [ 
                         str "Еще" ] ]
 
-        list [] (model.items |> Array.map (viewItem dispatch))
+        let listItemHeight (x : {| index : int |}) = 
+            match model.items.[x.index] with 
+            | Actual i | Old i -> if Array.isEmpty i.image then 112.0 + 10.0 else 446.0 + 10.0
+            | LoadNextDivider -> 36.0 + 10.0
+
+        ReactVirtualized.list
+            [ Key "posts-list"
+              ReactVirtualized.Width Browser.Dom.window.innerWidth
+              ReactVirtualized.Height (Browser.Dom.window.innerHeight - 118.0)
+              ReactVirtualized.OverscanRowCount 1
+              ReactVirtualized.RowCount (Array.length model.items)
+              ReactVirtualized.RowHeight listItemHeight
+              ReactVirtualized.RowRenderer viewItemVirt ] []
 
     let view (model : Model) dispatch =
         fragment [] [
@@ -181,8 +215,8 @@ module FeedScreen =
             if model.hasNew then
                 yield
                     button 
-                        [ Style [ 
-                              CSSProp.Position PositionOptions.Fixed
+                        [ Style 
+                            [ CSSProp.Position PositionOptions.Fixed
                               Bottom 60; Left 12; Right 12 ]
                           ButtonProp.Variant ButtonVariant.Contained
                           MaterialProp.Color ComponentColor.Primary
@@ -208,27 +242,33 @@ module TagsScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let private viewTagList title dispatch (tags : Tag []) =
-        let viewItem (tag : Tag) =
+    let private viewTagList dispatch (model : Model) =
+        let tags = Array.concat [ model.userTags; model.topTags ]
+
+        let viewItemVirt (x : {| index : int; key : string; style : string |}) =
+            let tag = tags.[x.index]
             listItem
-                [ ListItemProp.Button true
+                [ HTMLAttr.Custom ("style", x.style)
+                  Key x.key
+                  ListItemProp.Button true
                   OnClick (fun _ -> dispatch @@ OpenTag tag) ] [
                 listItemAvatar [] [
                     avatar [ Src tag.image ] [] ]
                 listItemText 
                     [ ListItemTextProp.Primary ^ str tag.name ] [] ]
 
-        tags
-        |> Array.map viewItem
-        |> list [ Subheader (listSubheader [ Style [ BackgroundColor "#f0f0f0" ] ] [ str title ]) ]
+        ReactVirtualized.list
+            [ Key "tags-list"
+              ReactVirtualized.Width Browser.Dom.window.innerWidth
+              ReactVirtualized.Height (Browser.Dom.window.innerHeight - 118.0)
+              ReactVirtualized.RowCount (Array.length tags)
+              ReactVirtualized.RowHeightFixed 56.0
+              ReactVirtualized.RowRenderer viewItemVirt ] []
 
     let view (model : Model) dispatch =
         fragment [] [
-            if not <| Array.isEmpty model.userTags then
-                yield viewTagList "Мои теги" dispatch model.userTags
-                yield divider []
-            yield viewTagList "Популярные теги" dispatch model.topTags
-            yield snackbar [ Open false; Message ^ str "Ошибка" ] [] ]
+            viewTagList dispatch model
+            snackbar [ Open false; Message ^ str "Ошибка" ] [] ]
 
 module LoginScreen =
     open Fable.Core.JsInterop
@@ -242,8 +282,8 @@ module LoginScreen =
         div [ Style [ CSSProp.Padding "16px" ] ] [
             formControl 
                 [ MaterialProp.Margin FormControlMargin.Normal
-                  HTMLAttr.Required true
-                  MaterialProp.FullWidth true] [
+                  Required true
+                  FullWidth true] [
                 inputLabel [] [ str "Логин" ]
                 input 
                     [ OnChange (fun e _ -> !!e?target?value |> UsernameMsg |> dispatch)
@@ -251,8 +291,8 @@ module LoginScreen =
 
             formControl 
                 [ MaterialProp.Margin FormControlMargin.Normal
-                  HTMLAttr.Required true
-                  MaterialProp.FullWidth true] [
+                  Required true
+                  FullWidth true] [
                 inputLabel [] [ str "Пароль" ]
                 input 
                     [ OnChange (fun e _ -> !!e?target?value |> PasswordMsg |> dispatch)
@@ -263,7 +303,7 @@ module LoginScreen =
                 [ OnClick (fun _ -> dispatch LoginMsg)
                   HTMLAttr.Disabled (not model.isEnabled)
                   HTMLAttr.Type "submit"
-                  MaterialProp.FullWidth true
+                  FullWidth true
                   ButtonProp.Variant ButtonVariant.Contained
                   MaterialProp.Color ComponentColor.Primary ]  [
                 str "Войти" ] ]
