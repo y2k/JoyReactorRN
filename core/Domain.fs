@@ -183,7 +183,7 @@ module ActionModule =
                 db := ldb
                 return result
             }
-        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
+        Cmd.OfAsyncImmediate.either (fun _ -> invoke) () Ok Error
 
     let readStore (callback: Db -> Db * 'a) : 'a Cmd =
         let invoke =

@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\parser\parser.fsproj" />
+    <ProjectReference Include="..\web-cli\web-cli.fsproj" />
   </ItemGroup>
 
 </Project>
