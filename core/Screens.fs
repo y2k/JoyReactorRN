@@ -225,7 +225,7 @@ module TagsScreen =
         | UserTags of Tag []
         | TopTagsSynced of Result<Tag[], exn>
         | UserTagsSynced of Result<Tag[], exn>
-        | OpenTag of Tag
+        | OpenTag of string
 
     let init = 
         Model.empty
@@ -376,7 +376,7 @@ module ApplicationScreen =
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
-            let (m, cmd) = FeedScreen.init ^ TagSource tag.name
+            let (m, cmd) = FeedScreen.init ^ TagSource tag
             { history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
         | _, (TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.OpenThread thread))) -> 

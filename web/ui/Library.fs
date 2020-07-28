@@ -212,7 +212,7 @@ module TagsScreen =
         let viewItem (tag : Tag) =
             listItem
                 [ ListItemProp.Button true
-                  OnClick (fun _ -> dispatch @@ OpenTag tag) ] [
+                  OnClick (fun _ -> dispatch @@ OpenTag tag.name) ] [
                 listItemAvatar [] [
                     avatar [ Src tag.image ] [] ]
                 listItemText 
