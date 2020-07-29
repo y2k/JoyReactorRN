@@ -161,7 +161,7 @@ module FeedScreen =
         | LoadNextPageCompleted of Result<PostsWithLevels, exn>
         | Refresh
         | RefreshCompleted of Result<PostsWithLevels, exn>
-        | OpenPost of Post
+        | OpenPost of int
 
     let init source =
         { source = source; items = [||]; hasNew = false; loading = false }
@@ -372,7 +372,7 @@ module ApplicationScreen =
         | { history = _ :: ((_ :: _) as prev) }, NavigateBack ->
             { model with history = prev }, Cmd.none
         | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) -> 
-            let (m, cmd) = PostScreen.init post.id
+            let (m, cmd) = PostScreen.init post
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
@@ -388,7 +388,7 @@ module ApplicationScreen =
             { history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
         | _, (PostsMsg (FeedScreen.OpenPost post)) -> 
-            let (m, cmd) = PostScreen.init post.id
+            let (m, cmd) = PostScreen.init post
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | { history = (TabsModel cmodel) :: other }, TabsMsg cmsg ->

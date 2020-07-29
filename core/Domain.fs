@@ -159,6 +159,8 @@ module ActionModule =
 
     let private db = ref Db.empty
 
+    let resetDb () = db := Db.empty
+
     let postForm form =
         let invoke =
             async {

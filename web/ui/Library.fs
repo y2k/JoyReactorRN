@@ -140,7 +140,7 @@ module FeedScreen =
                 [ CardHeaderProp.Avatar <| avatar [ Src post.userImage.url ] []
                   CardHeaderProp.Title <| str post.userName
                   CardHeaderProp.Subheader <| str (sprintf "%O" post.created) ] []
-            cardActionArea [ OnClick ^ fun _ -> dispatch ^ OpenPost post ] [
+            cardActionArea [ OnClick ^ fun _ -> dispatch ^ OpenPost post.id ] [
                 if post.title = ""
                     then div [] []
                     else
