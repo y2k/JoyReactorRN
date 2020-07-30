@@ -185,7 +185,11 @@ module ActionModule =
                 db := ldb
                 return result
             }
+#if FABLE_COMPILER
+        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
+#else
         Cmd.OfAsyncImmediate.either (fun _ -> invoke) () Ok Error
+#endif
 
     let readStore (callback: Db -> Db * 'a) : 'a Cmd =
         let invoke =

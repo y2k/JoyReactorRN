@@ -2,6 +2,24 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "run all",
+            "dependsOrder": "parallel",
+            "dependsOn": [
+                "run web-cli",
+                "fable"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "run web-cli",
+            "command": "dotnet run",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceRoot}/web-cli"
+            },
+            "dependsOn": "build"
+        },
+        {
             "label": "build",
             "command": "dotnet build",
             "type": "shell",
@@ -31,12 +49,16 @@
         },
         {
             "label": "fable",
-            "command": "yarn cold-start",
+            "command": "yarn && yarn start",
             "type": "shell",
             "group": "build",
             "presentation": {
                 "reveal": "always"
             },
+            "options": {
+                "cwd": "${workspaceRoot}/web"
+            },
+            "dependsOn": "build",
             "problemMatcher": "$msCompile"
         }
     ]
