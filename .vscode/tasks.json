@@ -2,24 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "RN menu",
-            "command": "$ANDROID_HOME/platform-tools/adb shell input keyevent 82",
-            "type": "shell",
-            "presentation": {
-                "reveal": "never"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "RN reload",
-            "command": "$ANDROID_HOME/platform-tools/adb shell input text \"RR\"",
-            "type": "shell",
-            "presentation": {
-                "reveal": "never"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "build",
             "command": "dotnet build",
             "type": "shell",
@@ -52,19 +34,8 @@
             "command": "yarn cold-start",
             "type": "shell",
             "group": "build",
-            "presentation": { "reveal": "always" },
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "fable - DEPRECATED",
-            "command": "dotnet fable npm-build",
-            "type": "shell",
-            "group": "build",
-            "options": {
-                "cwd": "${workspaceRoot}/src"
-            },
             "presentation": {
-                "reveal": "silent"
+                "reveal": "always"
             },
             "problemMatcher": "$msCompile"
         }
