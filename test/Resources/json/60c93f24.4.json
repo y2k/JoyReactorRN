@@ -1,0 +1,424 @@
+{
+  "Case": "FeedModel",
+  "Fields": [
+    {
+      "source": {
+        "Case": "FeedSource"
+      },
+      "items": [
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4443859,
+              "userName": "big_daddy",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/368715",
+                "aspect": 1
+              },
+              "rating": 12.7,
+              "created": "2020-07-27T20:26:13",
+              "image": [
+                {
+                  "url": "http://img1.joyreactor.cc/pics/post/-6072587.jpeg",
+                  "aspect": 1.3338815789473684
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img1.joyreactor.cc/pics/post/full/-6072587.jpeg",
+                    "aspect": 1.3338815789473684
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "алёша Ступин",
+                "artist",
+                "политота",
+                "Беларусь",
+                "страны",
+                "лукашенко",
+                "3%"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4444377,
+              "userName": "aksakal",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/777455",
+                "aspect": 1
+              },
+              "rating": 7.2,
+              "created": "2020-07-28T10:16:24",
+              "image": [],
+              "attachments": [],
+              "title": "",
+              "tags": [
+                "coub",
+                "собакен",
+                "милота"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4444402,
+              "userName": "I_am_just_Actor",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/596513",
+                "aspect": 1
+              },
+              "rating": 13.8,
+              "created": "2020-07-28T10:35:24",
+              "image": [
+                {
+                  "url": "http://img10.joyreactor.cc/pics/post/-6073587.jpeg",
+                  "aspect": 1.5
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073587.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073588.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073589.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073590.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073591.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073592.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073593.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073594.jpeg",
+                    "aspect": 1.5
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img10.joyreactor.cc/pics/post/-6073595.jpeg",
+                    "aspect": 1.5
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "duran",
+                "Комиксы",
+                "NSFW",
+                "что? где? когда?"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4443947,
+              "userName": "Ганфайтер",
+              "userImage": {
+                "url": "http://img0.joyreactor.cc/pics/avatar/user/114200",
+                "aspect": 1
+              },
+              "rating": 16.6,
+              "created": "2020-07-27T21:51:29",
+              "image": [],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img.youtube.com/vi/LrZw9p3FzNM/0.jpg",
+                    "aspect": 1.7777777777777777
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "depeche mode",
+                "video"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4444186,
+              "userName": "kreuz",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/51927",
+                "aspect": 1
+              },
+              "rating": 30.6,
+              "created": "2020-07-28T06:59:13",
+              "image": [
+                {
+                  "url": "http://img0.joyreactor.cc/pics/post/-6073262.gif",
+                  "aspect": 1
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img0.joyreactor.cc/pics/post/-6073262.gif",
+                    "aspect": 1
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "гифки",
+                "самокат",
+                "Медведи"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4444270,
+              "userName": "Sentepra",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/333981",
+                "aspect": 1
+              },
+              "rating": 20.4,
+              "created": "2020-07-28T08:43:14",
+              "image": [
+                {
+                  "url": "http://img1.joyreactor.cc/pics/post/-6073405.jpeg",
+                  "aspect": 1.0012345679012347
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img1.joyreactor.cc/pics/post/full/-6073405.jpeg",
+                    "aspect": 1.0012345679012347
+                  }
+                },
+                {
+                  "image": {
+                    "url": "http://img0.joyreactor.cc/pics/post/full/-6073406.jpeg",
+                    "aspect": 1
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "котэ",
+                "поза",
+                "сутулость"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4444341,
+              "userName": "Naro4iTo",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/344783",
+                "aspect": 1
+              },
+              "rating": 29.5,
+              "created": "2020-07-28T09:50:58",
+              "image": [
+                {
+                  "url": "http://img0.joyreactor.cc/pics/post/-6073500.jpeg",
+                  "aspect": 0.7998027613412229
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img0.joyreactor.cc/pics/post/full/-6073500.jpeg",
+                    "aspect": 0.7998027613412229
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "Odeith",
+                "стрит арт",
+                "граффити"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4443430,
+              "userName": "Yaoicko",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/137887",
+                "aspect": 1
+              },
+              "rating": 17.2,
+              "created": "2020-07-27T14:18:08",
+              "image": [
+                {
+                  "url": "http://img1.joyreactor.cc/pics/post/-6071819.gif",
+                  "aspect": 1.6666666666666667
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img1.joyreactor.cc/pics/post/-6071819.gif",
+                    "aspect": 1.6666666666666667
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "Fire Emblem",
+                "Игры",
+                "byleth (fire emblem)",
+                "Edelgard von Hresvelg",
+                "hunter russell",
+                "гифки",
+                "Pixel Gif",
+                "Pixel Art"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4444251,
+              "userName": "Imebal",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/54947",
+                "aspect": 1
+              },
+              "rating": 25,
+              "created": "2020-07-28T08:19:31",
+              "image": [
+                {
+                  "url": "http://img0.joyreactor.cc/pics/post/-6073374.jpeg",
+                  "aspect": 1.3620071684587813
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img0.joyreactor.cc/pics/post/-6073374.jpeg",
+                    "aspect": 1.3620071684587813
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "политика",
+                "ихтамнет",
+                "кадыровцы"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "Actual",
+          "Fields": [
+            {
+              "id": 4443565,
+              "userName": "Nox7662",
+              "userImage": {
+                "url": "http://img1.joyreactor.cc/pics/avatar/user/425193",
+                "aspect": 1
+              },
+              "rating": 16.4,
+              "created": "2020-07-27T16:35:06",
+              "image": [
+                {
+                  "url": "http://img1.joyreactor.cc/pics/post/-6072151.jpeg",
+                  "aspect": 0.8805646036916395
+                }
+              ],
+              "attachments": [
+                {
+                  "image": {
+                    "url": "http://img1.joyreactor.cc/pics/post/full/-6072151.jpeg",
+                    "aspect": 0.8805646036916395
+                  }
+                }
+              ],
+              "title": "",
+              "tags": [
+                "Ghost Rider",
+                "Marvel",
+                "фэндомы",
+                "Gavin Goulden"
+              ],
+              "comments": []
+            }
+          ]
+        },
+        {
+          "Case": "LoadNextDivider"
+        }
+      ],
+      "hasNew": false,
+      "loading": false
+    }
+  ]
+}

@@ -162,7 +162,7 @@ module FeedScreen =
                 [ CardHeaderProp.Avatar <| avatar [ Src post.userImage.url ] []
                   CardHeaderProp.Title <| str post.userName
                   CardHeaderProp.Subheader <| str (sprintf "%O" post.created) ] []
-            cardActionArea [ OnClick ^ fun _ -> dispatch ^ OpenPost post ] [
+            cardActionArea [ OnClick ^ fun _ -> dispatch ^ OpenPost post.id ] [
                 if post.title = ""
                     then div [] []
                     else
@@ -251,7 +251,7 @@ module TagsScreen =
                 [ HTMLAttr.Custom ("style", x.style)
                   Key x.key
                   ListItemProp.Button true
-                  OnClick (fun _ -> dispatch @@ OpenTag tag) ] [
+                  OnClick (fun _ -> dispatch @@ OpenTag tag.name) ] [
                 listItemAvatar [] [
                     avatar [ Src tag.image ] [] ]
                 listItemText 

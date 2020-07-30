@@ -1,0 +1,10 @@
+{
+  "Case": "TagsModel",
+  "Fields": [
+    {
+      "topTags": [],
+      "userTags": [],
+      "loaded": false
+    }
+  ]
+}

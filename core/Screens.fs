@@ -161,7 +161,7 @@ module FeedScreen =
         | LoadNextPageCompleted of Result<PostsWithLevels, exn>
         | Refresh
         | RefreshCompleted of Result<PostsWithLevels, exn>
-        | OpenPost of Post
+        | OpenPost of int
 
     let init source =
         { source = source; items = [||]; hasNew = false; loading = false }
@@ -225,7 +225,7 @@ module TagsScreen =
         | UserTags of Tag []
         | TopTagsSynced of Result<Tag[], exn>
         | UserTagsSynced of Result<Tag[], exn>
-        | OpenTag of Tag
+        | OpenTag of string
 
     let init = 
         Model.empty
@@ -372,11 +372,11 @@ module ApplicationScreen =
         | { history = _ :: ((_ :: _) as prev) }, NavigateBack ->
             { model with history = prev }, Cmd.none
         | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) -> 
-            let (m, cmd) = PostScreen.init post.id
+            let (m, cmd) = PostScreen.init post
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
-            let (m, cmd) = FeedScreen.init ^ TagSource tag.name
+            let (m, cmd) = FeedScreen.init ^ TagSource tag
             { history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
         | _, (TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.OpenThread thread))) -> 
@@ -388,7 +388,7 @@ module ApplicationScreen =
             { history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
         | _, (PostsMsg (FeedScreen.OpenPost post)) -> 
-            let (m, cmd) = PostScreen.init post.id
+            let (m, cmd) = PostScreen.init post
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | { history = (TabsModel cmodel) :: other }, TabsMsg cmsg ->

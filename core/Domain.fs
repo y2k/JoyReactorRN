@@ -159,6 +159,8 @@ module ActionModule =
 
     let private db = ref Db.empty
 
+    let resetDb () = db := Db.empty
+
     let postForm form =
         let invoke =
             async {
@@ -183,7 +185,7 @@ module ActionModule =
                 db := ldb
                 return result
             }
-        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
+        Cmd.OfAsyncImmediate.either (fun _ -> invoke) () Ok Error
 
     let readStore (callback: Db -> Db * 'a) : 'a Cmd =
         let invoke =

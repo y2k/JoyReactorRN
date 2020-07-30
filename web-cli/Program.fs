@@ -1,4 +1,6 @@
-﻿module Downloader =
+﻿module JoyReactor.WebCli
+
+module Downloader =
     open System
     open System.Net
     open System.Net.Http
@@ -67,23 +69,27 @@ module Domain =
           topTags = Parsers.parseTopTags html |> wrapToOption Array.isEmpty
           post = Parsers.parsePost html
           messages = Parsers.getMessages html }
-        |> fun response -> JsonSerializer.SerializeToUtf8Bytes (response, options)
+
+    let parseInner loadHtml url =
+        async {
+            let! (html, cookies) = loadHtml url
+            return (mkResponseBody html), cookies
+        }
 
     let parse url (ctx : HttpContext) =
         async {
-            let! (html, cookies) = 
-                extractCookiese ctx
-                |> Downloader.loadHtml url
+            let loadHtml url = extractCookiese ctx |> Downloader.loadHtml url
+            let! (response, cookies) = parseInner loadHtml url
 
-            let bodyWebPart =
-                mkResponseBody html
+            let bodyWebPart = 
+                JsonSerializer.SerializeToUtf8Bytes (response, options)
                 |> Successful.ok
 
             let cookieWebPart =
                 cookies
                 |> List.map ^ fun (k, v) -> HttpCookie.createKV k v
                 |> List.map setCookie
-                |> List.reduce compose
+                |> List.fold compose succeed
 
             return! (compose bodyWebPart cookieWebPart) ctx
         }
@@ -111,6 +117,7 @@ module Domain =
 
                 let bodyWebPart =
                     mkResponseBody html
+                    |> fun response -> JsonSerializer.SerializeToUtf8Bytes (response, options)
                     |> Successful.ok
 
                 let cookieWebPart =
@@ -129,12 +136,14 @@ open System.IO
 
 [<EntryPoint>]
 let main _ =
-    choose [
+    let api =
         choose [
             GET >=> pathScan "/parse/%s" Domain.parse
                 >=> Writers.setMimeType "application/json"
             POST >=> path "/form" >=> Domain.sendForm
                  >=> Writers.setMimeType "application/json" ]
+    choose [
+        api
         >=> Writers.setHeader "Access-Control-Allow-Origin" "http://localhost:8080"
         >=> Writers.setHeader "Access-Control-Allow-Credentials" "true"
         GET >=> path "/info" 

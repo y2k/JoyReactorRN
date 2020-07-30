@@ -1,0 +1,13 @@
+{
+  "Case": "FeedModel",
+  "Fields": [
+    {
+      "source": {
+        "Case": "FeedSource"
+      },
+      "items": [],
+      "hasNew": false,
+      "loading": true
+    }
+  ]
+}
