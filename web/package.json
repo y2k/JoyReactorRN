@@ -4,15 +4,16 @@
         "prod": "webpack-dev-server --mode production --host 0.0.0.0 --disable-host-check"
     },
     "devDependencies": {
-        "@babel/core": "^7.5.5",
-        "@babel/preset-env": "^7.7.7",
-        "fable-compiler": "^2.4.11",
-        "fable-loader": "^2.1.8",
-        "fable-splitter": "^2.1.11",
+        "@babel/core": "^7.11.0",
+        "@babel/preset-env": "^7.11.0",
+        "fable-compiler": "^2.10.2",
+        "fable-loader": "^2.1.9",
+        "fable-splitter": "^2.2.1",
         "offline-plugin": "^5.0.7",
-        "webpack": "^4.39.2",
-        "webpack-cli": "^3.3.6",
-        "webpack-dev-server": "^3.8.0"
+        "pnp-webpack-plugin": "^1.6.4",
+        "webpack": "^4.44.1",
+        "webpack-cli": "^3.3.12",
+        "webpack-dev-server": "^3.11.0"
     },
     "dependencies": {
         "@material-ui/core": "^4.9.0",
@@ -22,5 +23,10 @@
         "react-virtualized": "^9.21.2",
         "react-window": "^1.8.5"
     },
-    "version": "0.0.0"
+    "version": "0.0.0",
+    "dependenciesMeta": {
+        "fable-compiler": {
+            "unplugged": true
+        }
+    }
 }

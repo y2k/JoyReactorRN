@@ -1,6 +1,7 @@
 var path = require("path");
 var webpack = require("webpack");
 var OfflinePlugin = require('offline-plugin');
+const PnpWebpackPlugin = require(`pnp-webpack-plugin`);
 
 var config = {
     mode: "development",
@@ -44,5 +45,7 @@ module.exports = (env, argv) => {
             new webpack.HotModuleReplacementPlugin(),
         ]
     }
+    config.resolve = { plugins: [PnpWebpackPlugin] }
+    config.resolveLoader = { plugins: [PnpWebpackPlugin.moduleLoader(module)] }
     return config;
 };

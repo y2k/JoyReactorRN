@@ -7,7 +7,7 @@ RUN dotnet test
 RUN cd web-cli && dotnet publish -c Release -r linux-x64 --self-contained false
 
 RUN apk add yarn
-RUN cd web && yarn --ignore-optional && yarn webpack --mode production
+RUN cd web && yarn && yarn webpack --mode production
 
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1.2-alpine3.11
 
