@@ -314,7 +314,7 @@ module PostScreen =
     open JoyReactor
     open JoyReactor.Types
 
-    type Model = { post : Post option; error : string option; id : int; comments : Comment [] }
+    type Model = { tags: string []; image: Attachment option; isLoaded: bool; error: string option; id: int; comments: Comment [] }
 
     type Msg =
         | PostLoaded of Result<Post option, exn>
@@ -322,7 +322,7 @@ module PostScreen =
         | OpenTag of string
 
     let init id = 
-        { post = None; error = None; id = id; comments = [||] }
+        { tags = [||]; image = None; isLoaded = false; error = None; id = id; comments = [||] }
         , Cmd.batch [
             Services.postFromCache id |> Cmd.map PostLoaded
             Services.post id |> Cmd.map RefreshComplete ]
@@ -336,7 +336,10 @@ module PostScreen =
                 |> Array.sortByDescending ^ fun comment -> comment.rating
                 |> fun comments -> Array.take (min comments.Length 10) comments
             | None -> [||]
-        { model with post = post; comments = comments }
+        let image = post |> Option.bind (fun p -> Array.tryHead p.image)
+        let tags = post |> Option.map (fun p -> p.tags) |> Option.defaultValue [||]
+        let isLoaded = Option.isSome post
+        { model with comments = comments; image = image; tags = tags; isLoaded = isLoaded }
 
     let update (model : Model) = function
         | PostLoaded (Ok post) -> updateModel model post, Cmd.none

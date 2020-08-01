@@ -437,10 +437,10 @@ module PostScreen =
         |> Array.map viewComment
         |> list []
 
-    let private contentView dispatch (post : Post) comments =
+    let private contentView dispatch (model : Model) comments =
         div [ Style [ CSSProp.Padding "16px" ] ] [
-            (match post.image with
-                 | [| i |] ->
+            (match model.image with
+                 | Some i ->
                      cardMedia [
                          Image i.url
                          Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] ]
@@ -448,7 +448,7 @@ module PostScreen =
 
             h3 [] [ str "Теги:" ]
             div [] (
-                post.tags 
+                model.tags 
                 |> Array.map ^ fun tag -> 
                     chip 
                         [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag 
@@ -459,9 +459,8 @@ module PostScreen =
 
     let view (model : Model) dispatch = 
         fragment [] [
-            match model.post with
-            | Some post -> contentView dispatch post model.comments
-            | None -> div [] [] ]
+            if model.isLoaded then contentView dispatch model model.comments
+            else div [] [] ]
 
 module ApplicationScreen =
     open Fable.React
