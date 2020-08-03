@@ -145,7 +145,7 @@ module DomainInterpetator =
             topTags = toMapTag pr.topTags db.topTags
             posts = tryAddPost db.posts pr.post
             profile = pr.profile |> Option.orElse db.profile
-            messages2 = addMessages db.messages2 pr.messages
+            messages = addMessages db.messages pr.messages
             nextMessagesPage = updateNextMessagePage db.nextMessagesPage pr.messages }
 
 module ActionModule =
@@ -170,7 +170,7 @@ module ActionModule =
             }
         Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
 
-    let run (furl: Db -> Db * string option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
+    let run (furl: Db -> Db * Url option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
         let invoke : _ Async =
             let downloadPostsForUrl url =
                 async {
@@ -207,18 +207,18 @@ module Services =
             (fun _ -> CofxStorage.LocalDb.empty, ())
     let getMessages userName =
         ActionModule.readStore
-            (fun db -> db, Domain.selectMessageForUser' userName db.messages2)
+            (fun db -> db, Domain.selectMessageForUser' userName db.messages)
     let getThreads =
         ActionModule.readStore
             (fun db -> 
                 db
                 , match db.userName with
-                  | Some _ -> Some <| Domain.selectThreads db.messages2
+                  | Some _ -> Some <| Domain.selectThreads db.messages
                   | None -> None)
     let syncThreads page =
         ActionModule.run
             (fun db -> db, UrlBuilder.messages page |> Some)
-            (fun db -> db, (Domain.selectThreads db.messages2, db.nextMessagesPage))
+            (fun db -> db, (Domain.selectThreads db.messages, db.nextMessagesPage))
     let profile =
         ActionModule.run
             (fun db -> db, db.userName |> Option.map UrlBuilder.user)
