@@ -479,7 +479,7 @@ module ApplicationScreen =
 
     let view model dispatch =
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar "JoyReactor (0.6)"
+            Styles.appBar "JoyReactor (0.6.1)"
             div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
                 contentView model dispatch ] ]
 
