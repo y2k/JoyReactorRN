@@ -21,24 +21,24 @@ module Interpretator =
         fun url ->
             async {
                 let baseUrl = Browser.Dom.document.location.origin
-                let! r = 
-                    Fetch.fetch 
-                        (sprintf "%s/parse/%s" baseUrl (JS.encodeURIComponent url)) 
-                        [ Credentials RequestCredentials.Include ] 
+                let! r =
+                    Fetch.fetch
+                        (sprintf "%s/parse/%s" baseUrl (JS.encodeURIComponent url))
+                        [ Credentials RequestCredentials.Include ]
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
     JoyReactor.ActionModule.postFormImpl <-
         fun form ->
             async {
-                let textForm = 
+                let textForm =
                     sprintf "url=%s&form=%s"
                         (Uri.EscapeDataString form.url)
                         (Uri.EscapeDataString form.form)
                 let baseUrl = Browser.Dom.document.location.origin
-                let! r = 
-                    Fetch.fetch 
-                        (sprintf "%s/form" baseUrl) 
+                let! r =
+                    Fetch.fetch
+                        (sprintf "%s/form" baseUrl)
                         [ Method HttpMethod.POST
                           Credentials RequestCredentials.Include
                           Body !^ textForm ]
@@ -52,7 +52,7 @@ module ReactVirtualized =
     open Fable.React.Props
     open Fable.Core.JsInterop
 
-    type ReactVirtualizedProps = 
+    type ReactVirtualizedProps =
         | RowRenderer of ({| index : int; key : string; style : string |} -> ReactElement)
         | RowCount of int
         | Width of float
@@ -74,7 +74,7 @@ module Styles =
     open Fable.MaterialUI
     open Fable.MaterialUI.Core
 
-    let theme = 
+    let theme =
         createMuiTheme [
             Palette [
                 Primary [ Main orange.``800`` ] ] ]
@@ -82,14 +82,14 @@ module Styles =
     let appBar title =
         appBar [ AppBarProp.Position AppBarPosition.Fixed ] [
             toolbar [] [
-                typography 
+                typography
                     [ Style [ FlexGrow 1 ]
                       Variant TypographyVariant.H6
-                      MaterialProp.Color ComponentColor.Inherit ] [ 
+                      MaterialProp.Color ComponentColor.Inherit ] [
                     str title ]
-                iconButton 
+                iconButton
                     [ Style [ MarginRight -12 ]
-                      MaterialProp.Color ComponentColor.Inherit ] [ 
+                      MaterialProp.Color ComponentColor.Inherit ] [
                     icon [] [ str "more_vert" ] ] ] ]
 
 module MessagesScreen =
@@ -101,15 +101,15 @@ module MessagesScreen =
     open JoyReactor.Components.MessagesScreen
 
     let viewThread (thread : Message) dispatch =
-        listItem 
+        listItem
             [ Key (string thread.date) ] [
             listItemAvatar [] [
                 avatar [ Src thread.userImage ] [] ]
-            listItemText 
+            listItemText
                 [ ListItemTextProp.Primary <| str thread.userName
                   ListItemTextProp.Secondary <| str thread.text ] [] ]
 
-    let view model dispatch = 
+    let view model dispatch =
         list [] [
             for t in model.messages do
                 yield viewThread t dispatch ]
@@ -123,24 +123,24 @@ module ThreadsScreen =
     open JoyReactor.Components.ThreadsScreen
 
     let viewThread (thread : Message) dispatch =
-        listItem 
-            [ Key (string thread.date) 
+        listItem
+            [ Key (string thread.date)
               ListItemProp.Button true
               OnClick (fun _ -> dispatch @@ OpenThread thread) ] [
             listItemAvatar [] [
                 avatar [ Src thread.userImage ] [] ]
-            listItemText 
+            listItemText
                 [ ListItemTextProp.Primary <| str thread.userName
                   ListItemTextProp.Secondary <| str thread.text ] [] ]
 
     let view model dispatch =
         match model.notAuthorized with
         | true ->
-            button 
+            button
                 [ Style [ CSSProp.Position PositionOptions.Absolute; Left "10%"; Right "10%"; Bottom "50%" ]
                   ButtonProp.Variant ButtonVariant.Contained
                   MaterialProp.Color ComponentColor.Primary
-                  OnClick @@ fun _ -> dispatch OpenAuthorization ] [ 
+                  OnClick @@ fun _ -> dispatch OpenAuthorization ] [
                 str "Войти" ]
         | false ->
             list [] [
@@ -156,9 +156,9 @@ module FeedScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
-    let private viewPost dispatch (post : Post) = 
+    let private viewPost dispatch (post : Post) =
         card [ Style [ Flex 1. ] ] [
-            cardHeader 
+            cardHeader
                 [ CardHeaderProp.Avatar <| avatar [ Src post.userImage.url ] []
                   CardHeaderProp.Title <| str post.userName
                   CardHeaderProp.Subheader <| str (sprintf "%O" post.created) ] []
@@ -167,15 +167,15 @@ module FeedScreen =
                     then div [] []
                     else
                         cardContent [] [
-                            typography [ Variant TypographyVariant.Caption ] [ 
+                            typography [ Variant TypographyVariant.Caption ] [
                                 str post.title ] ]
                 (match post.image with
                  | [| i |] ->
                      let (iurl, h) = I.urlWithHeight 400. i
                      cardMedia [
                          Image iurl
-                         Style [ Height h ] 
-                        //  Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ] 
+                         Style [ Height h ]
+                        //  Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ]
                          ]
                  | _ -> div [] []) ]
             cardActions [] [
@@ -183,20 +183,20 @@ module FeedScreen =
 
     let private viewItemList (model : Model) dispatch =
         let viewItemVirt (x : {| index : int; key : string; style : string |}) =
-            match model.items.[x.index] with 
+            match model.items.[x.index] with
             | Actual i -> listItem [ Key ^ string i.id; HTMLAttr.Custom ("style", x.style) ] [ viewPost dispatch i ]
             | Old i -> listItem [ Key ^ string i.id; HTMLAttr.Custom ("style", x.style) ] [ viewPost dispatch i ]
             | LoadNextDivider ->
                 listItem [ Key "divider"; HTMLAttr.Custom ("style", x.style) ] [
-                    button 
+                    button
                         [ Style [ Flex 1. ]
                           ButtonProp.Variant ButtonVariant.Contained
                           MaterialProp.Color ComponentColor.Primary
-                          OnClick @@ fun _ -> dispatch LoadNextPage ] [ 
+                          OnClick @@ fun _ -> dispatch LoadNextPage ] [
                         str "Еще" ] ]
 
-        let listItemHeight (x : {| index : int |}) = 
-            match model.items.[x.index] with 
+        let listItemHeight (x : {| index : int |}) =
+            match model.items.[x.index] with
             | Actual i | Old i -> if Array.isEmpty i.image then 112.0 + 10.0 else 446.0 + 10.0
             | LoadNextDivider -> 36.0 + 10.0
 
@@ -214,13 +214,13 @@ module FeedScreen =
             yield viewItemList model dispatch
             if model.hasNew then
                 yield
-                    button 
-                        [ Style 
+                    button
+                        [ Style
                             [ CSSProp.Position PositionOptions.Fixed
                               Bottom 60; Left 12; Right 12 ]
                           ButtonProp.Variant ButtonVariant.Contained
                           MaterialProp.Color ComponentColor.Primary
-                          OnClick @@ fun _ -> dispatch ApplyPreloaded ] [ 
+                          OnClick @@ fun _ -> dispatch ApplyPreloaded ] [
                         str "Новые посты" ]
             if model.loading then
                 yield
@@ -254,7 +254,7 @@ module TagsScreen =
                   OnClick (fun _ -> dispatch @@ OpenTag tag.name) ] [
                 listItemAvatar [] [
                     avatar [ Src tag.image ] [] ]
-                listItemText 
+                listItemText
                     [ ListItemTextProp.Primary ^ str tag.name ] [] ]
 
         ReactVirtualized.list
@@ -280,26 +280,26 @@ module LoginScreen =
 
     let view model dispatch =
         div [ Style [ CSSProp.Padding "16px" ] ] [
-            formControl 
+            formControl
                 [ MaterialProp.Margin FormControlMargin.Normal
                   Required true
                   FullWidth true] [
                 inputLabel [] [ str "Логин" ]
-                input 
+                input
                     [ OnChange (fun e _ -> !!e?target?value |> UsernameMsg |> dispatch)
                       AutoComplete "email" ] ]
 
-            formControl 
+            formControl
                 [ MaterialProp.Margin FormControlMargin.Normal
                   Required true
                   FullWidth true] [
                 inputLabel [] [ str "Пароль" ]
-                input 
+                input
                     [ OnChange (fun e _ -> !!e?target?value |> PasswordMsg |> dispatch)
                       HTMLAttr.Type "password"
                       AutoComplete "current-password" ] ]
 
-            button 
+            button
                 [ OnClick (fun _ -> dispatch LoginMsg)
                   HTMLAttr.Disabled (not model.isEnabled)
                   HTMLAttr.Type "submit"
@@ -348,22 +348,22 @@ module ProfileScreen =
                     PaddingBottom "16px"
                     BackgroundColor "white"
                     AlignSelf AlignSelfOptions.Stretch ] ] [
-                typography 
+                typography
                     [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginLeft "16px"; MarginRight "16px"; MarginBottom "8px" ]
                       Variant TypographyVariant.Body1 ] [ str "Прогресс до следующей звезды:" ]
-                linearProgress 
-                    [ Style 
+                linearProgress
+                    [ Style
                           [ AlignSelf AlignSelfOptions.Stretch
                             CSSProp.BorderRadius "4px"
                             MarginLeft "16px"; MarginRight "16px"; Height "20px" ]
                       LinearProgressProp.Variant LinearProgressVariant.Determinate
                       Value (int profile.progressToNewStar) ] ]
             divider [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginBottom "16px"; ] ]
-            button 
+            button
                 [ Style [ AlignSelf AlignSelfOptions.Stretch; MarginLeft "16px"; MarginRight "16px" ]
                   ButtonProp.Variant ButtonVariant.Contained
                   MaterialProp.Color ComponentColor.Primary
-                  OnClick @@ fun _ -> dispatch Logout ] [ 
+                  OnClick @@ fun _ -> dispatch Logout ] [
                 str "Выйти" ] ]
 
     let view model dispatch =
@@ -388,7 +388,7 @@ module TabsScreen =
 
     let view model dispatch =
         let viewTab title index =
-            bottomNavigationAction 
+            bottomNavigationAction
                 [ Label ^ typography [ Variant TypographyVariant.Body2 ] ^ [ str title ]
                   OnClick (fun _ -> dispatch ^ SelectPage index) ]
         let toIndex = function
@@ -399,7 +399,7 @@ module TabsScreen =
 
         fragment [] [
             contentView model dispatch
-            appBar 
+            appBar
                 [ Style [ Bottom 0; Top "auto" ]
                   AppBarProp.Position AppBarPosition.Fixed ] [
                 bottomNavigation [ ShowLabels true; Value ^ toIndex model ] [
@@ -421,12 +421,12 @@ module PostScreen =
             listItem [ AlignItems ListItemAlignItems.FlexStart ] [
                 listItemAvatar [] [
                     avatar [ Src comment.image.url ] [] ]
-                listItemText [ 
+                listItemText [
                     ListItemTextProp.Primary ^ str comment.userName
                     ListItemTextProp.Secondary (
-                        fragment [] [ 
+                        fragment [] [
                             str comment.text
-                            typography 
+                            typography
                                 [ Component ("span" |> ReactElementType.ofHtmlElement)
                                   MaterialProp.Color ComponentColor.Primary ] [
                                 str <| sprintf " (%g)" comment.rating
@@ -448,16 +448,16 @@ module PostScreen =
 
             h3 [] [ str "Теги:" ]
             div [] (
-                model.tags 
-                |> Array.map ^ fun tag -> 
-                    chip 
-                        [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag 
+                model.tags
+                |> Array.map ^ fun tag ->
+                    chip
+                        [ Style [ CSSProp.Margin "2px" ]; Label ^ str tag
                           OnClick (fun _ -> dispatch <| OpenTag tag) ])
 
             h3 [] [ str "Лучшие комментари:" ]
             viewTopComment comments ]
 
-    let view (model : Model) dispatch = 
+    let view (model : Model) dispatch =
         fragment [] [
             if model.isLoaded then contentView dispatch model model.comments
             else div [] [] ]
@@ -506,7 +506,7 @@ module App =
 
 #if !DEBUG
     [<Fable.Core.Emit("require('offline-plugin/runtime').install();")>]
-    let initOfflinePlugin () = Fable.Core.Util.jsNative
+    let initOfflinePlugin () =  Fable.Core.Util.jsNative
 
     Browser.Dom.window.addEventListener ("load", fun _ -> initOfflinePlugin())
 #endif

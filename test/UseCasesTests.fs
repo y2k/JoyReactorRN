@@ -9,17 +9,17 @@ open JoyReactor.Components
 module D = ApplicationScreen
 type R = Text.RegularExpressions.Regex
 
-module SyncDownloader = 
+module SyncDownloader =
     open JoyReactor.WebCli
 
-    let private downloadHtml (url : string) = 
+    let private downloadHtml (url : string) =
         let encodedUrl = Text.Encoding.UTF8.GetBytes url |> Convert.ToBase64String
         let path = sprintf "../../../Resources/htmls/%s.html" encodedUrl
         if not <| IO.File.Exists path then printfn "Can't find url %s (%s)" url path
         IO.File.ReadAllText path |> async.Return
     let downloadImpl url =
-        Domain.parseInner 
-            (fun (url : string) -> 
+        Domain.parseInner
+            (fun (url : string) ->
                 async {
                     let! body = downloadHtml url
                     return body, []
@@ -28,12 +28,12 @@ module SyncDownloader =
 
 module TestRenderer =
     open System.Text.Json
-    
+
     let private options = JsonSerializerOptions()
     options.Converters.Add(Serialization.JsonFSharpConverter())
     options.Encoder <- Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     options.WriteIndented <- true
-    
+
     let viewTo viewRef (model : ApplicationScreen.Model) =
         let model =
             match model.history.[0] with
@@ -57,11 +57,11 @@ let assertTest f =
     f (List.rev !viewRef) (fun x -> viewRef := []; !dispatch (ApplicationScreen.TabsMsg x); List.rev !viewRef)
 
 let getJson id =
-    List.unfold 
-        (fun index -> 
+    List.unfold
+        (fun index ->
             let path = sprintf "../../../Resources/json/%s.%i.json" id index
             if IO.File.Exists path then Some (IO.File.ReadAllText path, index + 1)
-            else None) 
+            else None)
         0
 
 [<Fact>]

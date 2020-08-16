@@ -10,7 +10,7 @@ module Downloader =
         |> Seq.map ^ fun x -> x.Name, x.Value
         |> Seq.toList
 
-    let loadHtml (url : string) (cookies : (string * string) list) : (string * (string * string) list) Async = 
+    let loadHtml (url : string) (cookies : (string * string) list) : (string * (string * string) list) Async =
         async {
             use handler = new HttpClientHandler()
             handler.CookieContainer <- CookieContainer()
@@ -22,14 +22,14 @@ module Downloader =
             return response, responseCookie
         }
 
-    let postForm (url : string) body (cookies : (string * string) list) : (string * (string * string) list) Async = 
+    let postForm (url : string) body (cookies : (string * string) list) : (string * (string * string) list) Async =
         async {
             use handler = new HttpClientHandler()
             handler.CookieContainer <- CookieContainer()
             cookies
             |> List.iter ^ fun (k, v) -> handler.CookieContainer.Add(Uri url, Cookie(k, v))
             use httpClient = new HttpClient(handler)
-            
+
             let data = new StringContent(body, Text.Encoding.UTF8, "application/x-www-form-urlencoded")
 
             let! response' = httpClient.PostAsync(url, data)
@@ -81,7 +81,7 @@ module Domain =
             let loadHtml url = extractCookiese ctx |> Downloader.loadHtml url
             let! (response, cookies) = parseInner loadHtml url
 
-            let bodyWebPart = 
+            let bodyWebPart =
                 JsonSerializer.SerializeToUtf8Bytes (response, options)
                 |> Successful.ok
 
@@ -106,7 +106,7 @@ module Domain =
             match tryParseForm ctx with
             | None -> return! RequestErrors.BAD_REQUEST "Invalid json request" ctx
             | Some form ->
-                let! (html, cookies) = 
+                let! (html, cookies) =
                     extractCookiese ctx
                     |> Downloader.loadHtml form.url
 
@@ -146,13 +146,13 @@ let main _ =
         api
         >=> Writers.setHeader "Access-Control-Allow-Origin" "http://localhost:8080"
         >=> Writers.setHeader "Access-Control-Allow-Credentials" "true"
-        GET >=> path "/info" 
+        GET >=> path "/info"
             >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
         GET >=> path "/" >=> Files.browseFileHome "index.html"
         GET >=> path "/manifest.json" >=> Files.browseFileHome "manifest.json"
         GET >=> path "/bundle.js" >=> Files.browseFileHome "bundle.js"
         GET >=> path "/bundle.js.map" >=> Files.browseFileHome "bundle.js.map"
-        GET >=> path "/sw.js" 
+        GET >=> path "/sw.js"
             >=> Files.browseFileHome "sw.js"
             >=> Writers.setHeader "Cache-Control" "no-store"
         GET >=> path "/icon.png" >=> Files.browseFileHome "icon.png" ]

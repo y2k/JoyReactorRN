@@ -41,7 +41,7 @@ module Parsers =
 
     let getCsrfToken html =
         let doc = getDocument html
-        let tokenNode = 
+        let tokenNode =
             sprintf "//input[@name='%s']" csrfTokenName
             |> doc.SelectSingleNode
         tokenNode.Attributes.["value"].Value
@@ -54,7 +54,7 @@ module Parsers =
     let parseUserName html =
         let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
         if m.Success then Some m.Groups.[1].Value else None
-    
+
     let parseTopTags html =
         let doc = getDocument html
         doc.QuerySelectorAll("#blogs_week_content img")
@@ -249,7 +249,7 @@ module Parsers =
             |> Seq.tryPick ^ fun x -> Some x.Attributes.["href"].Value
 
         if Seq.isEmpty messages
-            then None 
+            then None
             else Some { messages = messages; nextPage = nextPage }
 
     let profile html =

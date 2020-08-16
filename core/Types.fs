@@ -71,7 +71,7 @@ module Types =
         { messages : Message []
           nextPage : string option }
 
-    type ParseResponse = 
+    type ParseResponse =
         { profile : Profile option
           posts : PostResponse option
           userName : string option

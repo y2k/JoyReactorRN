@@ -98,7 +98,7 @@ module PostsMergeDomain =
             old.old |> Array.filter ^ fun x -> Set.contains x.id keys
         let old = getPostsWithLevels source feeds
         let response = sharedFeeds |> Option.defaultValue { posts = [||]; nextPage = [||] }
-        let a = { old with 
+        let a = { old with
                     actual = merge old response.posts
                     old = mergeOld old response.posts
                     nextPage = response.nextPage |> Array.tryHead }
@@ -109,7 +109,7 @@ module PostsMergeDomain =
                   old = [||]
                   preloaded = [||]
                   nextPage = response.nextPage |> Array.tryHead }
-        Map.add source a feeds, None              
+        Map.add source a feeds, None
 
 module DomainInterpetator =
     open JoyReactor.Types
@@ -132,13 +132,13 @@ module DomainInterpetator =
 
     let saveAllParseResults db (pr : ParseResponse) =
         let toMapTag tags dbTags =
-            tags 
-            |> Option.map ^ fun x -> 
-                x 
+            tags
+            |> Option.map ^ fun x ->
+                x
                 |> Array.map (fun x -> x.name, x)
                 |> Map.ofArray
             |> Option.defaultValue dbTags
-        { db with 
+        { db with
             sharedFeeds = pr.posts
             userName = pr.userName |> Option.orElse db.userName
             userTags = toMapTag pr.userTags db.userTags
@@ -210,7 +210,7 @@ module Services =
             (fun db -> db, Domain.selectMessageForUser' userName db.messages)
     let getThreads =
         ActionModule.readStore
-            (fun db -> 
+            (fun db ->
                 db
                 , match db.userName with
                   | Some _ -> Some <| Domain.selectThreads db.messages
@@ -223,17 +223,17 @@ module Services =
         ActionModule.run
             (fun db -> db, db.userName |> Option.map UrlBuilder.user)
             (fun db -> db, db.profile)
-    let private subToTags (db : CofxStorage.LocalDb) = 
+    let private subToTags (db : CofxStorage.LocalDb) =
         [ db.topTags |> Map.toSeq |> Seq.map snd |> Seq.toArray
-          db.userTags  |> Map.toSeq |> Seq.map snd |> Seq.toArray ] 
+          db.userTags  |> Map.toSeq |> Seq.map snd |> Seq.toArray ]
         |> Array.concat
     let tagFromCache =
         ActionModule.run (fun db -> db, None) (fun db -> db, subToTags db)
     let userTags =
-        ActionModule.run 
-            (fun db -> db, db.userName |> Option.map ^ UrlBuilder.user) 
+        ActionModule.run
+            (fun db -> db, db.userName |> Option.map ^ UrlBuilder.user)
             (fun db -> db, subToTags db)
-    let topTags = 
+    let topTags =
         ActionModule.run (fun db -> db, Some UrlBuilder.home) (fun db -> db, subToTags db)
     let postFromCache id =
         ActionModule.run (fun db -> db, None) (fun db -> db, Map.tryFind id db.posts)
@@ -245,23 +245,23 @@ module FeedServices =
     open PostsMergeDomain
 
     let init source =
-        ActionModule.run 
+        ActionModule.run
             (fun db -> db, None)
             (fun db -> db, getPostsWithLevels source db.feeds)
     let preloadFirstPage source =
-        ActionModule.run 
+        ActionModule.run
             (fun db -> db, UrlBuilder.posts source "FIXME" None |> Some)
             (fun db ->
                  let (feeds, sharedFeeds, posts) = mergeFirstPage source db.sharedFeeds db.feeds
                  { db with feeds = feeds; sharedFeeds = sharedFeeds }, posts)
-    let applyPreloaded source = 
-        ActionModule.run 
+    let applyPreloaded source =
+        ActionModule.run
             (fun db -> db, None)
-            (fun db -> 
+            (fun db ->
                  let db = { db with feeds = mergePreloaded' source db.feeds }
                  db, getPostsWithLevels source db.feeds)
-    let loadNextPage source = 
-        ActionModule.run 
+    let loadNextPage source =
+        ActionModule.run
             (fun db ->
                  let a = getPostsWithLevels source db.feeds
                  db, UrlBuilder.posts source "FIXME" a.nextPage |> Some)
@@ -269,8 +269,8 @@ module FeedServices =
                  let (feeds, sharedFeeds) = mergeSecondPage source db.feeds db.sharedFeeds
                  let db = { db with feeds = feeds; sharedFeeds = sharedFeeds }
                  db, getPostsWithLevels source db.feeds)
-    let refresh source = 
-        ActionModule.run 
+    let refresh source =
+        ActionModule.run
             (fun db -> db, UrlBuilder.posts source "FIXME" None |> Some)
             (fun db ->
                  let (feeds, sharedFeeds) = replacePosts source db.sharedFeeds db.feeds

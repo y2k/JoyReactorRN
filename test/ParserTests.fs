@@ -24,7 +24,7 @@ let private assertMessages (actual : MessagesWithNext) =
         Assert.Matches(R(@"^http://img\w\.joyreactor\.cc/pics/avatar/user/\w{6}$"), message.userImage)
         Assert.Matches(R(@"^[\w\d_]{4,6}$"), message.userName)
         Assert.Equal(message.text.Trim([| '\n'; '\r'; '\t'; ' ' |]), message.text)
-        
+
 [<Fact>]
 let ``get csrf token``() =
     let token = getHtml "login.html" |> Parsers.getCsrfToken
@@ -41,7 +41,7 @@ let ``parse first messages``() =
     Assert.Equal(10, actual.messages |> Seq.filter (fun x -> x.isMine) |> Seq.length)
     Assert.Equal(10, actual.messages |> Seq.filter (fun x -> not x.isMine) |> Seq.length)
     assertMessages actual
-        
+
 [<Fact>]
 let ``parse last messages``() =
     let actual = getHtml "messages_last.html" |> Parsers.getMessages |> Option.get
@@ -122,7 +122,7 @@ let ``parse feed``() =
     let actual = Parsers.parsePostsForTag (getHtml "feed.html")
     let images = actual |> Seq.choose ^ fun post -> post.image |> Seq.tryHead |> Option.map (fun x -> x.url)
     Assert.Equal(9, Seq.length images)
-    images 
+    images
     |> Seq.iter ^ fun image ->
         Assert.Matches(R(@"http://img\d\.joyreactor\.cc/pics/post/-\d+\.(gif|jpeg|png)"), image)
 
@@ -132,7 +132,7 @@ let ``parse feed with top comment``() =
     actual
     |> Seq.iter ^ fun post ->
         Assert.Matches(
-            R(@"http://img\d\.joyreactor\.cc/pics/post/-\d+\.(gif|jpeg|png)"), 
+            R(@"http://img\d\.joyreactor\.cc/pics/post/-\d+\.(gif|jpeg|png)"),
             post.image |> Array.tryHead |> Option.map (fun x -> x.url) |> Option.defaultValue "")
 
 [<Fact>]

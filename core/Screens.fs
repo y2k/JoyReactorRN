@@ -26,7 +26,7 @@ module ThreadsScreen =
     open JoyReactor.Types
 
     type Model = { threads : Message []; pageLoaded : int; notAuthorized : bool }
-    type Msg = 
+    type Msg =
         | LocalThreadsLoaded of Message [] option
         | NextPageLoaded of Result<Message [] * string option, exn>
         | OpenThread of Message
@@ -41,10 +41,10 @@ module ThreadsScreen =
         else Services.syncThreads next |> Cmd.map NextPageLoaded
 
     let update model = function
-        | LocalThreadsLoaded (Some threads) -> 
+        | LocalThreadsLoaded (Some threads) ->
             { model with threads = threads }
             , Services.syncThreads None |> Cmd.map NextPageLoaded
-        | LocalThreadsLoaded None -> 
+        | LocalThreadsLoaded None ->
             { model with notAuthorized = true }
             , Services.syncThreads None |> Cmd.map NextPageLoaded
         | NextPageLoaded (Ok (threads, None)) ->
@@ -93,7 +93,7 @@ module LoginScreen =
     let init =
         { username = ""; password = ""; isEnabled = false; isBusy = false; error = None }, Cmd.none
 
-    let private computeIsEnable model = 
+    let private computeIsEnable model =
         { model with isEnabled = model.username <> "" && model.password <> "" }
 
     let update model msg : Model * Cmd<Msg> =
@@ -103,10 +103,10 @@ module LoginScreen =
             , Domain.login model.username model.password |> Cmd.map LoginEnd
         | LoginEnd(Ok _) -> { model with isBusy = false }, Cmd.ofMsg ClosePage
         | LoginEnd(Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
-        | UsernameMsg x -> 
+        | UsernameMsg x ->
             { model with username = x } |> computeIsEnable
             , Cmd.none
-        | PasswordMsg x -> 
+        | PasswordMsg x ->
             { model with password = x } |> computeIsEnable
             , Cmd.none
         | _ -> model, Cmd.none
@@ -120,7 +120,7 @@ module ProfileScreen =
         | ProfileLoading
         | ProfileModel of Profile
         | LoginModel of LoginScreen.Model
-    type Msg = 
+    type Msg =
         | ProfileLoaded of Result<Profile option, exn>
         | LoginMsg of LoginScreen.Msg
         | Logout
@@ -179,7 +179,7 @@ module FeedScreen =
             , FeedServices.preloadFirstPage model.source |> Cmd.map FirstPagePreloaded
         | PostsLoadedFromCache (Error e) -> failwithf "Error: PostsLoadedFromCache: %O" e
         | FirstPagePreloaded (Ok posts) ->
-            if Array.isEmpty posts.actual && Array.isEmpty posts.old 
+            if Array.isEmpty posts.actual && Array.isEmpty posts.old
                 then
                     { model with hasNew = true; loading = false }
                     , Cmd.ofMsg ApplyPreloaded
@@ -187,24 +187,24 @@ module FeedScreen =
                     { model with hasNew = true; loading = false }
                     , Cmd.none
         | FirstPagePreloaded (Error e) -> failwithf "Error: FirstPagePreloaded: %O" e
-        | ApplyPreloaded -> 
+        | ApplyPreloaded ->
             { model with hasNew = false }
             , FeedServices.applyPreloaded model.source |> Cmd.map ApplyPreloadedCompleted
-        | ApplyPreloadedCompleted (Ok xs) -> 
+        | ApplyPreloadedCompleted (Ok xs) ->
             { model with items = toItems xs false }
             , Cmd.none
         | ApplyPreloadedCompleted (Error e) -> failwithf "Error: ApplyPreloadedCompleted: %O" e
         | LoadNextPage ->
             { model with loading = true }
             , FeedServices.loadNextPage model.source |> Cmd.map LoadNextPageCompleted
-        | LoadNextPageCompleted (Ok xs) -> 
+        | LoadNextPageCompleted (Ok xs) ->
             { model with items = toItems xs false; loading = false }
             , Cmd.none
         | LoadNextPageCompleted (Error e) -> failwithf "Error: LoadNextPageCompleted: %O" e
         | Refresh ->
             { model with loading = true }
             , FeedServices.refresh model.source |> Cmd.map RefreshCompleted
-        | RefreshCompleted (Ok xs) -> 
+        | RefreshCompleted (Ok xs) ->
             { model with items = toItems xs false; loading = false }
             , Cmd.none
         | RefreshCompleted (Error e) -> failwithf "Error: RefreshCompleted: %O" e
@@ -227,7 +227,7 @@ module TagsScreen =
         | UserTagsSynced of Result<Tag[], exn>
         | OpenTag of string
 
-    let init = 
+    let init =
         Model.empty
         , Cmd.batch [
             ActionModule.readStore (fun db -> db, db.topTags |> Map.toArray |> Array.map snd) |> Cmd.map TopTags
@@ -267,7 +267,7 @@ module TabsScreen =
         | TagsModel of TagsScreen.Model
         | ThreadsModel of ThreadsScreen.Model
         | ProfileModel of ProfileScreen.Model
-    type Msg = 
+    type Msg =
         | FeedMsg of FeedScreen.Msg
         | TagsMsg of TagsScreen.Msg
         | ThreadsMsg of ThreadsScreen.Msg
@@ -283,16 +283,16 @@ module TabsScreen =
         | _, ThreadsMsg (ThreadsScreen.OpenAuthorization) ->
             ProfileScreen.init
             ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
-        | FeedModel model, FeedMsg msg -> 
+        | FeedModel model, FeedMsg msg ->
             FeedScreen.update model msg
             ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
-        | TagsModel model, TagsMsg msg -> 
+        | TagsModel model, TagsMsg msg ->
             TagsScreen.update model msg
             ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
-        | ThreadsModel model, ThreadsMsg msg -> 
+        | ThreadsModel model, ThreadsMsg msg ->
             ThreadsScreen.update model msg
             ||> fun model cmd -> ThreadsModel model, (cmd |> Cmd.map ThreadsMsg)
-        | ProfileModel model, ProfileMsg msg -> 
+        | ProfileModel model, ProfileMsg msg ->
             ProfileScreen.update model msg
             ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
         | _, SelectPage 0 ->
@@ -321,7 +321,7 @@ module PostScreen =
         | RefreshComplete of Result<Post option, exn>
         | OpenTag of string
 
-    let init id = 
+    let init id =
         { tags = [||]; image = None; isLoaded = false; error = None; id = id; comments = [||] }
         , Cmd.batch [
             Services.postFromCache id |> Cmd.map PostLoaded
@@ -352,13 +352,13 @@ module ApplicationScreen =
     open Elmish
     open JoyReactor.Types
 
-    type ChildModel = 
+    type ChildModel =
         | PostModel of PostScreen.Model
         | PostsModel of FeedScreen.Model
         | TabsModel of TabsScreen.Model
         | MessagesModel of MessagesScreen.Model
     type Model = { history : ChildModel list }
-    type Msg = 
+    type Msg =
         | PostMsg of PostScreen.Msg
         | PostsMsg of FeedScreen.Msg
         | TabsMsg of TabsScreen.Msg
@@ -374,23 +374,23 @@ module ApplicationScreen =
         match model, msg with
         | { history = _ :: ((_ :: _) as prev) }, NavigateBack ->
             { model with history = prev }, Cmd.none
-        | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) -> 
+        | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) ->
             let (m, cmd) = PostScreen.init post
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
-        | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) -> 
+        | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) ->
             let (m, cmd) = FeedScreen.init ^ TagSource tag
             { history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
-        | _, (TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.OpenThread thread))) -> 
+        | _, (TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.OpenThread thread))) ->
             let (m, cmd) = MessagesScreen.init thread.userName
             { history = MessagesModel m :: model.history }
             , cmd |> Cmd.map MessagesMsg
-        | _, (PostMsg (PostScreen.OpenTag source)) -> 
+        | _, (PostMsg (PostScreen.OpenTag source)) ->
             let (m, cmd) = FeedScreen.init ^ TagSource source
             { history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
-        | _, (PostsMsg (FeedScreen.OpenPost post)) -> 
+        | _, (PostsMsg (FeedScreen.OpenPost post)) ->
             let (m, cmd) = PostScreen.init post
             { history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
