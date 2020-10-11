@@ -259,5 +259,6 @@
     }
   ],
   "hasNew": false,
-  "loading": false
+  "loading": false,
+  "scroll": null
 }

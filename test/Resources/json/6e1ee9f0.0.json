@@ -418,7 +418,8 @@
         }
       ],
       "hasNew": false,
-      "loading": true
+      "loading": true,
+      "scroll": null
     }
   ]
 }
