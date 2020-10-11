@@ -1185,6 +1185,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.7.2":
+  version: 7.11.2
+  resolution: "@babel/runtime@npm:7.11.2"
+  dependencies:
+    regenerator-runtime: ^0.13.4
+  checksum: 2f127ad60a0f0568faa0044e5b48329d8166c7fd3a0a3ce774070010a1c441ebf5570f526dd6bb26e214fb1a01bb987ab6a4c3f60a00f04d02448939f4c61e1e
+  languageName: node
+  linkType: hard
+
 "@babel/template@npm:^7.10.4":
   version: 7.10.4
   resolution: "@babel/template@npm:7.10.4"
@@ -1920,16 +1929,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"babel-runtime@npm:^6.26.0":
-  version: 6.26.0
-  resolution: "babel-runtime@npm:6.26.0"
-  dependencies:
-    core-js: ^2.4.0
-    regenerator-runtime: ^0.11.0
-  checksum: 5010bf1d81e484d9c6a5b4e4c32564a0dc180c2dc5a65f999729c3cb63b9c6e805d3d10c19a4ccc2112bce084e39e51e52daf5c21df0141ce8e6e37727af2e0b
-  languageName: node
-  linkType: hard
-
 "balanced-match@npm:^1.0.0":
   version: 1.0.0
   resolution: "balanced-match@npm:1.0.0"
@@ -2419,7 +2418,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"clsx@npm:^1.0.1, clsx@npm:^1.0.4":
+"clsx@npm:^1.0.4":
   version: 1.1.1
   resolution: "clsx@npm:1.1.1"
   checksum: d8ae10ac0546da19fe8c9516886f6582a64a382cf4d09ea7d36d5287cafbdab1192ab249adc2cdf0310e0b0aeac4f4142cf7c738c98d9cb68c19ba24b6f673d5
@@ -2630,13 +2629,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"core-js@npm:^2.4.0":
-  version: 2.6.11
-  resolution: "core-js@npm:2.6.11"
-  checksum: 39ad00b46deaecf344470ef940949b58c4b15e71608a98e8ac7429cd16e485b829f9720d44a44b5f4dee966ff04a18baf5283feb8aaba2cb59ce2c25fa72b88c
-  languageName: node
-  linkType: hard
-
 "core-util-is@npm:1.0.2, core-util-is@npm:~1.0.0":
   version: 1.0.2
   resolution: "core-util-is@npm:1.0.2"
@@ -2727,6 +2719,13 @@ __metadata:
   version: 2.6.11
   resolution: "csstype@npm:2.6.11"
   checksum: b5de145e845a416006d870c8005807922ee23cb72f9427c2c1e3e7df9f7f2996ef32aa2f12456477a47966eabbd7a9a5baa668588ff6c6a19546ada77ad09edf
+  languageName: node
+  linkType: hard
+
+"csstype@npm:^3.0.2":
+  version: 3.0.3
+  resolution: "csstype@npm:3.0.3"
+  checksum: ec722366b468229bcc6c7fa3f07eb795efddfc4fdcfeb81728046f8bd20e21584735e89973ec18e8b0d4d3c8dddb288872440ee034836c159d664798da4cf832
   languageName: node
   linkType: hard
 
@@ -2959,13 +2958,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dom-helpers@npm:^5.0.0, dom-helpers@npm:^5.0.1":
+"dom-helpers@npm:^5.0.1":
   version: 5.1.4
   resolution: "dom-helpers@npm:5.1.4"
   dependencies:
     "@babel/runtime": ^7.8.7
     csstype: ^2.6.7
   checksum: 266a3f9af7ac882af88418144cb09313141f7ef2db4857454ffa988d7cb15e160e4b4ea0d4ace2264270466052b0f6c9f7ca245e464b80c79b8088eb4b92bf42
+  languageName: node
+  linkType: hard
+
+"dom-helpers@npm:^5.1.3":
+  version: 5.2.0
+  resolution: "dom-helpers@npm:5.2.0"
+  dependencies:
+    "@babel/runtime": ^7.8.7
+    csstype: ^3.0.2
+  checksum: 9ef27628f4ccfdfa0537b35ecf3b9600f1656f9c66f57a1530b552a65b51f4466d44514f2cb87399a15feee3c51047a77760327971e9aabc64fe637efd319156
   languageName: node
   linkType: hard
 
@@ -3358,10 +3367,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fable-compiler@npm:^2.10.2":
-  version: 2.10.2
-  resolution: "fable-compiler@npm:2.10.2"
-  checksum: 2f5d2703cc54bd75a658a2ed783fb826622e5cd31cddc5cfd2e6653ab171f7885c664ab423dea15d41dc4f5490a7e6dc30521894810e8ab4937d3e0cfca5e795
+"fable-compiler@npm:^2.13.0":
+  version: 2.13.0
+  resolution: "fable-compiler@npm:2.13.0"
+  checksum: 9d52a91f3bf020d136234b1822029ba79ec166c3878f945cfb8451bee3a43b8fbc7dbfe3eded9465012c9369604949ede561f4796e318b3b860792f104eed9b6
   languageName: node
   linkType: hard
 
@@ -4849,7 +4858,7 @@ fsevents@~2.1.2:
   languageName: node
   linkType: hard
 
-"loose-envify@npm:^1.0.0, loose-envify@npm:^1.1.0, loose-envify@npm:^1.3.0, loose-envify@npm:^1.4.0":
+"loose-envify@npm:^1.0.0, loose-envify@npm:^1.1.0, loose-envify@npm:^1.4.0":
   version: 1.4.0
   resolution: "loose-envify@npm:1.4.0"
   dependencies:
@@ -5793,7 +5802,7 @@ fsevents@~2.1.2:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.6.0, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2":
+"prop-types@npm:^15.6.2, prop-types@npm:^15.7.2":
   version: 15.7.2
   resolution: "prop-types@npm:15.7.2"
   dependencies:
@@ -5967,7 +5976,7 @@ fsevents@~2.1.2:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^16.12.0":
+"react-dom@npm:^16.13.1":
   version: 16.13.1
   resolution: "react-dom@npm:16.13.1"
   dependencies:
@@ -6010,20 +6019,20 @@ fsevents@~2.1.2:
   languageName: node
   linkType: hard
 
-"react-virtualized@npm:^9.21.2":
-  version: 9.21.2
-  resolution: "react-virtualized@npm:9.21.2"
+"react-virtualized@npm:^9.22.2":
+  version: 9.22.2
+  resolution: "react-virtualized@npm:9.22.2"
   dependencies:
-    babel-runtime: ^6.26.0
-    clsx: ^1.0.1
-    dom-helpers: ^5.0.0
-    loose-envify: ^1.3.0
-    prop-types: ^15.6.0
+    "@babel/runtime": ^7.7.2
+    clsx: ^1.0.4
+    dom-helpers: ^5.1.3
+    loose-envify: ^1.4.0
+    prop-types: ^15.7.2
     react-lifecycles-compat: ^3.0.4
   peerDependencies:
     react: ^15.3.0 || ^16.0.0-alpha
     react-dom: ^15.3.0 || ^16.0.0-alpha
-  checksum: f2e9476db8cff71a056aac66032e79a05c7417a2786cdc3ab4a314ae40d181a206fefaeca1f03a84bc51d76be94455cd24a442ea84e2af52a3b1332f05494927
+  checksum: e8d886b571b59d659130b18b91442ef729478389ae0d6e0f7ec51be8e975a8f73bd35e7eab918e8128063b1641a2b8c8086a83956343fec944eb37b79cc655d0
   languageName: node
   linkType: hard
 
@@ -6040,7 +6049,7 @@ fsevents@~2.1.2:
   languageName: node
   linkType: hard
 
-"react@npm:^16.12.0":
+"react@npm:^16.13.1":
   version: 16.13.1
   resolution: "react@npm:16.13.1"
   dependencies:
@@ -6110,13 +6119,6 @@ fsevents@~2.1.2:
   version: 1.4.1
   resolution: "regenerate@npm:1.4.1"
   checksum: 67fe7ea33291997b20634105c7b6787bcc03e137da348c1cc0d617b3d97d9ed1e05ce4b6dabcb86be7ddf198000f78275bcabd67e66889ba7daa296926f8eada
-  languageName: node
-  linkType: hard
-
-"regenerator-runtime@npm:^0.11.0":
-  version: 0.11.1
-  resolution: "regenerator-runtime@npm:0.11.1"
-  checksum: d98d44b9f5c9c3c670dcb615c5f5374931f937f3075dc8338126f45231643aa8c47ed2bfdef6ae593e311be54ca02d25d943971ca86a3dc1fa99068c2e1b88b2
   languageName: node
   linkType: hard
 
@@ -6352,14 +6354,14 @@ resolve@^1.3.2:
     "@babel/preset-env": ^7.11.0
     "@material-ui/core": ^4.9.0
     "@material-ui/icons": ^4.5.1
-    fable-compiler: ^2.10.2
+    fable-compiler: ^2.13.0
     fable-loader: ^2.1.9
     fable-splitter: ^2.2.1
     offline-plugin: ^5.0.7
     pnp-webpack-plugin: ^1.6.4
-    react: ^16.12.0
-    react-dom: ^16.12.0
-    react-virtualized: ^9.21.2
+    react: ^16.13.1
+    react-dom: ^16.13.1
+    react-virtualized: ^9.22.2
     react-window: ^1.8.5
     webpack: ^4.44.1
     webpack-cli: ^3.3.12

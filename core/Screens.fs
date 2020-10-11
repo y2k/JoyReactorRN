@@ -149,10 +149,12 @@ module FeedScreen =
     open JoyReactor
     open JoyReactor.Types
 
-    type PostState = | Actual of Post | LoadNextDivider | Old of Post
+    type PostState = Actual of Post | LoadNextDivider | Old of Post
 
-    type Model = { source: Source; items: PostState []; hasNew: bool; loading: bool }
+    type Model = { source: Source; items: PostState []; hasNew: bool; loading: bool; scroll: int option }
+
     type Msg =
+        | EndScrollChange of int option
         | PostsLoadedFromCache of Result<PostsWithLevels, exn>
         | FirstPagePreloaded of Result<PostsWithLevels, exn>
         | ApplyPreloaded
@@ -164,7 +166,7 @@ module FeedScreen =
         | OpenPost of int
 
     let init source =
-        { source = source; items = [||]; hasNew = false; loading = false }
+        { source = source; items = [||]; hasNew = false; loading = false; scroll = None }
         , FeedServices.init source |> Cmd.map PostsLoadedFromCache
 
     let update model msg =
@@ -174,6 +176,7 @@ module FeedScreen =
                 else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
 
         match msg with
+        | EndScrollChange offset -> { model with scroll = offset }, Cmd.none
         | PostsLoadedFromCache (Ok xs) ->
             { model with items = toItems xs true; loading = true }
             , FeedServices.preloadFirstPage model.source |> Cmd.map FirstPagePreloaded

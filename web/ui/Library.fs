@@ -60,6 +60,8 @@ module ReactVirtualized =
         | OverscanRowCount of int
         | RowHeight of ({| index : int |} -> float)
         | [<CompiledName("rowHeight")>] RowHeightFixed of float
+        | OnScroll of ({| scrollTop : int |} -> unit)
+        | ScrollTop of int option
         interface Props.IHTMLProp
 
     let inline autoSizer (elems : ReactElement list) : ReactElement =
@@ -67,6 +69,45 @@ module ReactVirtualized =
 
     let inline list (props : IHTMLProp list) (elems : ReactElement list) : ReactElement =
         ofImport "List" "react-virtualized/dist/commonjs/List" (keyValueList CaseRules.LowerFirst props) elems
+
+module DebounceComponent =
+    open Fable.Core
+    open Fable.React
+
+    type Props =
+        { onValueChanged : int option -> unit
+          render: (int -> unit) -> ReactElement
+          model: obj }
+
+    type State = { token: int; lastValue: int option }
+
+    type DebounceView (props) as this =
+        inherit Component<Props, State>(props)
+
+        do this.setInitState { token = 0; lastValue = None }
+
+        override _.shouldComponentUpdate(nextProps, _) =
+            props.model <> nextProps.model
+
+        override this.render () =
+            let onTimer value =
+                let nv = Some value
+                if this.state.lastValue <> nv then
+                    this.setState (fun s _ -> { s with lastValue = nv })
+                    props.onValueChanged <| nv
+
+            props.render (fun value ->
+                if this.state.lastValue <> None then
+                    this.setState (fun s _ -> { s with lastValue = None })
+                    props.onValueChanged None
+
+                JS.clearTimeout this.state.token
+                let token = JS.setTimeout (fun _ -> onTimer value) 200
+
+                this.setState (fun s _ -> { s with token = token }))
+
+    let debounceView model onValueChanged render =
+        ofType<DebounceView, _, _> { onValueChanged = onValueChanged; render = render; model = model } []
 
 module Styles =
     open Fable.React
@@ -172,11 +213,7 @@ module FeedScreen =
                 (match post.image with
                  | [| i |] ->
                      let (iurl, h) = I.urlWithHeight 400. i
-                     cardMedia [
-                         Image iurl
-                         Style [ Height h ]
-                        //  Style [ Height 0; PaddingTop (sprintf "%f%%" (100. / i.aspect)) ]
-                         ]
+                     cardMedia [ Image iurl; Style [ Height h ] ]
                  | _ -> div [] []) ]
             cardActions [] [
                 typography [] [ str <| sprintf "%g" post.rating ] ] ]
@@ -200,14 +237,20 @@ module FeedScreen =
             | Actual i | Old i -> if Array.isEmpty i.image then 112.0 + 10.0 else 446.0 + 10.0
             | LoadNextDivider -> 36.0 + 10.0
 
-        ReactVirtualized.list
-            [ Key "posts-list"
-              ReactVirtualized.Width Browser.Dom.window.innerWidth
-              ReactVirtualized.Height (Browser.Dom.window.innerHeight - 118.0)
-              ReactVirtualized.OverscanRowCount 1
-              ReactVirtualized.RowCount (Array.length model.items)
-              ReactVirtualized.RowHeight listItemHeight
-              ReactVirtualized.RowRenderer viewItemVirt ] []
+        DebounceComponent.debounceView
+            model
+            (fun x -> dispatch <| EndScrollChange x)
+            (fun d ->
+                ReactVirtualized.list
+                    [ Key "posts-list"
+                      ReactVirtualized.OnScroll (fun x -> d x.scrollTop)
+                      ReactVirtualized.ScrollTop model.scroll
+                      ReactVirtualized.Width Browser.Dom.window.innerWidth
+                      ReactVirtualized.Height (Browser.Dom.window.innerHeight - 118.0)
+                      ReactVirtualized.OverscanRowCount 1
+                      ReactVirtualized.RowCount (Array.length model.items)
+                      ReactVirtualized.RowHeight listItemHeight
+                      ReactVirtualized.RowRenderer viewItemVirt ] [])
 
     let view (model : Model) dispatch =
         fragment [] [
@@ -478,8 +521,9 @@ module ApplicationScreen =
         | [] -> failwithf "illegal state (%O)" model
 
     let view model dispatch =
+        printfn "LOG2 :: render 2"
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar "JoyReactor (0.6.1)"
+            Styles.appBar <| sprintf "JoyReactor (0.6.1) %O" (System.Random().Next(10_000))
             div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
                 contentView model dispatch ] ]
 
