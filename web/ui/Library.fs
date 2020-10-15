@@ -521,9 +521,8 @@ module ApplicationScreen =
         | [] -> failwithf "illegal state (%O)" model
 
     let view model dispatch =
-        printfn "LOG2 :: render 2"
         muiThemeProvider [ Theme (ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar <| sprintf "JoyReactor (0.6.1) %O" (System.Random().Next(10_000))
+            Styles.appBar "JoyReactor (0.6.1)"
             div [ Style [ PaddingTop 60; PaddingBottom 60 ] ] [
                 contentView model dispatch ] ]
 

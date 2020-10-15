@@ -48,16 +48,12 @@ module TestFramework =
             | prev :: _ when prev <> view -> viewRef := view :: !viewRef
             | _ -> ()
 
-    let assertTest f =
-        JoyReactor.ActionModule.resetDb ()
-        JoyReactor.ActionModule.downloadAndParseImpl <- SyncDownloader.downloadImpl
-        let viewRef : string list ref = ref []
-        let dispatch : (ApplicationScreen.Msg -> unit) ref = ref (fun _ -> ())
-        Program.mkProgram D.init (flip D.update) (fun model d -> dispatch := d; TestRenderer.viewTo viewRef model)
-        |> Program.run
-        f (List.rev !viewRef) (fun x -> viewRef := []; !dispatch (ApplicationScreen.TabsMsg x); List.rev !viewRef)
+    type Env =
+        { dispatch: TabsScreen.Msg -> string list
+          initView: string list
+          getJson: string -> string list }
 
-    let getJson id =
+    let private getJson id =
         List.unfold
             (fun index ->
                 let path = sprintf "../../../Resources/json/%s.%i.json" id index
@@ -65,40 +61,48 @@ module TestFramework =
                 else None)
             0
 
-    [<Obsolete("For testing use")>]
-    let saveJson id jsons =
+    let private saveJson id jsons =
         jsons
         |> List.iteri
             (fun index json ->
                 let path = sprintf "../../../Resources/json/%s.%i.json" id index
                 IO.File.WriteAllText (path, json))
 
-module T = TestFramework
+    let assertTest f =
+        JoyReactor.ActionModule.resetDb ()
+        JoyReactor.ActionModule.downloadAndParseImpl <- SyncDownloader.downloadImpl
+        let viewRef : string list ref = ref []
+        let dispatch : (ApplicationScreen.Msg -> unit) ref = ref (fun _ -> ())
+        Program.mkProgram D.init (flip D.update) (fun model d -> dispatch := d; TestRenderer.viewTo viewRef model)
+        |> Program.run
+        f { dispatch = (fun x -> viewRef := []; !dispatch (ApplicationScreen.TabsMsg x); List.rev !viewRef)
+            initView = (List.rev !viewRef)
+            getJson = getJson }
 
 [<Fact>]
 let ``open post test`` () =
-    T.assertTest <| fun _ dispatch ->
-        let actual = FeedScreen.OpenPost 4444270 |> TabsScreen.FeedMsg |> dispatch
-        let expected = T.getJson "9a7e041f"
+    TestFramework.assertTest <| fun env ->
+        let actual = FeedScreen.OpenPost 4444270 |> TabsScreen.FeedMsg |> env.dispatch
+        let expected = env.getJson "9a7e041f"
         test <@ actual = expected @>
 
 [<Fact>]
 let ``open tags test`` () =
-    T.assertTest <| fun _ dispatch ->
-        let actual = TabsScreen.SelectPage 1 |> dispatch
-        let expected = T.getJson "aed3391d"
+    TestFramework.assertTest <| fun env ->
+        let actual = TabsScreen.SelectPage 1 |> env.dispatch
+        let expected = env.getJson "aed3391d"
         test <@ expected = actual @>
 
-        let actual = TagsScreen.OpenTag "purpleisaprose" |> TabsScreen.TagsMsg  |> dispatch
-        let expected = T.getJson "db255b1d"
+        let actual = TagsScreen.OpenTag "purpleisaprose" |> TabsScreen.TagsMsg  |> env.dispatch
+        let expected = env.getJson "db255b1d"
         test <@ expected = actual @>
 
 [<Fact>]
 let ``feed test`` () =
-    T.assertTest <| fun initView dispatch ->
-        let expected = T.getJson "60c93f24"
-        test <@ expected = initView @>
+    TestFramework.assertTest <| fun env ->
+        let expected = env.getJson "60c93f24"
+        test <@ expected = env.initView @>
 
-        let actual = FeedScreen.LoadNextPage |> TabsScreen.FeedMsg |> dispatch
-        let expected = T.getJson "6e1ee9f0"
+        let actual = FeedScreen.LoadNextPage |> TabsScreen.FeedMsg |> env.dispatch
+        let expected = env.getJson "6e1ee9f0"
         test <@ expected = actual @>
