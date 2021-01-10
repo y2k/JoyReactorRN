@@ -45,6 +45,10 @@ module Image =
         sprintf "https://rc.y2k.work/cache/fit?width=%i&height=%i&bgColor=ffffff&quality=75&url=%s" (int w) (int h)
             (Uri.EscapeDataString url)
 
+    let origin url =
+        Uri.EscapeDataString url
+        |> sprintf "https://rc.y2k.work/cache/origin?url=%s"
+
     let urlWithHeight limitWidth (attachment : Attachment) =
         let aspect = max 1.2 attachment.aspect
         let w = limitWidth

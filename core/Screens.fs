@@ -338,8 +338,12 @@ module PostScreen =
                 |> Array.filter ^ fun comment -> comment.parentId = 0 && comment.rating >= -0.3
                 |> Array.sortByDescending ^ fun comment -> comment.rating
                 |> fun comments -> Array.take (min comments.Length 10) comments
+                |> Array.map (fun c -> { c with image = { c.image with url = Image.origin c.image.url } })
             | None -> [||]
-        let image = post |> Option.bind (fun p -> Array.tryHead p.image)
+        let image =
+            post
+            |> Option.bind (fun p -> Array.tryHead p.image)
+            |> Option.map (fun a -> { a with url = Image.origin a.url })
         let tags = post |> Option.map (fun p -> p.tags) |> Option.defaultValue [||]
         let isLoaded = Option.isSome post
         { model with comments = comments; image = image; tags = tags; isLoaded = isLoaded }
@@ -360,7 +364,7 @@ module ApplicationScreen =
         | PostsModel of FeedScreen.Model
         | TabsModel of TabsScreen.Model
         | MessagesModel of MessagesScreen.Model
-    type Model = { history : ChildModel list }
+    type Model = { history : ChildModel list; title : string }
     type Msg =
         | PostMsg of PostScreen.Msg
         | PostsMsg of FeedScreen.Msg
@@ -370,7 +374,7 @@ module ApplicationScreen =
 
     let init _ =
         let (m, cmd) = TabsScreen.init ()
-        { history = [ TabsModel m ] }
+        { history = [ TabsModel m ]; title = "JoyReactor (0.6.2)" }
         , cmd |> Cmd.map TabsMsg
 
     let update model msg =
@@ -379,23 +383,23 @@ module ApplicationScreen =
             { model with history = prev }, Cmd.none
         | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) ->
             let (m, cmd) = PostScreen.init post
-            { history = PostModel m :: model.history }
+            { model with history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) ->
             let (m, cmd) = FeedScreen.init ^ TagSource tag
-            { history = PostsModel m :: model.history }
+            { model with history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
         | _, (TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.OpenThread thread))) ->
             let (m, cmd) = MessagesScreen.init thread.userName
-            { history = MessagesModel m :: model.history }
+            { model with history = MessagesModel m :: model.history }
             , cmd |> Cmd.map MessagesMsg
         | _, (PostMsg (PostScreen.OpenTag source)) ->
             let (m, cmd) = FeedScreen.init ^ TagSource source
-            { history = PostsModel m :: model.history }
+            { model with history = PostsModel m :: model.history }
             , cmd |> Cmd.map PostsMsg
         | _, (PostsMsg (FeedScreen.OpenPost post)) ->
             let (m, cmd) = PostScreen.init post
-            { history = PostModel m :: model.history }
+            { model with history = PostModel m :: model.history }
             , cmd |> Cmd.map PostMsg
         | { history = (TabsModel cmodel) :: other }, TabsMsg cmsg ->
             let (m, cmd) = TabsScreen.update cmodel cmsg
