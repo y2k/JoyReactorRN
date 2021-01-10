@@ -45,7 +45,7 @@
             "presentation": {
                 "reveal": "always"
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": []
         },
         {
             "label": "fable",
