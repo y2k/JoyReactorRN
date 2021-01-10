@@ -17,7 +17,7 @@ module Interpretator =
     open Fetch.Types
     open JoyReactor.Types
 
-    JoyReactor.ActionModule.downloadAndParseImpl <-
+    JoyReactor.SyncExecutor.downloadAndParseImpl <-
         fun url ->
             async {
                 let baseUrl = Browser.Dom.document.location.origin
@@ -28,7 +28,7 @@ module Interpretator =
                     |> Async.AwaitPromise
                 return! r.json<ParseResponse>() |> Async.AwaitPromise
             }
-    JoyReactor.ActionModule.postFormImpl <-
+    JoyReactor.SyncExecutor.postFormImpl <-
         fun form ->
             async {
                 let textForm =

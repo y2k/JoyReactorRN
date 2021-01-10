@@ -33,6 +33,9 @@
         },
         {
             "label": "test",
+            "dependsOn": [
+                "build"
+            ],
             "command": "dotnet test",
             "type": "shell",
             "group": {

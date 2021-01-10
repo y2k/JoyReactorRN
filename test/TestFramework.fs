@@ -94,8 +94,8 @@ let assetJson id count actual =
     | expected -> test <@ actual = expected @>
 
 let assertTest f =
-    JoyReactor.ActionModule.resetDb ()
-    JoyReactor.ActionModule.downloadAndParseImpl <- SyncDownloader.downloadImpl
+    JoyReactor.SyncExecutor.resetDb ()
+    JoyReactor.SyncExecutor.downloadAndParseImpl <- SyncDownloader.downloadImpl
 
     let viewRef: string list ref = ref []
     let dispatch: (ApplicationScreen.Msg -> unit) ref = ref (fun _ -> ())

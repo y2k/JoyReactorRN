@@ -1,5 +1,8 @@
 ﻿namespace JoyReactor.Components
 
+module S = JoyReactor.SyncBuilder
+module A = JoyReactor.SyncExecutor
+
 module Update =
     open Elmish
     let inline map f fcmd (model, cmd) = f model, cmd |> Cmd.map fcmd
@@ -15,7 +18,7 @@ module MessagesScreen =
 
     let init userName =
         { messages = [||] }
-        , Services.getMessages userName |> Cmd.map MessagesLoaded
+        , S.get (UserMessages.selectMessageForUser userName) |> A.exec' MessagesLoaded
 
     let update (model : Model) = function
         | MessagesLoaded messages -> { model with messages = messages }, Cmd.none
@@ -32,21 +35,31 @@ module ThreadsScreen =
         | OpenThread of Message
         | OpenAuthorization
 
+    let private getMessages (db : LocalDb) =
+        match db.userName with
+        | Some _ -> Some <| UserMessages.selectThreads db.messages
+        | None -> None
+
     let init =
         { threads = [||]; pageLoaded = 0; notAuthorized = false }
-        , Services.getThreads |> Cmd.map LocalThreadsLoaded
+        , S.get getMessages |> A.exec' LocalThreadsLoaded
+
+    let private syncThreads page =
+        S.get (fun db -> (UserMessages.selectThreads db.messages, db.nextMessagesPage))
+        |> S.withSync (UrlBuilder.messages page)
+        |> A.exec NextPageLoaded
 
     let private tryLoadNextPage next model =
         if model.pageLoaded > 2 then Cmd.none
-        else Services.syncThreads next |> Cmd.map NextPageLoaded
+        else syncThreads next
 
     let update model = function
         | LocalThreadsLoaded (Some threads) ->
             { model with threads = threads }
-            , Services.syncThreads None |> Cmd.map NextPageLoaded
+            , syncThreads None
         | LocalThreadsLoaded None ->
             { model with notAuthorized = true }
-            , Services.syncThreads None |> Cmd.map NextPageLoaded
+            , syncThreads None
         | NextPageLoaded (Ok (threads, None)) ->
             { model with threads = threads }, Cmd.none
         | NextPageLoaded (Ok (threads, (Some _ as next))) ->
@@ -72,7 +85,7 @@ module LoginScreen =
 
         let login username password =
             mkLoginForm username password
-            |> ActionModule.postForm
+            |> A.postForm
 
     open Elmish
 
@@ -126,9 +139,11 @@ module ProfileScreen =
         | Logout
         | LogoutEnd of Result<unit, exn>
 
+    let private mkUserUrl (db : LocalDb) = db.userName |> Option.map UrlBuilder.user
+
     let init =
         ProfileLoading
-        , Services.profile |> Cmd.map ProfileLoaded
+        , S.get (fun db -> db.profile) |> S.withSync' mkUserUrl |> A.exec ProfileLoaded
 
     let update model msg =
         match msg with
@@ -136,7 +151,9 @@ module ProfileScreen =
         | ProfileLoaded (Ok None) ->
             LoginScreen.init |> Update.map LoginModel LoginMsg
         | ProfileLoaded (Error e) -> failwithf "ProfileLoaded: %O" e
-        | Logout -> model, Services.logout |> Cmd.map LogoutEnd
+        | Logout ->
+            model
+            , S.sync UrlBuilder.logout |> S.withPost (always LocalDb.empty) |> A.exec LogoutEnd
         | LogoutEnd _ -> init
         | LoginMsg (LoginScreen.LoginEnd (Ok _)) -> init
         | LoginMsg childMsg ->
@@ -158,7 +175,7 @@ module FeedScreen =
         | PostsLoadedFromCache of Result<PostsWithLevels, exn>
         | FirstPagePreloaded of Result<PostsWithLevels, exn>
         | ApplyPreloaded
-        | ApplyPreloadedCompleted of Result<PostsWithLevels, exn>
+        | ApplyPreloadedCompleted of PostsWithLevels
         | LoadNextPage
         | LoadNextPageCompleted of Result<PostsWithLevels, exn>
         | Refresh
@@ -167,7 +184,14 @@ module FeedScreen =
 
     let init source =
         { source = source; items = [||]; hasNew = false; loading = false; scroll = None }
-        , FeedServices.init source |> Cmd.map PostsLoadedFromCache
+        , S.get (fun db -> FeedMerger.getPostsWithLevels source db.feeds) |> A.exec PostsLoadedFromCache
+
+    let private updateFeeds source (db : LocalDb) =
+         let (feeds, sharedFeeds, _) = FeedMerger.mergeFirstPage source db.sharedFeeds db.feeds
+         { db with feeds = feeds; sharedFeeds = sharedFeeds }
+    let private getPosts source (db : LocalDb) =
+         let (_, _, posts) = FeedMerger.mergeFirstPage source db.sharedFeeds db.feeds
+         posts
 
     let update model msg =
         let toItems (ps: PostsWithLevels) loading: PostState [] =
@@ -179,7 +203,10 @@ module FeedScreen =
         | EndScrollChange offset -> { model with scroll = offset }, Cmd.none
         | PostsLoadedFromCache (Ok xs) ->
             { model with items = toItems xs true; loading = true }
-            , FeedServices.preloadFirstPage model.source |> Cmd.map FirstPagePreloaded
+            , S.get (getPosts model.source)
+              |> S.withSync (UrlBuilder.posts model.source "FIXME" None)
+              |> S.withPost (updateFeeds model.source)
+              |> A.exec FirstPagePreloaded
         | PostsLoadedFromCache (Error e) -> failwithf "Error: PostsLoadedFromCache: %O" e
         | FirstPagePreloaded (Ok posts) ->
             if Array.isEmpty posts.actual && Array.isEmpty posts.old
@@ -192,21 +219,34 @@ module FeedScreen =
         | FirstPagePreloaded (Error e) -> failwithf "Error: FirstPagePreloaded: %O" e
         | ApplyPreloaded ->
             { model with hasNew = false }
-            , FeedServices.applyPreloaded model.source |> Cmd.map ApplyPreloadedCompleted
-        | ApplyPreloadedCompleted (Ok xs) ->
+            , S.get (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds)
+              |> S.withPost (fun db -> { db with feeds = FeedMerger.mergePreloaded' model.source db.feeds })
+              |> A.exec' ApplyPreloadedCompleted
+        | ApplyPreloadedCompleted xs ->
             { model with items = toItems xs false }
             , Cmd.none
-        | ApplyPreloadedCompleted (Error e) -> failwithf "Error: ApplyPreloadedCompleted: %O" e
         | LoadNextPage ->
             { model with loading = true }
-            , FeedServices.loadNextPage model.source |> Cmd.map LoadNextPageCompleted
+            , S.get (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds)
+              |> S.withSync' (fun db ->
+                   let a = FeedMerger.getPostsWithLevels model.source db.feeds
+                   UrlBuilder.posts model.source "FIXME" a.nextPage |> Some)
+              |> S.withPost (fun db ->
+                   let (feeds, sharedFeeds) = FeedMerger.mergeSecondPage model.source db.feeds db.sharedFeeds
+                   { db with feeds = feeds; sharedFeeds = sharedFeeds })
+              |> A.exec LoadNextPageCompleted
         | LoadNextPageCompleted (Ok xs) ->
             { model with items = toItems xs false; loading = false }
             , Cmd.none
         | LoadNextPageCompleted (Error e) -> failwithf "Error: LoadNextPageCompleted: %O" e
         | Refresh ->
             { model with loading = true }
-            , FeedServices.refresh model.source |> Cmd.map RefreshCompleted
+            , S.get (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds)
+              |> S.withSync (UrlBuilder.posts model.source "FIXME" None)
+              |> S.withPost (fun db ->
+                    let (feeds, sharedFeeds) = FeedMerger.replacePosts model.source db.sharedFeeds db.feeds
+                    { db with feeds = feeds; sharedFeeds = sharedFeeds})
+              |> A.exec RefreshCompleted
         | RefreshCompleted (Ok xs) ->
             { model with items = toItems xs false; loading = false }
             , Cmd.none
@@ -217,7 +257,6 @@ module TagsScreen =
     open Elmish
     open JoyReactor
     open JoyReactor.Types
-    type LocalDb = CofxStorage.LocalDb
 
     type Model =
         { topTags : Tag []; userTags : Tag []; loaded : bool }
@@ -230,17 +269,17 @@ module TagsScreen =
         | UserTagsSynced of Result<Tag[], exn>
         | OpenTag of string
 
+    let private topTags (db : LocalDb) = db.topTags |> Map.toArray |> Array.map snd
+    let private userTags (db : LocalDb) = db.userTags |> Map.toArray |> Array.map snd
+    let private mkUserUrl (db : LocalDb) = db.userName |> Option.map UrlBuilder.user
+
     let init =
         Model.empty
         , Cmd.batch [
-            ActionModule.readStore (fun db -> db, db.topTags |> Map.toArray |> Array.map snd) |> Cmd.map TopTags
-            ActionModule.readStore (fun db -> db, db.userTags |> Map.toArray |> Array.map snd) |> Cmd.map UserTags
-            ActionModule.run
-                (fun db -> db, Some UrlBuilder.home)
-                (fun db -> db, db.topTags |> Map.toArray |> Array.map snd) |> Cmd.map TopTagsSynced
-            ActionModule.run
-                (fun db -> db, db.userName |> Option.map UrlBuilder.user)
-                (fun db -> db, db.userTags |> Map.toArray |> Array.map snd) |> Cmd.map UserTagsSynced ]
+            S.get topTags |> A.exec' TopTags
+            S.get userTags |> A.exec' UserTags
+            S.get topTags |> S.withSync UrlBuilder.home |> A.exec TopTagsSynced
+            S.get userTags |> S.withSync' mkUserUrl |> A.exec UserTagsSynced ]
 
     let private addFavorite tags =
         Array.concat [
@@ -324,11 +363,13 @@ module PostScreen =
         | RefreshComplete of Result<Post option, exn>
         | OpenTag of string
 
+    let getPosts id (db : LocalDb) = Map.tryFind id db.posts
+
     let init id =
         { tags = [||]; image = None; isLoaded = false; error = None; id = id; comments = [||] }
         , Cmd.batch [
-            Services.postFromCache id |> Cmd.map PostLoaded
-            Services.post id |> Cmd.map RefreshComplete ]
+            S.get (getPosts id) |> A.exec PostLoaded
+            S.get (getPosts id) |> S.withSync (UrlBuilder.post id) |> A.exec RefreshComplete ]
 
     let private updateModel (model : Model) (post : Post option) =
         let comments =

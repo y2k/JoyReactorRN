@@ -9,6 +9,7 @@ module UrlBuilder =
     let home = sprintf "%s/" baseUrl
     let donate = sprintf "%s/donate" baseUrl
     let ads = sprintf "%s/ads" baseUrl
+    let logout = sprintf "%s/logout" baseUrl
 
     let messages page =
         page
@@ -55,7 +56,7 @@ module Image =
         let h = w / aspect
         normalize attachment.url w h, h
 
-module Domain =
+module UserMessages =
     open Types
 
     let selectThreads messages =
@@ -66,15 +67,15 @@ module Domain =
         |> Seq.distinctBy (fun x -> x.userName)
         |> Seq.toArray
 
-    let selectMessageForUser' userName (messages : Map<double, Message>) =
-        messages
+    let selectMessageForUser userName db =
+        db.messages
         |> Map.toSeq
         |> Seq.filter (fun (_, v) -> v.userName = userName)
         |> Seq.map snd
         |> Seq.toArray
         |> Array.sortByDescending (fun x -> x.date)
 
-module PostsMergeDomain =
+module FeedMerger =
     open JoyReactor.Types
 
     let getPostsWithLevels source (feeds : Map<Source, PostsWithLevels>) =
@@ -115,168 +116,15 @@ module PostsMergeDomain =
                   nextPage = response.nextPage |> Array.tryHead }
         Map.add source a feeds, None
 
-module DomainInterpetator =
+module SyncBuilder =
     open JoyReactor.Types
-    open JoyReactor.CofxStorage
+    type private Db = LocalDb
 
-    let private tryAddPost posts post =
-        post
-        |> Option.map ^ fun p -> Map.add p.id p posts
-        |> Option.defaultValue posts
-    let private addMessages messages (newMessages : MessagesWithNext option) =
-        match newMessages with
-        | Some mesWithNext ->
-            mesWithNext.messages
-            |> Array.fold (fun a x -> Map.add x.date x a) messages
-        | None -> messages
-    let private updateNextMessagePage nextMessagesPage newMessages =
-        match newMessages with
-        | None -> nextMessagesPage
-        | Some x -> x.nextPage
+    type 'a Param = { pre : Db -> Db; post : Db -> Db; url : Db -> Url option; convert : Db -> 'a }
 
-    let saveAllParseResults db (pr : ParseResponse) =
-        let toMapTag tags dbTags =
-            tags
-            |> Option.map ^ fun x ->
-                x
-                |> Array.map (fun x -> x.name, x)
-                |> Map.ofArray
-            |> Option.defaultValue dbTags
-        { db with
-            sharedFeeds = pr.posts
-            userName = pr.userName |> Option.orElse db.userName
-            userTags = toMapTag pr.userTags db.userTags
-            topTags = toMapTag pr.topTags db.topTags
-            posts = tryAddPost db.posts pr.post
-            profile = pr.profile |> Option.orElse db.profile
-            messages = addMessages db.messages pr.messages
-            nextMessagesPage = updateNextMessagePage db.nextMessagesPage pr.messages }
-
-module ActionModule =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-    type Db = CofxStorage.LocalDb
-
-    let mutable downloadAndParseImpl : string -> ParseResponse Async = fun _ -> failwith "not implemented"
-    let mutable postFormImpl : PostForm -> ParseResponse Async = fun _ -> failwith "not implemented"
-
-    let private db = ref Db.empty
-
-    let resetDb () = db := Db.empty
-
-    let postForm form =
-        let invoke =
-            async {
-                let! pr = postFormImpl form
-                db := DomainInterpetator.saveAllParseResults !db pr
-                return ()
-            }
-        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
-
-    let run (furl: Db -> Db * Url option) (callback: Db -> Db * 'a) : Result<'a, exn> Cmd =
-        let invoke : _ Async =
-            let downloadPostsForUrl url =
-                async {
-                    let! pr = downloadAndParseImpl url
-                    db := DomainInterpetator.saveAllParseResults !db pr
-                }
-            async {
-                let (ldb, opUrl) = furl !db
-                db := ldb
-                match opUrl with None -> () | Some url -> do! downloadPostsForUrl url
-                let (ldb, result) = callback !db
-                db := ldb
-                return result
-            }
-#if FABLE_COMPILER
-        Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
-#else
-        Cmd.OfAsyncImmediate.either (fun _ -> invoke) () Ok Error
-#endif
-
-    let readStore (callback: Db -> Db * 'a) : 'a Cmd =
-        let invoke =
-            async {
-                let (ldb, result) = callback !db
-                db := ldb
-                return result
-            }
-        Cmd.OfAsync.either (fun _ -> invoke) () id raise
-
-module Services =
-    let logout =
-        ActionModule.run
-            (fun db -> db, Some <| sprintf "%s/logout" UrlBuilder.baseUrl)
-            (fun _ -> CofxStorage.LocalDb.empty, ())
-    let getMessages userName =
-        ActionModule.readStore
-            (fun db -> db, Domain.selectMessageForUser' userName db.messages)
-    let getThreads =
-        ActionModule.readStore
-            (fun db ->
-                db
-                , match db.userName with
-                  | Some _ -> Some <| Domain.selectThreads db.messages
-                  | None -> None)
-    let syncThreads page =
-        ActionModule.run
-            (fun db -> db, UrlBuilder.messages page |> Some)
-            (fun db -> db, (Domain.selectThreads db.messages, db.nextMessagesPage))
-    let profile =
-        ActionModule.run
-            (fun db -> db, db.userName |> Option.map UrlBuilder.user)
-            (fun db -> db, db.profile)
-    let private subToTags (db : CofxStorage.LocalDb) =
-        [ db.topTags |> Map.toSeq |> Seq.map snd |> Seq.toArray
-          db.userTags  |> Map.toSeq |> Seq.map snd |> Seq.toArray ]
-        |> Array.concat
-    let tagFromCache =
-        ActionModule.run (fun db -> db, None) (fun db -> db, subToTags db)
-    let userTags =
-        ActionModule.run
-            (fun db -> db, db.userName |> Option.map ^ UrlBuilder.user)
-            (fun db -> db, subToTags db)
-    let topTags =
-        ActionModule.run (fun db -> db, Some UrlBuilder.home) (fun db -> db, subToTags db)
-    let postFromCache id =
-        ActionModule.run (fun db -> db, None) (fun db -> db, Map.tryFind id db.posts)
-    let post id =
-        ActionModule.run (fun db -> db, Some ^ UrlBuilder.post id) (fun db -> db, Map.tryFind id db.posts)
-
-module FeedServices =
-    open JoyReactor.Types
-    open PostsMergeDomain
-
-    let init source =
-        ActionModule.run
-            (fun db -> db, None)
-            (fun db -> db, getPostsWithLevels source db.feeds)
-    let preloadFirstPage source =
-        ActionModule.run
-            (fun db -> db, UrlBuilder.posts source "FIXME" None |> Some)
-            (fun db ->
-                 let (feeds, sharedFeeds, posts) = mergeFirstPage source db.sharedFeeds db.feeds
-                 { db with feeds = feeds; sharedFeeds = sharedFeeds }, posts)
-    let applyPreloaded source =
-        ActionModule.run
-            (fun db -> db, None)
-            (fun db ->
-                 let db = { db with feeds = mergePreloaded' source db.feeds }
-                 db, getPostsWithLevels source db.feeds)
-    let loadNextPage source =
-        ActionModule.run
-            (fun db ->
-                 let a = getPostsWithLevels source db.feeds
-                 db, UrlBuilder.posts source "FIXME" a.nextPage |> Some)
-            (fun db ->
-                 let (feeds, sharedFeeds) = mergeSecondPage source db.feeds db.sharedFeeds
-                 let db = { db with feeds = feeds; sharedFeeds = sharedFeeds }
-                 db, getPostsWithLevels source db.feeds)
-    let refresh source =
-        ActionModule.run
-            (fun db -> db, UrlBuilder.posts source "FIXME" None |> Some)
-            (fun db ->
-                 let (feeds, sharedFeeds) = replacePosts source db.sharedFeeds db.feeds
-                 let db = { db with feeds = feeds; sharedFeeds = sharedFeeds}
-                 db, getPostsWithLevels source db.feeds)
+    let get convert = { pre = id; post = id; url = (fun _ -> None); convert = convert }
+    let sync u = { get (fun _ -> ()) with url = fun _ -> Some u }
+    let withSync u (x : _ Param) = { x with url = fun _ -> Some u }
+    let withSync' fu (x : _ Param) = { x with url = fun db -> fu db }
+    let withPre f (x : _ Param) = { x with pre = f }
+    let withPost f (x : _ Param) = { x with post = f }
