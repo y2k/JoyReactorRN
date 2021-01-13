@@ -94,15 +94,17 @@ let assetJson id count actual =
     | expected -> test <@ actual = expected @>
 
 let assertTest f =
-    JoyReactor.SyncExecutor.resetDb ()
-    JoyReactor.SyncExecutor.downloadAndParseImpl <- SyncDownloader.downloadImpl
+    let t =
+        JoyReactor.SyncExecutor.init SyncDownloader.downloadImpl (fun _ -> failwith "???")
+
+    JoyReactor.SyncExecutor.resetDb t
 
     let viewRef: string list ref = ref []
     let dispatch: (ApplicationScreen.Msg -> unit) ref = ref (fun _ -> ())
 
     Program.mkProgram
-        D.init
-        (flip D.update)
+        (ElmishInterpretator.wrapInit t D.init)
+        (ElmishInterpretator.wrapUpdate t D.update)
         (fun model d ->
             dispatch := d
             TestRenderer.viewTo viewRef model)

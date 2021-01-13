@@ -1,50 +1,38 @@
 ﻿namespace JoyReactor.Web
 
-[<AutoOpen>]
-module Prelude =
-    let inline (^) f x = f x
-    let inline (@@) f x = f x
-    let inline (<!) f a () = f a
-    let inline (>>=) ma mf = async.Bind(ma, mf)
-    let inline (>>-) ma f = async.Bind(ma, f >> async.Return)
-    let inline flip f a b = f b a
-    let wrap fmodel fmsg (a, b) = a |> fmodel, b |> Elmish.Cmd.map fmsg
-
-module Interpretator =
+module Impl =
     open System
     open Fable.Core
     open Fable.Core.JsInterop
     open Fetch.Types
     open JoyReactor.Types
 
-    JoyReactor.SyncExecutor.downloadAndParseImpl <-
-        fun url ->
-            async {
-                let baseUrl = Browser.Dom.document.location.origin
-                let! r =
-                    Fetch.fetch
-                        (sprintf "%s/parse/%s" baseUrl (JS.encodeURIComponent url))
-                        [ Credentials RequestCredentials.Include ]
-                    |> Async.AwaitPromise
-                return! r.json<ParseResponse>() |> Async.AwaitPromise
-            }
-    JoyReactor.SyncExecutor.postFormImpl <-
-        fun form ->
-            async {
-                let textForm =
-                    sprintf "url=%s&form=%s"
-                        (Uri.EscapeDataString form.url)
-                        (Uri.EscapeDataString form.form)
-                let baseUrl = Browser.Dom.document.location.origin
-                let! r =
-                    Fetch.fetch
-                        (sprintf "%s/form" baseUrl)
-                        [ Method HttpMethod.POST
-                          Credentials RequestCredentials.Include
-                          Body !^ textForm ]
-                    |> Async.AwaitPromise
-                return! r.json<ParseResponse>() |> Async.AwaitPromise
-            }
+    let downloadAndParse url =
+        async {
+            let baseUrl = Browser.Dom.document.location.origin
+            let! r =
+                Fetch.fetch
+                    (sprintf "%s/parse/%s" baseUrl (JS.encodeURIComponent url))
+                    [ Credentials RequestCredentials.Include ]
+                |> Async.AwaitPromise
+            return! r.json<ParseResponse>() |> Async.AwaitPromise
+        }
+    let postForm form =
+        async {
+            let textForm =
+                sprintf "url=%s&form=%s"
+                    (Uri.EscapeDataString form.url)
+                    (Uri.EscapeDataString form.form)
+            let baseUrl = Browser.Dom.document.location.origin
+            let! r =
+                Fetch.fetch
+                    (sprintf "%s/form" baseUrl)
+                    [ Method HttpMethod.POST
+                      Credentials RequestCredentials.Include
+                      Body !^ textForm ]
+                |> Async.AwaitPromise
+            return! r.json<ParseResponse>() |> Async.AwaitPromise
+        }
 
 module ReactVirtualized =
     open Fable.Core
@@ -546,6 +534,7 @@ module App =
     open Elmish.Navigation
     open Elmish.HMR
     module D = JoyReactor.Components.ApplicationScreen
+    module E = JoyReactor.Components.ElmishInterpretator
 
 #if !DEBUG
     [<Fable.Core.Emit("require('offline-plugin/runtime').install();")>]
@@ -554,7 +543,9 @@ module App =
     Browser.Dom.window.addEventListener ("load", fun _ -> initOfflinePlugin())
 #endif
 
-    Program.mkProgram D.init (flip D.update) ApplicationScreen.view
+    let t = JoyReactor.SyncExecutor.init Impl.downloadAndParse Impl.postForm
+
+    Program.mkProgram (E.wrapInit t D.init) (E.wrapUpdate t D.update) ApplicationScreen.view
     |> Program.withReactBatched "elmish-app"
     |> Program.withNavigation
 #if DEBUG

@@ -1,33 +1,60 @@
 ﻿namespace JoyReactor.Components
 
-module S = JoyReactor.SyncBuilder
-module A = JoyReactor.SyncExecutor
+open JoyReactor
+open JoyReactor.Types
 
-module Update =
+module S = SyncBuilder
+
+module Effect =
+    type 'msg t =
+        | SyncEffect of S.Param * (Result<LocalDb, exn> -> 'msg)
+        | PostFormEff of PostForm * (Result<unit, exn> -> 'msg)
+        | OfMsg of 'msg
+
+    let batch (efs : 'msg t list list) : 'msg t list = efs |> List.collect id
+    let none = []
+    let ofMsg msg = [ OfMsg msg ]
+    let map (f : 'a -> 'b) (es : 'a t list) : 'b t list =
+        es
+        |> List.map (fun e ->
+            match e with
+            | SyncEffect (a, g) -> SyncEffect (a, fun x -> let r = g x in f r)
+            | PostFormEff (form, g) -> PostFormEff (form, fun x -> let r = g x in f r)
+            | OfMsg m -> OfMsg (f m))
+    let inline merge f fcmd (model, cmd) = f model, cmd |> map fcmd
+
+module A =
+    let exec' (f : LocalDb -> 'a) (p : S.Param) =
+        [ Effect.SyncEffect (p, function Ok x -> f x | Error e -> raise e) ]
+    let exec (f : LocalDb -> 'a) (g : Result<'a, exn> -> 'b) (p : S.Param) =
+        [ Effect.SyncEffect (p, Result.map f >> g) ]
+    let postForm f c = [ Effect.PostFormEff (f, c) ]
+
+module ElmishInterpretator =
     open Elmish
-    let inline map f fcmd (model, cmd) = f model, cmd |> Cmd.map fcmd
+
+    let private interp t = function
+        | Effect.OfMsg m -> Cmd.ofMsg m
+        | Effect.PostFormEff (f, c) -> SyncExecutor.postForm t f |> Cmd.map c
+        | Effect.SyncEffect (p, c) -> SyncExecutor.exec t p |> Cmd.map c
+    let private interpAll t es = List.map (interp t) es |> Cmd.batch
+    let wrapInit t init _ = let (m, e) = init () in m, interpAll t e
+    let wrapUpdate t update msg m = let (m, e) = update m msg in m, interpAll t e
 
 module MessagesScreen =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-
     type Model = { messages : Message [] }
     type Msg =
         | MessagesLoaded of Message []
 
     let init userName =
         { messages = [||] }
-        , S.get (UserMessages.selectMessageForUser userName) |> A.exec' MessagesLoaded
+        , S.get
+          |> A.exec' (UserMessages.selectMessageForUser userName >> MessagesLoaded)
 
     let update (model : Model) = function
-        | MessagesLoaded messages -> { model with messages = messages }, Cmd.none
+        | MessagesLoaded messages -> { model with messages = messages }, Effect.none
 
 module ThreadsScreen =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-
     type Model = { threads : Message []; pageLoaded : int; notAuthorized : bool }
     type Msg =
         | LocalThreadsLoaded of Message [] option
@@ -42,15 +69,15 @@ module ThreadsScreen =
 
     let init =
         { threads = [||]; pageLoaded = 0; notAuthorized = false }
-        , S.get getMessages |> A.exec' LocalThreadsLoaded
+        , S.get |> A.exec' (getMessages >> LocalThreadsLoaded)
 
     let private syncThreads page =
-        S.get (fun db -> (UserMessages.selectThreads db.messages, db.nextMessagesPage))
+        S.get
         |> S.withSync (UrlBuilder.messages page)
-        |> A.exec NextPageLoaded
+        |> A.exec (fun db -> (UserMessages.selectThreads db.messages, db.nextMessagesPage)) NextPageLoaded
 
     let private tryLoadNextPage next model =
-        if model.pageLoaded > 2 then Cmd.none
+        if model.pageLoaded > 2 then Effect.none
         else syncThreads next
 
     let update model = function
@@ -61,19 +88,17 @@ module ThreadsScreen =
             { model with notAuthorized = true }
             , syncThreads None
         | NextPageLoaded (Ok (threads, None)) ->
-            { model with threads = threads }, Cmd.none
+            { model with threads = threads }, Effect.none
         | NextPageLoaded (Ok (threads, (Some _ as next))) ->
             { model with threads = threads; pageLoaded = model.pageLoaded + 1 }
             , tryLoadNextPage next model
         | NextPageLoaded (Error e) -> raise e
-        | OpenThread _ -> model, Cmd.none
-        | OpenAuthorization -> model, Cmd.none
+        | OpenThread _ -> model, Effect.none
+        | OpenAuthorization -> model, Effect.none
 
 module LoginScreen =
     module Domain =
         open System
-        open JoyReactor
-        open JoyReactor.Types
 
         let private mkLoginForm username password =
             [ "signin[username]", username
@@ -85,9 +110,7 @@ module LoginScreen =
 
         let login username password =
             mkLoginForm username password
-            |> A.postForm
-
-    open Elmish
+            |> fun x -> A.postForm x id
 
     type Model =
         { username : string
@@ -95,7 +118,6 @@ module LoginScreen =
           isEnabled : bool
           isBusy : bool
           error : string option }
-
     type Msg =
         | LoginMsg
         | LoginEnd of Result<unit, exn>
@@ -104,31 +126,27 @@ module LoginScreen =
         | ClosePage
 
     let init =
-        { username = ""; password = ""; isEnabled = false; isBusy = false; error = None }, Cmd.none
+        { username = ""; password = ""; isEnabled = false; isBusy = false; error = None }, Effect.none
 
     let private computeIsEnable model =
         { model with isEnabled = model.username <> "" && model.password <> "" }
 
-    let update model msg : Model * Cmd<Msg> =
+    let update model msg =
         match msg with
         | LoginMsg ->
             { model with isBusy = true; error = None }
-            , Domain.login model.username model.password |> Cmd.map LoginEnd
-        | LoginEnd(Ok _) -> { model with isBusy = false }, Cmd.ofMsg ClosePage
-        | LoginEnd(Error e) -> { model with isBusy = false; error = Some <| string e }, Cmd.none
+            , Domain.login model.username model.password |> Effect.map LoginEnd
+        | LoginEnd(Ok _) -> { model with isBusy = false }, Effect.ofMsg ClosePage
+        | LoginEnd(Error e) -> { model with isBusy = false; error = Some <| string e }, Effect.none
         | UsernameMsg x ->
             { model with username = x } |> computeIsEnable
-            , Cmd.none
+            , Effect.none
         | PasswordMsg x ->
             { model with password = x } |> computeIsEnable
-            , Cmd.none
-        | _ -> model, Cmd.none
+            , Effect.none
+        | _ -> model, Effect.none
 
 module ProfileScreen =
-    open JoyReactor
-    open JoyReactor.Types
-    open Elmish
-
     type Model =
         | ProfileLoading
         | ProfileModel of Profile
@@ -143,33 +161,27 @@ module ProfileScreen =
 
     let init =
         ProfileLoading
-        , S.get (fun db -> db.profile) |> S.withSync' mkUserUrl |> A.exec ProfileLoaded
+        , S.get |> S.withSync' mkUserUrl |> A.exec (fun db -> db.profile) ProfileLoaded
 
     let update model msg =
         match msg with
-        | ProfileLoaded (Ok (Some profile)) -> ProfileModel profile, Cmd.none
+        | ProfileLoaded (Ok (Some profile)) -> ProfileModel profile, Effect.none
         | ProfileLoaded (Ok None) ->
-            LoginScreen.init |> Update.map LoginModel LoginMsg
+            LoginScreen.init |> Effect.merge LoginModel LoginMsg
         | ProfileLoaded (Error e) -> failwithf "ProfileLoaded: %O" e
         | Logout ->
             model
-            , S.sync UrlBuilder.logout |> S.withPost (always LocalDb.empty) |> A.exec LogoutEnd
+            , S.sync UrlBuilder.logout |> S.withPost (always LocalDb.empty) |> A.exec (always ()) LogoutEnd
         | LogoutEnd _ -> init
         | LoginMsg (LoginScreen.LoginEnd (Ok _)) -> init
         | LoginMsg childMsg ->
             match model with
-            | LoginModel childModel -> LoginScreen.update childModel childMsg |> Update.map LoginModel LoginMsg
-            | _ -> model, Cmd.none
+            | LoginModel childModel -> LoginScreen.update childModel childMsg |> Effect.merge LoginModel LoginMsg
+            | _ -> model, Effect.none
 
 module FeedScreen =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-
     type PostState = Actual of Post | LoadNextDivider | Old of Post
-
     type Model = { source: Source; items: PostState []; hasNew: bool; loading: bool; scroll: int option }
-
     type Msg =
         | EndScrollChange of int option
         | PostsLoadedFromCache of Result<PostsWithLevels, exn>
@@ -184,7 +196,7 @@ module FeedScreen =
 
     let init source =
         { source = source; items = [||]; hasNew = false; loading = false; scroll = None }
-        , S.get (fun db -> FeedMerger.getPostsWithLevels source db.feeds) |> A.exec PostsLoadedFromCache
+        , S.get |> A.exec (fun db -> FeedMerger.getPostsWithLevels source db.feeds) PostsLoadedFromCache
 
     let private updateFeeds source (db : LocalDb) =
          let (feeds, sharedFeeds, _) = FeedMerger.mergeFirstPage source db.sharedFeeds db.feeds
@@ -200,68 +212,63 @@ module FeedScreen =
                 else Array.concat [ ps.actual |> Array.map Actual; ps.old |> Array.map Old ]
 
         match msg with
-        | EndScrollChange offset -> { model with scroll = offset }, Cmd.none
+        | EndScrollChange offset -> { model with scroll = offset }, Effect.none
         | PostsLoadedFromCache (Ok xs) ->
             { model with items = toItems xs true; loading = true }
-            , S.get (getPosts model.source)
+            , S.get
               |> S.withSync (UrlBuilder.posts model.source "FIXME" None)
               |> S.withPost (updateFeeds model.source)
-              |> A.exec FirstPagePreloaded
+              |> A.exec (getPosts model.source) FirstPagePreloaded
         | PostsLoadedFromCache (Error e) -> failwithf "Error: PostsLoadedFromCache: %O" e
         | FirstPagePreloaded (Ok posts) ->
             if Array.isEmpty posts.actual && Array.isEmpty posts.old
                 then
                     { model with hasNew = true; loading = false }
-                    , Cmd.ofMsg ApplyPreloaded
+                    , Effect.ofMsg ApplyPreloaded
                 else
                     { model with hasNew = true; loading = false }
-                    , Cmd.none
+                    , Effect.none
         | FirstPagePreloaded (Error e) -> failwithf "Error: FirstPagePreloaded: %O" e
         | ApplyPreloaded ->
             { model with hasNew = false }
-            , S.get (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds)
+            , S.get
               |> S.withPost (fun db -> { db with feeds = FeedMerger.mergePreloaded' model.source db.feeds })
-              |> A.exec' ApplyPreloadedCompleted
+              |> A.exec' (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds |> ApplyPreloadedCompleted)
         | ApplyPreloadedCompleted xs ->
             { model with items = toItems xs false }
-            , Cmd.none
+            , Effect.none
         | LoadNextPage ->
             { model with loading = true }
-            , S.get (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds)
+            , S.get
               |> S.withSync' (fun db ->
                    let a = FeedMerger.getPostsWithLevels model.source db.feeds
                    UrlBuilder.posts model.source "FIXME" a.nextPage |> Some)
               |> S.withPost (fun db ->
                    let (feeds, sharedFeeds) = FeedMerger.mergeSecondPage model.source db.feeds db.sharedFeeds
                    { db with feeds = feeds; sharedFeeds = sharedFeeds })
-              |> A.exec LoadNextPageCompleted
+              |> A.exec (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds) LoadNextPageCompleted
         | LoadNextPageCompleted (Ok xs) ->
             { model with items = toItems xs false; loading = false }
-            , Cmd.none
+            , Effect.none
         | LoadNextPageCompleted (Error e) -> failwithf "Error: LoadNextPageCompleted: %O" e
         | Refresh ->
             { model with loading = true }
-            , S.get (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds)
+            , S.get
               |> S.withSync (UrlBuilder.posts model.source "FIXME" None)
               |> S.withPost (fun db ->
                     let (feeds, sharedFeeds) = FeedMerger.replacePosts model.source db.sharedFeeds db.feeds
                     { db with feeds = feeds; sharedFeeds = sharedFeeds})
-              |> A.exec RefreshCompleted
+              |> A.exec (fun db -> FeedMerger.getPostsWithLevels model.source db.feeds) RefreshCompleted
         | RefreshCompleted (Ok xs) ->
             { model with items = toItems xs false; loading = false }
-            , Cmd.none
+            , Effect.none
         | RefreshCompleted (Error e) -> failwithf "Error: RefreshCompleted: %O" e
-        | OpenPost _ -> model, Cmd.none
+        | OpenPost _ -> model, Effect.none
 
 module TagsScreen =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-
     type Model =
         { topTags : Tag []; userTags : Tag []; loaded : bool }
         with static member empty = { topTags = [||]; userTags = [||]; loaded = false }
-
     type Msg =
         | TopTags of Tag []
         | UserTags of Tag []
@@ -275,11 +282,11 @@ module TagsScreen =
 
     let init =
         Model.empty
-        , Cmd.batch [
-            S.get topTags |> A.exec' TopTags
-            S.get userTags |> A.exec' UserTags
-            S.get topTags |> S.withSync UrlBuilder.home |> A.exec TopTagsSynced
-            S.get userTags |> S.withSync' mkUserUrl |> A.exec UserTagsSynced ]
+        , Effect.batch [
+            S.get |> A.exec' (topTags >> TopTags)
+            S.get |> A.exec' (userTags >> UserTags)
+            S.get |> S.withSync UrlBuilder.home |> A.exec topTags TopTagsSynced
+            S.get |> S.withSync' mkUserUrl |> A.exec userTags UserTagsSynced ]
 
     let private addFavorite tags =
         Array.concat [
@@ -292,18 +299,15 @@ module TagsScreen =
         | _ -> TagSource tag.name
 
     let update (model : Model) = function
-        | TopTags tags -> { model with topTags = tags }, Cmd.none
-        | UserTags tags -> { model with userTags = tags }, Cmd.none
-        | TopTagsSynced (Ok tags) -> { model with topTags = tags }, Cmd.none
-        | UserTagsSynced (Ok tags) -> { model with userTags = tags }, Cmd.none
-        | TopTagsSynced (Error _) -> model, Cmd.none
-        | UserTagsSynced (Error _) -> model, Cmd.none
-        | OpenTag _ -> model, Cmd.none
+        | TopTags tags -> { model with topTags = tags }, Effect.none
+        | UserTags tags -> { model with userTags = tags }, Effect.none
+        | TopTagsSynced (Ok tags) -> { model with topTags = tags }, Effect.none
+        | UserTagsSynced (Ok tags) -> { model with userTags = tags }, Effect.none
+        | TopTagsSynced (Error _) -> model, Effect.none
+        | UserTagsSynced (Error _) -> model, Effect.none
+        | OpenTag _ -> model, Effect.none
 
 module TabsScreen =
-    open Elmish
-    open JoyReactor.Types
-
     type Model =
         | FeedModel of FeedScreen.Model
         | TagsModel of TagsScreen.Model
@@ -318,46 +322,41 @@ module TabsScreen =
 
     let init _ =
         FeedScreen.init FeedSource
-        ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
+        ||> fun model cmd -> FeedModel model, (cmd |> Effect.map FeedMsg)
 
     let update model msg =
         match model, msg with
         | _, ThreadsMsg (ThreadsScreen.OpenAuthorization) ->
             ProfileScreen.init
-            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
+            ||> fun model cmd -> ProfileModel model, (cmd |> Effect.map ProfileMsg)
         | FeedModel model, FeedMsg msg ->
             FeedScreen.update model msg
-            ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
+            ||> fun model cmd -> FeedModel model, (cmd |> Effect.map FeedMsg)
         | TagsModel model, TagsMsg msg ->
             TagsScreen.update model msg
-            ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
+            ||> fun model cmd -> TagsModel model, (cmd |> Effect.map TagsMsg)
         | ThreadsModel model, ThreadsMsg msg ->
             ThreadsScreen.update model msg
-            ||> fun model cmd -> ThreadsModel model, (cmd |> Cmd.map ThreadsMsg)
+            ||> fun model cmd -> ThreadsModel model, (cmd |> Effect.map ThreadsMsg)
         | ProfileModel model, ProfileMsg msg ->
             ProfileScreen.update model msg
-            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
+            ||> fun model cmd -> ProfileModel model, (cmd |> Effect.map ProfileMsg)
         | _, SelectPage 0 ->
             FeedScreen.init FeedSource
-            ||> fun model cmd -> FeedModel model, (cmd |> Cmd.map FeedMsg)
+            ||> fun model cmd -> FeedModel model, (cmd |> Effect.map FeedMsg)
         | _, SelectPage 1 ->
             TagsScreen.init
-            ||> fun model cmd -> TagsModel model, (cmd |> Cmd.map TagsMsg)
+            ||> fun model cmd -> TagsModel model, (cmd |> Effect.map TagsMsg)
         | _, SelectPage 2 ->
             ThreadsScreen.init
-            ||> fun model cmd -> ThreadsModel model, (cmd |> Cmd.map ThreadsMsg)
+            ||> fun model cmd -> ThreadsModel model, (cmd |> Effect.map ThreadsMsg)
         | _, SelectPage 3 ->
             ProfileScreen.init
-            ||> fun model cmd -> ProfileModel model, (cmd |> Cmd.map ProfileMsg)
-        | _ -> model, []
+            ||> fun model cmd -> ProfileModel model, (cmd |> Effect.map ProfileMsg)
+        | _ -> model, Effect.none
 
 module PostScreen =
-    open Elmish
-    open JoyReactor
-    open JoyReactor.Types
-
     type Model = { tags: string []; image: Attachment option; isLoaded: bool; error: string option; id: int; comments: Comment [] }
-
     type Msg =
         | PostLoaded of Result<Post option, exn>
         | RefreshComplete of Result<Post option, exn>
@@ -367,9 +366,9 @@ module PostScreen =
 
     let init id =
         { tags = [||]; image = None; isLoaded = false; error = None; id = id; comments = [||] }
-        , Cmd.batch [
-            S.get (getPosts id) |> A.exec PostLoaded
-            S.get (getPosts id) |> S.withSync (UrlBuilder.post id) |> A.exec RefreshComplete ]
+        , Effect.batch [
+            S.get |> A.exec (getPosts id) PostLoaded
+            S.get |> S.withSync (UrlBuilder.post id) |> A.exec (getPosts id) RefreshComplete ]
 
     let private updateModel (model : Model) (post : Post option) =
         let comments =
@@ -390,16 +389,13 @@ module PostScreen =
         { model with comments = comments; image = image; tags = tags; isLoaded = isLoaded }
 
     let update (model : Model) = function
-        | PostLoaded (Ok post) -> updateModel model post, Cmd.none
+        | PostLoaded (Ok post) -> updateModel model post, Effect.none
         | PostLoaded (Error e) -> failwithf "Error: PostLoaded: %O" e
-        | RefreshComplete(Ok post) -> { (updateModel model post) with error = None }, Cmd.none
-        | RefreshComplete(Error e) -> { model with error = Some <| string e }, Cmd.none
-        | OpenTag _ -> model, Cmd.none
+        | RefreshComplete(Ok post) -> { (updateModel model post) with error = None }, Effect.none
+        | RefreshComplete(Error e) -> { model with error = Some <| string e }, Effect.none
+        | OpenTag _ -> model, Effect.none
 
 module ApplicationScreen =
-    open Elmish
-    open JoyReactor.Types
-
     type ChildModel =
         | PostModel of PostScreen.Model
         | PostsModel of FeedScreen.Model
@@ -416,46 +412,46 @@ module ApplicationScreen =
     let init _ =
         let (m, cmd) = TabsScreen.init ()
         { history = [ TabsModel m ]; title = "JoyReactor (0.6.2)" }
-        , cmd |> Cmd.map TabsMsg
+        , cmd |> Effect.map TabsMsg
 
     let update model msg =
         match model, msg with
         | { history = _ :: ((_ :: _) as prev) }, NavigateBack ->
-            { model with history = prev }, Cmd.none
+            { model with history = prev }, Effect.none
         | _, (TabsMsg (TabsScreen.FeedMsg (FeedScreen.OpenPost post))) ->
             let (m, cmd) = PostScreen.init post
             { model with history = PostModel m :: model.history }
-            , cmd |> Cmd.map PostMsg
+            , cmd |> Effect.map PostMsg
         | _, (TabsMsg (TabsScreen.TagsMsg (TagsScreen.OpenTag tag))) ->
             let (m, cmd) = FeedScreen.init ^ TagSource tag
             { model with history = PostsModel m :: model.history }
-            , cmd |> Cmd.map PostsMsg
+            , cmd |> Effect.map PostsMsg
         | _, (TabsMsg (TabsScreen.ThreadsMsg (ThreadsScreen.OpenThread thread))) ->
             let (m, cmd) = MessagesScreen.init thread.userName
             { model with history = MessagesModel m :: model.history }
-            , cmd |> Cmd.map MessagesMsg
+            , cmd |> Effect.map MessagesMsg
         | _, (PostMsg (PostScreen.OpenTag source)) ->
             let (m, cmd) = FeedScreen.init ^ TagSource source
             { model with history = PostsModel m :: model.history }
-            , cmd |> Cmd.map PostsMsg
+            , cmd |> Effect.map PostsMsg
         | _, (PostsMsg (FeedScreen.OpenPost post)) ->
             let (m, cmd) = PostScreen.init post
             { model with history = PostModel m :: model.history }
-            , cmd |> Cmd.map PostMsg
+            , cmd |> Effect.map PostMsg
         | { history = (TabsModel cmodel) :: other }, TabsMsg cmsg ->
             let (m, cmd) = TabsScreen.update cmodel cmsg
             { model with history = TabsModel m :: other }
-            , cmd |> Cmd.map TabsMsg
+            , cmd |> Effect.map TabsMsg
         | { history = (PostsModel cmodel) :: other }, PostsMsg cmsg ->
             let (m, cmd) = FeedScreen.update cmodel cmsg
             { model with history = PostsModel m :: other }
-            , cmd |> Cmd.map PostsMsg
+            , cmd |> Effect.map PostsMsg
         | { history = (PostModel cmodel) :: other }, PostMsg cmsg ->
             let (m, cmd) = PostScreen.update cmodel cmsg
             { model with history = PostModel m :: other }
-            , cmd |> Cmd.map PostMsg
+            , cmd |> Effect.map PostMsg
         | { history = (MessagesModel cmodel) :: other }, MessagesMsg cmsg ->
             let (m, cmd) = MessagesScreen.update cmodel cmsg
             { model with history = MessagesModel m :: other }
-            , cmd |> Cmd.map MessagesMsg
-        | _ -> model, Cmd.none
+            , cmd |> Effect.map MessagesMsg
+        | _ -> model, Effect.none

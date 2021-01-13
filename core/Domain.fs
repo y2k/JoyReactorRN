@@ -120,11 +120,10 @@ module SyncBuilder =
     open JoyReactor.Types
     type private Db = LocalDb
 
-    type 'a Param = { pre : Db -> Db; post : Db -> Db; url : Db -> Url option; convert : Db -> 'a }
+    type Param = { pre : Db -> Db; post : Db -> Db; url : Db -> Url option }
 
-    let get convert = { pre = id; post = id; url = (fun _ -> None); convert = convert }
-    let sync u = { get (fun _ -> ()) with url = fun _ -> Some u }
-    let withSync u (x : _ Param) = { x with url = fun _ -> Some u }
-    let withSync' fu (x : _ Param) = { x with url = fun db -> fu db }
-    let withPre f (x : _ Param) = { x with pre = f }
-    let withPost f (x : _ Param) = { x with post = f }
+    let get = { pre = id; post = id; url = (fun _ -> None) }
+    let sync u = { get with url = fun _ -> Some u }
+    let withSync u (x : Param) = { x with url = fun _ -> Some u }
+    let withSync' fu (x : Param) = { x with url = fun db -> fu db }
+    let withPost f (x : Param) = { x with post = f }
