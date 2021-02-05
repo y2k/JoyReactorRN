@@ -411,7 +411,7 @@ module ApplicationScreen =
 
     let init _ =
         let (m, cmd) = TabsScreen.init ()
-        { history = [ TabsModel m ]; title = "JoyReactor (0.6.2)" }
+        { history = [ TabsModel m ]; title = "JoyReactor (0.6.3)" }
         , cmd |> Effect.map TabsMsg
 
     let update model msg =

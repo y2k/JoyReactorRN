@@ -149,6 +149,7 @@ let main _ =
         GET >=> path "/info"
             >=> Successful.OK(sprintf "JR Parser (Suave) - %O" System.DateTime.Now)
         GET >=> path "/" >=> Files.browseFileHome "index.html"
+        GET >=> path "/manifest.webmanifest" >=> Files.browseFileHome "manifest.webmanifest"
         GET >=> path "/manifest.json" >=> Files.browseFileHome "manifest.json"
         GET >=> path "/bundle.js" >=> Files.browseFileHome "bundle.js"
         GET >=> path "/bundle.js.map" >=> Files.browseFileHome "bundle.js.map"
