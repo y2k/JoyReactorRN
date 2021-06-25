@@ -103,7 +103,7 @@ module ThreadsScreen =
         match model.notAuthorized with
         | true ->
             button
-                [ Style [ CSSProp.Position PositionOptions.Absolute; Left "10%"; Right "10%"; Bottom "50%" ]
+                [ Style [ Width "-moz-available"; CSSProp.Position PositionOptions.Absolute; Left "16px"; Right "16px"; Bottom "50%" ]
                   ButtonProp.Variant ButtonVariant.Contained
                   MaterialProp.Color ComponentColor.Primary
                   OnClick @@ fun _ -> dispatch OpenAuthorization ] [
@@ -185,7 +185,7 @@ module FeedScreen =
                     button
                         [ Style
                             [ CSSProp.Position PositionOptions.Fixed
-                              Bottom 60; Left 12; Right 12 ]
+                              Bottom 60; Left 12; Right 12; Width "-moz-available" ]
                           ButtonProp.Variant ButtonVariant.Contained
                           MaterialProp.Color ComponentColor.Primary
                           OnClick @@ fun _ -> dispatch ApplyPreloaded ] [
