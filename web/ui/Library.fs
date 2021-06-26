@@ -281,12 +281,15 @@ module TagsScreen =
                 listItemText [ ListItemTextProp.Primary ^ str tag.name ] []
             ]
 
-        ReactVirtualized.list [ Key "tags-list"
-                                ReactVirtualized.Width Browser.Dom.window.innerWidth
-                                ReactVirtualized.Height(Browser.Dom.window.innerHeight - 118.0)
-                                ReactVirtualized.RowCount(Array.length tags)
-                                ReactVirtualized.RowHeightFixed 56.0
-                                ReactVirtualized.RowRenderer viewItemVirt ] []
+        ReactVirtualized.autoSizer [ ReactVirtualized.Children
+                                         (fun size ->
+                                             ReactVirtualized.list [ Key "tags-list"
+                                                                     ReactVirtualized.Width
+                                                                         Browser.Dom.window.innerWidth
+                                                                     ReactVirtualized.Height size.height
+                                                                     ReactVirtualized.RowCount(Array.length tags)
+                                                                     ReactVirtualized.RowHeightFixed 56.0
+                                                                     ReactVirtualized.RowRenderer viewItemVirt ] []) ]
 
     let view (model: Model) dispatch =
         fragment [] [
@@ -425,9 +428,7 @@ module TabsScreen =
 
     let view model dispatch =
         let viewTab title index =
-            bottomNavigationAction [ Label
-                                     ^ typography [ Variant TypographyVariant.Body2 ]
-                                       ^ [ str title ]
+            bottomNavigationAction [ Label(typography [ Variant TypographyVariant.Body2 ] ([ str title ]))
                                      OnClick(fun _ -> dispatch ^ SelectPage index) ]
 
         let toIndex =
@@ -438,15 +439,20 @@ module TabsScreen =
             | ProfileModel _ -> 3
 
         fragment [] [
-            contentView model dispatch
-            appBar [ Style [ Bottom 0; Top "auto" ]
-                     AppBarProp.Position AppBarPosition.Fixed ] [
-                bottomNavigation [ ShowLabels true
-                                   Value ^ toIndex model ] [
-                    viewTab "Лента" 0
-                    viewTab "Теги" 1
-                    viewTab "Сообщения" 2
-                    viewTab "Профиль" 3
+            div [ Style [ Display DisplayOptions.Flex
+                          Height "100%"
+                          FlexDirection "column" ] ] [
+                div [ Style [ Flex 1.0 ] ] [
+                    contentView model dispatch
+                ]
+                appBar [ AppBarProp.Position AppBarPosition.Static ] [
+                    bottomNavigation [ ShowLabels true
+                                       Value(toIndex model) ] [
+                        viewTab "Лента" 0
+                        viewTab "Теги" 1
+                        viewTab "Сообщения" 2
+                        viewTab "Профиль" 3
+                    ]
                 ]
             ]
         ]
@@ -480,7 +486,9 @@ module PostScreen =
         comments |> Array.map viewComment |> list []
 
     let private contentView dispatch (model: Model) comments =
-        div [ Style [ CSSProp.Padding "16px" ] ] [
+        div [ Style [ CSSProp.Padding "16px"
+                      Height "100%"
+                      OverflowY OverflowOptions.Scroll ] ] [
             (match model.image with
              | Some i ->
                  cardMedia [ Image i.url
@@ -511,7 +519,6 @@ module PostScreen =
         ]
 
 module ApplicationScreen =
-    open Fable.React
     open Fable.React.Props
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
@@ -526,13 +533,9 @@ module ApplicationScreen =
         | [] -> failwithf "illegal state (%O)" model
 
     let view model dispatch =
-        muiThemeProvider [ Theme(ProviderTheme.Theme Styles.theme) ] [
-            Styles.appBar model.title
-            div [ Style [ Height "100%"
-                          PaddingTop 60
-                          PaddingBottom 60 ] ] [
-                contentView model dispatch
-            ]
+        muiThemeProvider [ Theme(ProviderTheme.Theme Styles.theme)
+                           Style [ Height "100%" ] ] [
+            contentView model dispatch
         ]
 
 module Program =
