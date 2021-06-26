@@ -1,14 +1,34 @@
 {
-  "Case": "FeedModel",
-  "Fields": [
-    {
-      "source": {
-        "Case": "FeedSource"
-      },
-      "items": [],
-      "hasNew": true,
-      "loading": false,
-      "scroll": null
-    }
+  "current": {
+    "Case": "FeedModel",
+    "Fields": [
+      {
+        "source": {
+          "Case": "FeedSource"
+        },
+        "items": [],
+        "hasNew": true,
+        "loading": false,
+        "scroll": null
+      }
+    ]
+  },
+  "tabs": [
+    [
+      "Лента",
+      0
+    ],
+    [
+      "Теги",
+      1
+    ],
+    [
+      "Сообщения",
+      2
+    ],
+    [
+      "Профиль",
+      3
+    ]
   ]
 }

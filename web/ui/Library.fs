@@ -427,32 +427,22 @@ module TabsScreen =
         | ProfileModel m -> ProfileScreen.view m (ProfileMsg >> dispatch)
 
     let view model dispatch =
-        let viewTab title index =
+        let viewTab (title, index) =
             bottomNavigationAction [ Label(typography [ Variant TypographyVariant.Body2 ] ([ str title ]))
                                      OnClick(fun _ -> dispatch ^ SelectPage index) ]
-
-        let toIndex =
-            function
-            | FeedModel _ -> 0
-            | TagsModel _ -> 1
-            | ThreadsModel _ -> 2
-            | ProfileModel _ -> 3
 
         fragment [] [
             div [ Style [ Display DisplayOptions.Flex
                           Height "100%"
                           FlexDirection "column" ] ] [
                 div [ Style [ Flex 1.0 ] ] [
-                    contentView model dispatch
+                    contentView model.current dispatch
                 ]
                 appBar [ AppBarProp.Position AppBarPosition.Static ] [
-                    bottomNavigation [ ShowLabels true
-                                       Value(toIndex model) ] [
-                        viewTab "Лента" 0
-                        viewTab "Теги" 1
-                        viewTab "Сообщения" 2
-                        viewTab "Профиль" 3
-                    ]
+                    bottomNavigation
+                        [ ShowLabels true
+                          Value(toIndex model.current) ]
+                        (Array.map viewTab model.tabs)
                 ]
             ]
         ]

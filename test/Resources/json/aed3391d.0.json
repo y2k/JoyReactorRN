@@ -1,10 +1,30 @@
 {
-  "Case": "TagsModel",
-  "Fields": [
-    {
-      "topTags": [],
-      "userTags": [],
-      "loaded": false
-    }
+  "current": {
+    "Case": "TagsModel",
+    "Fields": [
+      {
+        "topTags": [],
+        "userTags": [],
+        "loaded": false
+      }
+    ]
+  },
+  "tabs": [
+    [
+      "Лента",
+      0
+    ],
+    [
+      "Теги",
+      1
+    ],
+    [
+      "Сообщения",
+      2
+    ],
+    [
+      "Профиль",
+      3
+    ]
   ]
 }

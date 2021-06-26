@@ -424,11 +424,15 @@ module TagsScreen =
         | OpenTag _ -> model, Effect.none
 
 module TabsScreen =
-    type Model =
+    type TabModel =
         | FeedModel of FeedScreen.Model
         | TagsModel of TagsScreen.Model
         | ThreadsModel of ThreadsScreen.Model
         | ProfileModel of ProfileScreen.Model
+
+    type Model =
+        { current: TabModel
+          tabs: (string * int) [] }
 
     type Msg =
         | FeedMsg of FeedScreen.Msg
@@ -437,39 +441,54 @@ module TabsScreen =
         | ProfileMsg of ProfileScreen.Msg
         | SelectPage of int
 
+    let toIndex =
+        function
+        | FeedModel _ -> 0
+        | TagsModel _ -> 1
+        | ThreadsModel _ -> 2
+        | ProfileModel _ -> 3
+
     let init _ =
         FeedScreen.init FeedSource
-        ||> fun model cmd -> FeedModel model, (cmd |> Effect.map FeedMsg)
+        ||> fun model cmd ->
+                { current = FeedModel model
+                  tabs =
+                      [| "Лента"
+                         "Теги"
+                         "Сообщения"
+                         "Профиль" |]
+                      |> Array.mapi (fun i x -> x, i) },
+                (cmd |> Effect.map FeedMsg)
 
     let update model msg =
-        match model, msg with
+        match model.current, msg with
         | _, ThreadsMsg (ThreadsScreen.OpenAuthorization) ->
             ProfileScreen.init
-            ||> fun model cmd -> ProfileModel model, (cmd |> Effect.map ProfileMsg)
-        | FeedModel model, FeedMsg msg ->
-            FeedScreen.update model msg
-            ||> fun model cmd -> FeedModel model, (cmd |> Effect.map FeedMsg)
-        | TagsModel model, TagsMsg msg ->
-            TagsScreen.update model msg
-            ||> fun model cmd -> TagsModel model, (cmd |> Effect.map TagsMsg)
-        | ThreadsModel model, ThreadsMsg msg ->
-            ThreadsScreen.update model msg
-            ||> fun model cmd -> ThreadsModel model, (cmd |> Effect.map ThreadsMsg)
-        | ProfileModel model, ProfileMsg msg ->
-            ProfileScreen.update model msg
-            ||> fun model cmd -> ProfileModel model, (cmd |> Effect.map ProfileMsg)
+            ||> fun m cmd -> { model with current = ProfileModel m }, (cmd |> Effect.map ProfileMsg)
+        | FeedModel m, FeedMsg msg ->
+            FeedScreen.update m msg
+            ||> fun m cmd -> { model with current = FeedModel m }, (cmd |> Effect.map FeedMsg)
+        | TagsModel m, TagsMsg msg ->
+            TagsScreen.update m msg
+            ||> fun m cmd -> { model with current = TagsModel m }, (cmd |> Effect.map TagsMsg)
+        | ThreadsModel m, ThreadsMsg msg ->
+            ThreadsScreen.update m msg
+            ||> fun m cmd -> { model with current = ThreadsModel m }, (cmd |> Effect.map ThreadsMsg)
+        | ProfileModel m, ProfileMsg msg ->
+            ProfileScreen.update m msg
+            ||> fun m cmd -> { model with current = ProfileModel m }, (cmd |> Effect.map ProfileMsg)
         | _, SelectPage 0 ->
             FeedScreen.init FeedSource
-            ||> fun model cmd -> FeedModel model, (cmd |> Effect.map FeedMsg)
+            ||> fun m cmd -> { model with current = FeedModel m }, (cmd |> Effect.map FeedMsg)
         | _, SelectPage 1 ->
             TagsScreen.init
-            ||> fun model cmd -> TagsModel model, (cmd |> Effect.map TagsMsg)
+            ||> fun m cmd -> { model with current = TagsModel m }, (cmd |> Effect.map TagsMsg)
         | _, SelectPage 2 ->
             ThreadsScreen.init
-            ||> fun model cmd -> ThreadsModel model, (cmd |> Effect.map ThreadsMsg)
+            ||> fun m cmd -> { model with current = ThreadsModel m }, (cmd |> Effect.map ThreadsMsg)
         | _, SelectPage 3 ->
             ProfileScreen.init
-            ||> fun model cmd -> ProfileModel model, (cmd |> Effect.map ProfileMsg)
+            ||> fun m cmd -> { model with current = ProfileModel m }, (cmd |> Effect.map ProfileMsg)
         | _ -> model, Effect.none
 
 module PostScreen =
