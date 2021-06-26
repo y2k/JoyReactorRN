@@ -10,12 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fable.Browser.Dom" Version="1.2.0" />
+    <PackageReference Include="Fable.Browser.Dom" Version="2.4.4" />
     <PackageReference Include="Fable.Elmish.Browser" Version="3.0.4" />
-    <PackageReference Include="Fable.Elmish.HMR" Version="4.0.1" />
+    <PackageReference Include="Fable.Elmish.HMR" Version="4.1.0" />
     <PackageReference Include="Fable.Elmish.React" Version="3.0.1" />
-    <PackageReference Include="Fable.Fetch" Version="2.2.0" />
+    <PackageReference Include="Fable.Fetch" Version="2.3.1" />
     <PackageReference Include="Fable.MaterialUI" Version="4.1.0" />
+    <PackageReference Include="Fable.React" Version="7.4.1" />
   </ItemGroup>
 
   <ItemGroup>

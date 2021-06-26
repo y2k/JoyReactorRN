@@ -11,11 +11,11 @@ var __wpo = {
     "/"
   ],
   "hashesMap": {
-    "04b5d79ae1d43a2277e80f6fd6b1fbb9cba92811": "./bundle.js"
+    "8b4c568e26f5b9a72cfa1061f14a3195852040d0": "./bundle.js"
   },
   "strategy": "changed",
   "responseStrategy": "cache-first",
-  "version": "26/06/2021, 16:58:52",
+  "version": "26/06/2021, 17:10:46",
   "name": "webpack-offline",
   "pluginVersion": "5.0.7",
   "relativePaths": true
