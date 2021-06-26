@@ -21,8 +21,14 @@ module ReactVirtualized =
         | ScrollTop of int option
         interface Props.IHTMLProp
 
-    let inline autoSizer (elems: ReactElement list) : ReactElement =
-        ofImport "AutoSizer" "react-virtualized/dist/commonjs/AutoSizer" (keyValueList CaseRules.LowerFirst []) elems
+    type AutoSizerSize = { width: float; height: float }
+
+    type AutoSizerProps =
+        | Children of (AutoSizerSize -> ReactElement)
+        interface Props.IHTMLProp
+
+    let inline autoSizer (props: IHTMLProp list) : ReactElement =
+        ofImport "AutoSizer" "react-virtualized/dist/commonjs/AutoSizer" (keyValueList CaseRules.LowerFirst props) []
 
     let inline list (props: IHTMLProp list) (elems: ReactElement list) : ReactElement =
         ofImport "List" "react-virtualized/dist/commonjs/List" (keyValueList CaseRules.LowerFirst props) elems

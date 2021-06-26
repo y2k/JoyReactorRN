@@ -206,15 +206,23 @@ module FeedScreen =
             model
             (fun x -> dispatch <| EndScrollChange x)
             (fun d ->
-                ReactVirtualized.list [ Key "posts-list"
-                                        ReactVirtualized.OnScroll(fun x -> d x.scrollTop)
-                                        ReactVirtualized.ScrollTop model.scroll
-                                        ReactVirtualized.Width Browser.Dom.window.innerWidth
-                                        ReactVirtualized.Height(Browser.Dom.window.innerHeight - 118.0)
-                                        ReactVirtualized.OverscanRowCount 1
-                                        ReactVirtualized.RowCount(Array.length model.items)
-                                        ReactVirtualized.RowHeight listItemHeight
-                                        ReactVirtualized.RowRenderer viewItemVirt ] [])
+                ReactVirtualized.autoSizer [ Style [ Flex "1 1 auto" ]
+                                             ReactVirtualized.Children
+                                                 (fun size ->
+                                                     ReactVirtualized.list [ Key "posts-list"
+                                                                             ReactVirtualized.OnScroll
+                                                                                 (fun x -> d x.scrollTop)
+                                                                             ReactVirtualized.ScrollTop model.scroll
+                                                                             ReactVirtualized.Width
+                                                                                 Browser.Dom.window.innerWidth
+                                                                             ReactVirtualized.Height size.height
+                                                                             ReactVirtualized.OverscanRowCount 1
+                                                                             ReactVirtualized.RowCount(
+                                                                                 Array.length model.items
+                                                                             )
+                                                                             ReactVirtualized.RowHeight listItemHeight
+                                                                             ReactVirtualized.RowRenderer viewItemVirt ] []) ])
+
 
     let view (model: Model) dispatch =
         fragment [] [
@@ -520,7 +528,8 @@ module ApplicationScreen =
     let view model dispatch =
         muiThemeProvider [ Theme(ProviderTheme.Theme Styles.theme) ] [
             Styles.appBar model.title
-            div [ Style [ PaddingTop 60
+            div [ Style [ Height "100%"
+                          PaddingTop 60
                           PaddingBottom 60 ] ] [
                 contentView model dispatch
             ]
