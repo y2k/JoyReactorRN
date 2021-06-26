@@ -37,14 +37,14 @@ type Post =
 type PostResponse =
     { posts: Post []
       nextPage: int [] }
-    static member empty: PostResponse = { posts = [||]; nextPage = [||] }
+    static member empty : PostResponse = { posts = [||]; nextPage = [||] }
 
 type PostsWithLevels =
     { actual: Post []
       old: Post []
       preloaded: Post []
       nextPage: int option }
-    static member empty: PostsWithLevels =
+    static member empty : PostsWithLevels =
         { actual = [||]
           old = [||]
           preloaded = [||]

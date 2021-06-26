@@ -65,7 +65,7 @@ module SyncExecutor =
         Cmd.OfAsync.either (fun _ -> invoke) () Ok Error
 
     let private run t furl callback =
-        let invoke: _ Async =
+        let invoke : _ Async =
             let downloadPostsForUrl url =
                 async {
                     let! pr = t.downloadAndParse url

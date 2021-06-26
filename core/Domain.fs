@@ -16,7 +16,7 @@ module UrlBuilder =
         |> Option.defaultValue "/private/list"
         |> (+) baseUrl
 
-    let user userName: string =
+    let user userName : string =
         System.Uri.EscapeDataString userName
         |> sprintf "%s/user/%s" baseUrl
 
