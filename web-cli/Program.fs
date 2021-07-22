@@ -76,10 +76,13 @@ module Domain =
             return (mkResponseBody html), cookies
         }
 
+    let handleUrl url cookies =
+        let loadHtml url = cookies |> Downloader.loadHtml url
+        parseInner loadHtml url
+
     let parse url (ctx : HttpContext) =
         async {
-            let loadHtml url = extractCookiese ctx |> Downloader.loadHtml url
-            let! (response, cookies) = parseInner loadHtml url
+            let! (response, cookies) = extractCookiese ctx |> handleUrl url
 
             let bodyWebPart =
                 JsonSerializer.SerializeToUtf8Bytes (response, options)

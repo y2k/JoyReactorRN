@@ -51,8 +51,8 @@ module ElmishInterpretator =
 
     let private interpAll t es = List.map (interp t) es |> Cmd.batch
 
-    let wrapInit t init _ =
-        let (m, e) = init () in m, interpAll t e
+    let wrapInit t init arg =
+        let (m, e) = init arg in m, interpAll t e
 
     let wrapUpdate t update msg m =
         let (m, e) = update m msg in m, interpAll t e
