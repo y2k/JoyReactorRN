@@ -455,6 +455,15 @@ module PostScreen =
     open Fable.MaterialUI.Props
     open Fable.MaterialUI.Core
 
+    module I = JoyReactor.Image
+
+    let private viewCommentImage (c: Comment) =
+        match Array.tryHead c.attachments with
+        | Some a ->
+            cardMedia [ Image(I.normalize a.image.url 100.0 100.0)
+                        Style [ Height 100; Width 100 ] ]
+        | None -> div [] []
+
     let private viewTopComment (comments: Comment []) =
         let viewComment (comment: Comment) =
             listItem [ AlignItems ListItemAlignItems.FlexStart ] [
@@ -465,6 +474,7 @@ module PostScreen =
                                ListItemTextProp.Secondary(
                                    fragment [] [
                                        str comment.text
+                                       viewCommentImage comment
                                        typography [ Component("span" |> ReactElementType.ofHtmlElement)
                                                     MaterialProp.Color ComponentColor.Primary ] [
                                            str <| sprintf " (%g)" comment.rating
