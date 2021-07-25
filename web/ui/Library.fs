@@ -496,7 +496,10 @@ module PostScreen =
                                      PaddingTop(sprintf "%f%%" (100. / i.aspect)) ] ]
              | _ -> div [] [])
 
-            h3 [] [ str "Теги:" ]
+            typography [ Variant TypographyVariant.H5
+                         Style [ CSSProp.Margin "4px 0px" ] ] [
+                str "Теги:"
+            ]
             div
                 []
                 (model.tags
@@ -506,7 +509,10 @@ module PostScreen =
                                Label ^ str tag
                                OnClick(fun _ -> dispatch <| OpenTag tag) ])
 
-            h3 [] [ str "Лучшие комментари:" ]
+            typography [ Variant TypographyVariant.H5
+                         Style [ CSSProp.Margin "4px 0px" ] ] [
+                str "Лучшие комментари:"
+            ]
             viewTopComment comments
         ]
 
