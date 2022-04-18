@@ -70,3 +70,5 @@ obj/
 .ionide
 
 *.fsx
+bundle.js
+
