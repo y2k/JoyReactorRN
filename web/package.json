@@ -5,8 +5,8 @@
         "bundle": "webpack --mode production"
     },
     "devDependencies": {
-        "@babel/core": "^7.14.8",
-        "@babel/preset-env": "^7.14.8",
+        "@babel/core": "^7.18.10",
+        "@babel/preset-env": "^7.18.10",
         "fable-compiler": "^2.13.0",
         "fable-loader": "^2.1.9",
         "fable-splitter": "^2.2.1",
@@ -14,15 +14,15 @@
         "pnp-webpack-plugin": "^1.7.0",
         "webpack": "^4.46.0",
         "webpack-cli": "^3.3.12",
-        "webpack-dev-server": "^3.11.2"
+        "webpack-dev-server": "^3.11.3"
     },
     "dependencies": {
-        "@material-ui/core": "^4.12.2",
-        "@material-ui/icons": "^4.11.2",
-        "react": "^17.0.2",
-        "react-dom": "^17.0.2",
+        "@material-ui/core": "^4.12.4",
+        "@material-ui/icons": "^4.11.3",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
         "react-virtualized": "^9.22.3",
-        "react-window": "^1.8.6"
+        "react-window": "^1.8.7"
     },
     "version": "0.0.0",
     "dependenciesMeta": {
