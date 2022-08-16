@@ -32,6 +32,10 @@ module Parsers =
 
     let private domain = UrlBuilder.domain
 
+    let private fixProtocol (url: string) =
+        url.Replace("http://", UrlBuilder.scheme)
+        |> fun x -> Regex.Replace(x, "^//", "https://")
+
     let private getDocument html =
         let doc = HtmlDocument()
         doc.LoadHtml html
@@ -48,8 +52,8 @@ module Parsers =
 
     let private resolveTagImage name =
         TagResolver.tryGetImageId TagResolver.tagIcons name
-        |> Option.map ^ sprintf "http://img1.joyreactor.cc/pics/avatar/tag/%i"
-        |> Option.defaultValue ^ sprintf "http://img0.%s/images/default_avatar.jpeg" domain
+        |> Option.map ^ sprintf "https://img1.joyreactor.cc/pics/avatar/tag/%i"
+        |> Option.defaultValue ^ sprintf "https://img0.%s/images/default_avatar.jpeg" domain
 
     let parseUserName html =
         let m = Regex.Match(html, "<a href=\"/user/([^\"]+)\"\\s+id=\"settings\"")
@@ -58,7 +62,9 @@ module Parsers =
     let parseTopTags html =
         let doc = getDocument html
         doc.QuerySelectorAll("#blogs_week_content img")
-        |> Seq.map (fun x -> { name = HtmlEntity.DeEntitize x.Attributes.["alt"].Value; image = x.Attributes.["src"].Value })
+        |> Seq.map (fun x ->
+            { name = HtmlEntity.DeEntitize x.Attributes.["alt"].Value;
+              image = fixProtocol x.Attributes.["src"].Value })
         |> Seq.toArray
 
     let readUserTags html =
@@ -77,6 +83,7 @@ module Parsers =
         |> replace "(/comment/).+(-\\d+\\.[\\w\\d]+)$" "$1$2"
         |> replace "(/full/).+(-\\d+\\.)" "$1$2"
         |> replace "(/post/).+(-\\d+\\.)" "$1$2"
+        |> fixProtocol
 
     let findNumber value =
         let NUMBER_REGEX = Regex("\\d+")
@@ -121,6 +128,7 @@ module Parsers =
                     else
                         x.Attributes.["src"].Value
                         |> fun x -> Regex.Replace(x, "(/post/).+(-\\d+\\.)", "$1$2")
+                    |> fixProtocol
 
                 element.QuerySelectorAll("div.post_content img")
                 |> Seq.filter ^ fun x -> x <> null && x.Attributes.Contains("width")
@@ -136,7 +144,7 @@ module Parsers =
                     let m = SRC_PATTERN.Match(x.Attributes.["src"].Value)
                     if not m.Success then failwith x.Attributes.["src"].Value
                     { aspect = (float x.Attributes.["width"].Value) / (float x.Attributes.["height"].Value)
-                      url = sprintf "http://img.youtube.com/vi/%s/0.jpg" m.Groups.[1].Value }
+                      url = sprintf "https://img.youtube.com/vi/%s/0.jpg" m.Groups.[1].Value }
 
             let parseVideoThumbnails (element : HtmlNode) =
                 element.QuerySelectorAll("video[poster]")
@@ -174,7 +182,7 @@ module Parsers =
                 let userImg = node.QuerySelector("img.avatar")
                 let id = int (node.QuerySelector("span.comment_rating").Attributes.["comment_id"].Value)
                 { text = node.QuerySelector("div.txt > div").InnerText
-                  image = { aspect = 1.0; url = userImg.Attributes.["src"].Value }
+                  image = { aspect = 1.0; url = fixProtocol userImg.Attributes.["src"].Value }
                   rating = node.QuerySelectorAll("span.comment_rating")
                            |> Seq.map ^ fun x -> x.InnerText
                            |> Seq.fold (sprintf "%s%s") ""
@@ -188,7 +196,9 @@ module Parsers =
                   parentId = parentId }
             |> Seq.toArray
 
-        { userImage = { aspect = 1.0; url = element.QuerySelector("div.uhead_nick > img").Attributes.["src"].Value }
+        { userImage = {
+            aspect = 1.0;
+            url = fixProtocol (element.QuerySelector("div.uhead_nick > img").Attributes.["src"].Value) }
           userName = element.QuerySelector("div.uhead_nick > a").InnerText
           rating = getRating()
           created = getCreated()
@@ -229,8 +239,8 @@ module Parsers =
     let getMessages html =
         let getUserImage (name : String) : String =
             TagResolver.tryGetImageId TagResolver.userIcons name
-            |> Option.map ^ sprintf "http://img0.%s/pics/avatar/user/%i" domain
-            |> Option.defaultValue ^ sprintf "http://img0.%s/images/default_avatar.jpeg" domain
+            |> Option.map ^ sprintf "https://img0.%s/pics/avatar/user/%i" domain
+            |> Option.defaultValue ^ sprintf "https://img0.%s/images/default_avatar.jpeg" domain
 
         let document = getDocument html
         let messages =
@@ -263,7 +273,9 @@ module Parsers =
                 float ^ m.Groups.[1].Value
 
             { userName = document.QuerySelector("div.sidebarContent > div.user > span").InnerText.Trim()
-              userImage = { aspect = 1.0; url = document.QuerySelector("div.sidebarContent > div.user > img").Attributes.["src"].Value }
+              userImage =
+                { aspect = 1.0;
+                  url = fixProtocol (document.QuerySelector("div.sidebarContent > div.user > img").Attributes.["src"].Value) }
               rating = float ^ document.QuerySelector("#rating-text > b").InnerText.Replace(" ", "")
               stars = Seq.length ^ document.QuerySelectorAll(".star-row-0 > .star-0")
               progressToNewStar = getProgressToNewStar }

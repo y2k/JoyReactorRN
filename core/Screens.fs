@@ -405,7 +405,7 @@ module TagsScreen =
 
     let private addFavorite tags =
         Array.concat [ [| { name = "Избранное"
-                            image = sprintf "http://img1.%s/pics/avatar/tag/1279" UrlBuilder.domain } |]
+                            image = sprintf "https://img1.%s/pics/avatar/tag/1279" UrlBuilder.domain } |]
                        tags ]
 
     let private tagToSource tag =
