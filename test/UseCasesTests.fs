@@ -1,7 +1,6 @@
 module JoyReactor.Tests.UseCasesTests
 
 open Xunit
-open Swensen.Unquote
 open JoyReactor.Components
 
 [<Fact>]

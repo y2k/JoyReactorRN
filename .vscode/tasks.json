@@ -5,19 +5,20 @@
             "label": "run all",
             "dependsOrder": "parallel",
             "dependsOn": [
-                "run web-cli",
+                "run server",
                 "fable"
             ],
             "problemMatcher": []
         },
         {
-            "label": "run web-cli",
+            "label": "run server",
             "command": "dotnet run",
             "type": "shell",
             "options": {
-                "cwd": "${workspaceRoot}/web-cli"
+                "cwd": "${workspaceRoot}/server"
             },
-            "dependsOn": "build"
+            "dependsOn": "build",
+            "problemMatcher": []
         },
         {
             "label": "build",

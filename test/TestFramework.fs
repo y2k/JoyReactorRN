@@ -13,7 +13,8 @@ module SyncDownloader =
 
     let private downloadHtml (url: string) =
         let encodedUrl =
-            Text.Encoding.UTF8.GetBytes url
+            url.Replace("https://", "http://")
+            |> Text.Encoding.UTF8.GetBytes
             |> Convert.ToBase64String
 
         let path =

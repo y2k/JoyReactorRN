@@ -5,7 +5,8 @@ module UrlBuilder =
 
     let domain = "joyreactor.cc"
 
-    let baseUrl = sprintf "http://%s" domain
+    let scheme = "https://"
+    let baseUrl = sprintf "%s%s" scheme domain
     let home = sprintf "%s/" baseUrl
     let donate = sprintf "%s/donate" baseUrl
     let ads = sprintf "%s/ads" baseUrl
