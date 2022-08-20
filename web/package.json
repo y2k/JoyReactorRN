@@ -1,14 +1,15 @@
 {
     "scripts": {
-        "start": "webpack-dev-server --disable-host-check",
-        "prod": "webpack-dev-server --mode production --host 0.0.0.0 --disable-host-check",
-        "bundle": "webpack --mode production"
+        "start": "dotnet fable ui && webpack-dev-server --disable-host-check",
+        "prod": "dotnet fable ui && webpack-dev-server --mode production --host 0.0.0.0 --disable-host-check",
+        "bundle": "dotnet fable ui && webpack --mode production"
     },
     "devDependencies": {
         "@babel/core": "^7.18.10",
         "@babel/preset-env": "^7.18.10",
         "offline-plugin": "^5.0.7",
         "pnp-webpack-plugin": "^1.7.0",
+        "terser-webpack-plugin": "4.2.3",
         "webpack": "^4.46.0",
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.3"
@@ -20,5 +21,6 @@
         "react-dom": "^18.2.0",
         "react-virtualized": "^9.22.3",
         "react-window": "^1.8.7"
-    }
+    },
+    "packageManager": "yarn@3.2.2"
 }

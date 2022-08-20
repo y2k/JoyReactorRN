@@ -1,11 +1,11 @@
 var path = require("path");
 var webpack = require("webpack");
-var OfflinePlugin = require('offline-plugin');
 const PnpWebpackPlugin = require(`pnp-webpack-plugin`);
+const TerserPlugin = require("terser-webpack-plugin");
 
 var config = {
     mode: "development",
-    entry: "./ui/ui.fsproj",
+    entry: "./ui/Library.fs.js",
     output: {
         path: path.join(__dirname, "./public"),
         filename: "bundle.js",
@@ -17,28 +17,22 @@ var config = {
         inline: true,
         proxy: [{
             path: '/parse/',
-            target: 'http://localhost:8090'
+            target: 'http://127.0.0.1:8090'
         }, {
             path: '/form',
-            target: 'http://localhost:8090'
+            target: 'http://127.0.0.1:8090'
         }],
     },
     module: {
-        rules: [{
-            test: /\.fs(x|proj)?$/,
-            use: "fable-loader"
-        }]
     }
 };
 
 module.exports = (env, argv) => {
     if (argv.mode === 'production') {
-        config.plugins = [
-            new OfflinePlugin({
-                autoUpdate: true,
-                externals: ['/']
-            })
-        ]
+        config.optimization = {
+            minimize: true,
+            minimizer: [new TerserPlugin()],
+        }
     } else {
         config.devtool = 'source-map';
         config.plugins = [
