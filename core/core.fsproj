@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="common/Prelude.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Domain.fs" />
     <Compile Include="Synchronizer.fs" />
@@ -13,7 +14,6 @@
 
   <ItemGroup>
     <PackageReference Include="Elmish" Version="3.1.0" />
-    <PackageReference Include="y2k.Prelude" Version="0.2.10" />
   </ItemGroup>
 
 </Project>
