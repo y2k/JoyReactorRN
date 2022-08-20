@@ -96,7 +96,7 @@ module ThreadsScreen =
     let viewThread (thread: Message) dispatch =
         listItem [ Key(string thread.date)
                    ListItemProp.Button true
-                   OnClick(fun _ -> dispatch @@ OpenThread thread) ] [
+                   OnClick(fun _ -> dispatch ^ OpenThread thread) ] [
             listItemAvatar [] [
                 avatar [ Src thread.userImage ] []
             ]
@@ -114,7 +114,7 @@ module ThreadsScreen =
                              Bottom "50%" ]
                      ButtonProp.Variant ButtonVariant.Contained
                      MaterialProp.Color ComponentColor.Primary
-                     OnClick @@ fun _ -> dispatch OpenAuthorization ] [
+                     OnClick ^ fun _ -> dispatch OpenAuthorization ] [
                 str "Войти"
             ]
         | false ->
@@ -187,7 +187,7 @@ module FeedScreen =
                     button [ Style [ Flex 1. ]
                              ButtonProp.Variant ButtonVariant.Contained
                              MaterialProp.Color ComponentColor.Primary
-                             OnClick @@ fun _ -> dispatch LoadNextPage ] [
+                             OnClick ^ fun _ -> dispatch LoadNextPage ] [
                         str "Еще"
                     ]
                 ]
@@ -236,7 +236,7 @@ module FeedScreen =
                                      Width "-moz-available" ]
                              ButtonProp.Variant ButtonVariant.Contained
                              MaterialProp.Color ComponentColor.Primary
-                             OnClick @@ fun _ -> dispatch ApplyPreloaded ] [
+                             OnClick ^ fun _ -> dispatch ApplyPreloaded ] [
                         str "Новые посты"
                     ]
             if model.loading then
@@ -248,7 +248,7 @@ module FeedScreen =
                                   JustifyContent "center" ] ] [
                         circularProgress [ LinearProgressProp.Color LinearProgressColor.Secondary ]
                     ]
-            yield snackbar [ Open false; Message @@ str "Ошибка" ] []
+            yield snackbar [ Open false; Message ^ str "Ошибка" ] []
         ]
 
 module TagsScreen =
@@ -274,7 +274,7 @@ module TagsScreen =
             listItem [ HTMLAttr.Custom("style", x.style)
                        Key x.key
                        ListItemProp.Button true
-                       OnClick(fun _ -> dispatch @@ OpenTag tag.name) ] [
+                       OnClick(fun _ -> dispatch ^ OpenTag tag.name) ] [
                 listItemAvatar [] [
                     avatar [ Src tag.image ] []
                 ]
@@ -401,7 +401,7 @@ module ProfileScreen =
                              MarginRight "16px" ]
                      ButtonProp.Variant ButtonVariant.Contained
                      MaterialProp.Color ComponentColor.Primary
-                     OnClick @@ fun _ -> dispatch Logout ] [
+                     OnClick ^ fun _ -> dispatch Logout ] [
                 str "Выйти"
             ]
         ]
@@ -553,7 +553,7 @@ module Program =
     let withNavigation p =
         let sub _ =
             Cmd.ofSub
-            @@ fun dispatch ->
+            ^ fun dispatch ->
                 window.onpopstate <-
                     fun _ ->
                         history.pushState ("", null, null)
