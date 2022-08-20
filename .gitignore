@@ -71,4 +71,4 @@ obj/
 
 *.fsx
 bundle.js
-
+*.fs.js
